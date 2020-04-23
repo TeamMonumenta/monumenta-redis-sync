@@ -72,8 +72,6 @@ public class MonumentaRedisSyncAPI {
 			return;
 		}
 
-		/* TODO: Something to check if the player is already transferring */
-
 		/* If any return params were specified, mark them on the player */
 		if (returnLoc != null || returnYaw != null || returnPitch != null) {
 			DataEventListener.setPlayerReturnParams(player, returnLoc, returnYaw, returnPitch);
@@ -110,8 +108,6 @@ public class MonumentaRedisSyncAPI {
 			out.writeUTF(target);
 
 			player.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
-
-			/* TODO: Timeout if it fails and unlock. Remember to reinstate data saving! */
 		});
 
 		/* TODO: Verbosity */

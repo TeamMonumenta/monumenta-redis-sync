@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -45,7 +46,9 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerItemDamageEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -62,7 +65,6 @@ import com.playmonumenta.redissync.utils.ScoreboardUtils;
 
 import io.lettuce.core.LettuceFutures;
 import io.lettuce.core.RedisFuture;
-import io.lettuce.core.api.async.RedisAsyncCommands;
 
 public class DataEventListener implements Listener {
 	public static class ReturnParams {
@@ -77,6 +79,8 @@ public class DataEventListener implements Listener {
 		}
 	}
 
+	private static final String TRANSFER_UNLOCK_TASK_METAKEY = "RedisSyncTransferUnlockMetakey";
+	private static final int TRANSFER_UNLOCK_TIMEOUT_TICKS = 10 * 20;
 	private static DataEventListener INSTANCE = null;
 
 	private final Gson mGson = new Gson();
@@ -95,8 +99,30 @@ public class DataEventListener implements Listener {
 
 	/********************* Protected API *********************/
 
-	protected static void setPlayerAsTransferring(Player player) {
+	protected static void setPlayerAsTransferring(Player player) throws Exception {
+		if (INSTANCE.mTransferringPlayers.contains(player.getUniqueId())) {
+			throw new Exception("Player " + player.getName() + " is already transferring");
+		}
 		INSTANCE.mTransferringPlayers.add(player.getUniqueId());
+
+		/*
+		 * Start a task to automatically unlock the player if transfer times out.
+		 * This task is cancelled when player leaves the server (PlayerQuitEvent)
+		 */
+		Plugin plugin = MonumentaRedisSync.getInstance();
+		BukkitRunnable unlockRunnable = new BukkitRunnable() {
+			@Override
+			public void run() {
+				if (DataEventListener.isPlayerTransferring(player)) {
+					player.sendMessage(ChatColor.RED + "Transferring timed out and your player has been unlocked");
+					DataEventListener.setPlayerAsNotTransferring(player);
+					player.removeMetadata(TRANSFER_UNLOCK_TASK_METAKEY, plugin);
+				}
+			}
+		};
+		unlockRunnable.runTaskLater(plugin, TRANSFER_UNLOCK_TIMEOUT_TICKS);
+		player.setMetadata(TRANSFER_UNLOCK_TASK_METAKEY,
+		                   new FixedMetadataValue(plugin, unlockRunnable));
 	}
 
 	protected static void setPlayerReturnParams(Player player, Location returnLoc, Float returnYaw, Float returnPitch) {
@@ -365,6 +391,18 @@ public class DataEventListener implements Listener {
 			RedisAPI.getInstance().async().hset("uuid2name", uuidStr, nameStr);
 			RedisAPI.getInstance().async().hset("name2uuid", nameStr, uuidStr);
 		});
+	}
+
+	@EventHandler(priority = EventPriority.LOWEST)
+	public void playerQuitEvent(PlayerQuitEvent event) {
+		Player player = event.getPlayer();
+		if (player.hasMetadata(TRANSFER_UNLOCK_TASK_METAKEY)) {
+			BukkitRunnable runnable = (BukkitRunnable) player.getMetadata(TRANSFER_UNLOCK_TASK_METAKEY).get(0).value();
+			if (!runnable.isCancelled()) {
+				runnable.cancel();
+			}
+			player.removeMetadata(TRANSFER_UNLOCK_TASK_METAKEY, MonumentaRedisSync.getInstance());
+		}
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST)

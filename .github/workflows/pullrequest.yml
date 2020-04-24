@@ -46,9 +46,9 @@ jobs:
       run: git config --global user.email "Monumenta.CI@NotARealEmail.com"
     - name: Get Paper
       run: |
-          git clone https://github.com/PaperMC/Paper.git
+          git clone https://github.com/TeamMonumenta/Paper.git
           cd Paper
-          git checkout ver/1.13.2
+          git checkout 1.13
     - name: Build Paper
       working-directory: ./Paper
       run: ./paper jar

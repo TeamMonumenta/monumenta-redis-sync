@@ -5,17 +5,18 @@ import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.UUID;
 
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.scheduler.BukkitRunnable;
-
 import com.playmonumenta.redissync.MonumentaRedisSync;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI.RedisPlayerData;
 
-import io.github.jorelali.commandapi.api.CommandAPI;
-import io.github.jorelali.commandapi.api.CommandPermission;
-import io.github.jorelali.commandapi.api.arguments.Argument;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.scheduler.BukkitRunnable;
+
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.Argument;
 
 public class UpgradeAllPlayers {
 	public static void register(MonumentaRedisSync plugin) {
@@ -24,17 +25,18 @@ public class UpgradeAllPlayers {
 		LinkedHashMap<String, Argument> arguments;
 
 		arguments = new LinkedHashMap<>();
-		CommandAPI.getInstance().register(command,
-		                                  perms,
-		                                  arguments,
-		                                  (sender, args) -> {
-											  try {
-												  run(plugin);
-											  } catch (Exception ex) {
-												  CommandAPI.fail(ex.getMessage());
-											  }
-		                                  }
-		);
+
+		new CommandAPICommand(command)
+			.withArguments(arguments)
+			.withPermission(perms)
+			.executes((sender, args) -> {
+				try {
+					run(plugin);
+				} catch (Exception ex) {
+					CommandAPI.fail(ex.getMessage());
+				}
+			}
+		).register();
 	}
 
 	private static void updatePlayer(MonumentaRedisSync mrs, UUID uuid) {

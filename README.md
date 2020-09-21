@@ -65,6 +65,10 @@ hard to get working too.
 If you are interested in getting this working / trying it out yourself, join
 the Monumenta Discord (https://discord.gg/eep9qcu) and message @Combustible.
 
+This plugin also requires CommandAPI 4.3. Other versions might also work, worth
+testing. If you try with a version that doesn't work (log errors, commands
+don't work, etc.) it's not going to damage your player data.
+
 ## Download
 
 You can download the Monumenta Redis Sync plugin from [GitHub Packages](https://github.com/TeamMonumenta/monumenta-redis-sync/packages).

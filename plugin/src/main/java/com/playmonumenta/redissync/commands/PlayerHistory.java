@@ -3,20 +3,21 @@ package com.playmonumenta.redissync.commands;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
+import com.playmonumenta.redissync.RedisAPI;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
-import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
-import com.playmonumenta.redissync.RedisAPI;
-
-import io.github.jorelali.commandapi.api.CommandAPI;
-import io.github.jorelali.commandapi.api.CommandPermission;
-import io.github.jorelali.commandapi.api.arguments.Argument;
-import io.github.jorelali.commandapi.api.arguments.EntitySelectorArgument;
-import io.github.jorelali.commandapi.api.arguments.EntitySelectorArgument.EntitySelector;
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.EntitySelectorArgument;
+import dev.jorel.commandapi.arguments.EntitySelectorArgument.EntitySelector;
 
 public class PlayerHistory {
 	public static void register(Plugin plugin) {
@@ -26,20 +27,20 @@ public class PlayerHistory {
 
 		arguments = new LinkedHashMap<>();
 		arguments.put("player", new EntitySelectorArgument(EntitySelector.ONE_PLAYER));
-		CommandAPI.getInstance().register(command,
-		                                  perms,
-		                                  arguments,
-		                                  (sender, args) -> {
-											  if (!(sender instanceof Player)) {
-												  CommandAPI.fail("This command can only be run by players");
-											  }
-											  try {
-												  playerHistory(plugin, sender, (Player)args[0]);
-											  } catch (Exception ex) {
-												  CommandAPI.fail(ex.getMessage());
-											  }
-		                                  }
-		);
+		new CommandAPICommand(command)
+			.withArguments(arguments)
+			.withPermission(perms)
+			.executes((sender, args) -> {
+				if (!(sender instanceof Player)) {
+					CommandAPI.fail("This command can only be run by players");
+				}
+				try {
+					playerHistory(plugin, sender, (Player)args[0]);
+				} catch (Exception ex) {
+					CommandAPI.fail(ex.getMessage());
+				}
+			}
+		).register();
 	}
 
 	private static void playerHistory(Plugin plugin, CommandSender sender, Player target) {

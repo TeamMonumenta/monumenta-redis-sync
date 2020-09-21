@@ -7,11 +7,12 @@ import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 import org.bukkit.command.ProxiedCommandSender;
 import org.bukkit.entity.Player;
 
-import io.github.jorelali.commandapi.api.CommandAPI;
-import io.github.jorelali.commandapi.api.CommandPermission;
-import io.github.jorelali.commandapi.api.arguments.Argument;
-import io.github.jorelali.commandapi.api.arguments.LiteralArgument;
-import io.github.jorelali.commandapi.api.arguments.StringArgument;
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.LiteralArgument;
+import dev.jorel.commandapi.arguments.StringArgument;
 
 public class Stash {
 	public static void register() {
@@ -23,123 +24,120 @@ public class Stash {
 
 		arguments = new LinkedHashMap<>();
 		arguments.put("put", new LiteralArgument("put"));
-		CommandAPI.getInstance().register(command,
-		                                  perms,
-		                                  arguments,
-		                                  (sender, args) -> {
-											  if (sender instanceof ProxiedCommandSender) {
-												  sender = ((ProxiedCommandSender)sender).getCallee();
-											  }
-											  if (!(sender instanceof Player)) {
-												  CommandAPI.fail("This command can only be run by/as players");
-											  }
-											  try {
-												  MonumentaRedisSyncAPI.stashPut((Player)sender, null);
-											  } catch (Exception ex) {
-												  CommandAPI.fail(ex.getMessage());
-											  }
-		                                  }
-		);
+		new CommandAPICommand(command)
+			.withArguments(arguments)
+			.withPermission(perms)
+			.executes((sender, args) -> {
+				if (sender instanceof ProxiedCommandSender) {
+					sender = ((ProxiedCommandSender)sender).getCallee();
+				}
+				if (!(sender instanceof Player)) {
+					CommandAPI.fail("This command can only be run by/as players");
+				}
+				try {
+					MonumentaRedisSyncAPI.stashPut((Player)sender, null);
+				} catch (Exception ex) {
+					CommandAPI.fail(ex.getMessage());
+				}
+			}
+		).register();
 
 		/* Optional argument version */
 		arguments.put("name", new StringArgument());
-		CommandAPI.getInstance().register(command,
-		                                  perms,
-		                                  arguments,
-		                                  (sender, args) -> {
-											  if (sender instanceof ProxiedCommandSender) {
-												  sender = ((ProxiedCommandSender)sender).getCallee();
-											  }
-											  if (!(sender instanceof Player)) {
-												  CommandAPI.fail("This command can only be run by/as players");
-											  }
-											  try {
-												  MonumentaRedisSyncAPI.stashPut((Player)sender, (String)args[0]);
-											  } catch (Exception ex) {
-												  CommandAPI.fail(ex.getMessage());
-											  }
-		                                  }
-		);
+		new CommandAPICommand(command)
+			.withArguments(arguments)
+			.withPermission(perms)
+			.executes((sender, args) -> {
+				if (sender instanceof ProxiedCommandSender) {
+					sender = ((ProxiedCommandSender)sender).getCallee();
+				}
+				if (!(sender instanceof Player)) {
+					CommandAPI.fail("This command can only be run by/as players");
+				}
+				try {
+					MonumentaRedisSyncAPI.stashPut((Player)sender, (String)args[0]);
+				} catch (Exception ex) {
+					CommandAPI.fail(ex.getMessage());
+				}
+			}
+		).register();
 
 		/********************* stash get *********************/
 
 		arguments = new LinkedHashMap<>();
 		arguments.put("get", new LiteralArgument("get"));
-		CommandAPI.getInstance().register(command,
-		                                  perms,
-		                                  arguments,
-		                                  (sender, args) -> {
-											  if (sender instanceof ProxiedCommandSender) {
-												  sender = ((ProxiedCommandSender)sender).getCallee();
-											  }
-											  if (!(sender instanceof Player)) {
-												  CommandAPI.fail("This command can only be run by/as players");
-											  }
-											  try {
-												  MonumentaRedisSyncAPI.stashGet((Player)sender, null);
-											  } catch (Exception ex) {
-												  CommandAPI.fail(ex.getMessage());
-											  }
-		                                  }
-		);
+		new CommandAPICommand(command)
+			.withArguments(arguments)
+			.withPermission(perms)
+			.executes((sender, args) -> {
+				if (sender instanceof ProxiedCommandSender) {
+					sender = ((ProxiedCommandSender)sender).getCallee();
+				}
+				if (!(sender instanceof Player)) {
+					CommandAPI.fail("This command can only be run by/as players");
+				}
+				try {
+					MonumentaRedisSyncAPI.stashGet((Player)sender, null);
+				} catch (Exception ex) {
+					CommandAPI.fail(ex.getMessage());
+				}
+			}
+		).register();
 
 		/* Optional argument version */
 		arguments.put("name", new StringArgument());
-		CommandAPI.getInstance().register(command,
-		                                  perms,
-		                                  arguments,
-		                                  (sender, args) -> {
-											  if (sender instanceof ProxiedCommandSender) {
-												  sender = ((ProxiedCommandSender)sender).getCallee();
-											  }
-											  if (!(sender instanceof Player)) {
-												  CommandAPI.fail("This command can only be run by/as players");
-											  }
-											  try {
-												  MonumentaRedisSyncAPI.stashGet((Player)sender, (String)args[0]);
-											  } catch (Exception ex) {
-												  CommandAPI.fail(ex.getMessage());
-											  }
-		                                  }
-		);
+		new CommandAPICommand(command)
+			.withArguments(arguments)
+			.withPermission(perms)
+			.executes((sender, args) -> {
+				if (sender instanceof ProxiedCommandSender) {
+					sender = ((ProxiedCommandSender)sender).getCallee();
+				}
+				if (!(sender instanceof Player)) {
+					CommandAPI.fail("This command can only be run by/as players");
+				}
+				try {
+					MonumentaRedisSyncAPI.stashGet((Player)sender, (String)args[0]);
+				} catch (Exception ex) {
+					CommandAPI.fail(ex.getMessage());
+				}
+			}
+		).register();
 
 		/********************* stash info *********************/
 
 		arguments = new LinkedHashMap<>();
 		arguments.put("info", new LiteralArgument("info"));
-		CommandAPI.getInstance().register(command,
-		                                  perms,
-		                                  arguments,
-		                                  (sender, args) -> {
-											  if (!(sender instanceof Player)) {
-												  CommandAPI.fail("This command can only be run by players");
-											  }
-											  try {
-												  MonumentaRedisSyncAPI.stashInfo((Player)sender, null);
-											  } catch (Exception ex) {
-												  CommandAPI.fail(ex.getMessage());
-											  }
-		                                  }
-		);
+		new CommandAPICommand(command)
+			.withArguments(arguments)
+			.withPermission(perms)
+			.executes((sender, args) -> {
+				if (!(sender instanceof Player)) {
+					CommandAPI.fail("This command can only be run by players");
+				}
+				try {
+					MonumentaRedisSyncAPI.stashInfo((Player)sender, null);
+				} catch (Exception ex) {
+					CommandAPI.fail(ex.getMessage());
+				}
+			}
+		).register();
 
 		/* Optional argument version */
 		arguments.put("name", new StringArgument());
-		CommandAPI.getInstance().register(command,
-		                                  perms,
-		                                  arguments,
-		                                  (sender, args) -> {
-											  if (!(sender instanceof Player)) {
-												  CommandAPI.fail("This command can only be run by players");
-											  }
-											  try {
-												  MonumentaRedisSyncAPI.stashInfo((Player)sender, (String)args[0]);
-											  } catch (Exception ex) {
-												  CommandAPI.fail(ex.getMessage());
-											  }
-		                                  }
-		);
-
-
+		new CommandAPICommand(command)
+			.withArguments(arguments)
+			.withPermission(perms)
+			.executes((sender, args) -> {
+				if (!(sender instanceof Player)) {
+					CommandAPI.fail("This command can only be run by players");
+				}
+				try {
+					MonumentaRedisSyncAPI.stashInfo((Player)sender, (String)args[0]);
+				} catch (Exception ex) {
+					CommandAPI.fail(ex.getMessage());
+				}
+			}
+		).register();
 	}
-
 }

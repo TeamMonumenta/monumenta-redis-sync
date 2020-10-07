@@ -49,12 +49,12 @@ jobs:
       working-directory: .
       run: |
         set -o pipefail
-        ./compile.sh | tee compile.log
+        ./compile.sh --batch-mode | tee compile.log
 
     # Checkstyle
     - name: Run checkstyle
       working-directory: .
-      run: mvn checkstyle:checkstyle
+      run: ./mvn_version_wrapper.sh checkstyle:checkstyle --batch-mode
     - name: Run reviewdog
       env:
         REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -64,7 +64,7 @@ jobs:
     # PMD
     - name: Run pmd
       working-directory: .
-      run: mvn pmd:pmd
+      run: ./mvn_version_wrapper.sh pmd:pmd --batch-mode
     - name: Run reviewdog
       env:
         REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}

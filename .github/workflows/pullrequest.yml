@@ -47,19 +47,19 @@ jobs:
           ./paper jar
         fi
 
-        #    - name: Build and report style/pmd/warnings
-        #      env:
-        #        REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        #      run: |
-        #        set -o pipefail
-        #        ./compile.sh --batch-mode --no-snapshot-updates | tee compile.log
-        #        cat compile.log | grep '^\[WARNING\].*\.java' | reviewdog -efm="[WARNING] %f:[%l,%c] %m" -name="compiler-warnings" -reporter=github-pr-check
-        #
-        #        ./mvn_version_wrapper.sh checkstyle:checkstyle --batch-mode --no-snapshot-updates
-        #        cat adapterapi/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (adapterapi)" -reporter=github-pr-check
-        #        cat v1_15_R1/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (v1_15_R1)" -reporter=github-pr-check
-        #        cat v1_16_R2/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (v1_16_R2)" -reporter=github-pr-check
-        #        cat plugin/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (plugin)" -reporter=github-pr-check
-        #
-        #        ./mvn_version_wrapper.sh pmd:pmd --batch-mode --no-snapshot-updates
-        #        cat v1_15_R1/target/pmd.txt plugin/target/pmd.txt adapterapi/target/pmd.txt v1_16_R2/target/pmd.txt | reviewdog -efm="%f:%l:	%m" -name="pmd" -reporter=github-pr-check
+    - name: Build and report style/pmd/warnings
+      env:
+        REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -o pipefail
+        ./compile.sh --batch-mode --no-snapshot-updates | tee compile.log
+        cat compile.log | grep '^\[WARNING\].*\.java' | reviewdog -efm="[WARNING] %f:[%l,%c] %m" -name="compiler-warnings" -reporter=github-pr-check
+
+        ./mvn_version_wrapper.sh checkstyle:checkstyle --batch-mode --no-snapshot-updates
+        cat adapterapi/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (adapterapi)" -reporter=github-pr-check
+        cat v1_15_R1/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (v1_15_R1)" -reporter=github-pr-check
+        cat v1_16_R2/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (v1_16_R2)" -reporter=github-pr-check
+        cat plugin/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (plugin)" -reporter=github-pr-check
+
+        #./mvn_version_wrapper.sh pmd:pmd --batch-mode --no-snapshot-updates
+        #cat v1_15_R1/target/pmd.txt plugin/target/pmd.txt adapterapi/target/pmd.txt v1_16_R2/target/pmd.txt | reviewdog -efm="%f:%l:	%m" -name="pmd" -reporter=github-pr-check

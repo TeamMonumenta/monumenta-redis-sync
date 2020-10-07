@@ -34,6 +34,7 @@ jobs:
 
     - name: Build Paper
       run: |
+        if [[ ! -d ~/.m2/repository/com/destroystokyo/paper ]]; then
           git clone https://github.com/TeamMonumenta/Paper.git
           cd Paper
           git checkout 1.13
@@ -42,6 +43,7 @@ jobs:
           ./paper jar
           git checkout 1.16
           ./paper jar
+        fi
 
     - name: Build and deploy to Github Package Registry
       env:

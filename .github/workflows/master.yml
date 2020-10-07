@@ -25,6 +25,11 @@ jobs:
       run: |
           git clone https://github.com/TeamMonumenta/Paper.git
           cd Paper
+    - name: Build Paper 1.13
+      working-directory: ./Paper
+      run: |
+          git checkout 1.13
+          ./paper jar
     - name: Build Paper 1.15
       working-directory: ./Paper
       run: |

@@ -27,7 +27,7 @@ jobs:
     - name: Cache maven dependencies
       uses: actions/cache@v2
       env:
-        cache-name: cache-maven-dependencies-test
+        cache-name: cache-maven-dependencies
       with:
         # maven files are stored in `~/.m2/repository`
         path: ~/.m2/repository

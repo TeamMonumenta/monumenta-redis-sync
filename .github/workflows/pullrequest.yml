@@ -39,6 +39,13 @@ jobs:
           git checkout 1.16
           ./paper jar
 
+    # Build & compiler warnings
+    - name: Build with Maven
+      working-directory: .
+      run: |
+        set -o pipefail
+        ./compile.sh | tee compile.log
+
     # Checkstyle
     - name: Run checkstyle
       working-directory: .
@@ -58,13 +65,6 @@ jobs:
         REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         cat v1_15_R1/target/pmd.txt plugin/target/pmd.txt adapterapi/target/pmd.txt v1_16_R2/target/pmd.txt | reviewdog -efm="%f:%l:	%m" -name="pmd" -reporter=github-pr-check
-
-    # Build & compiler warnings
-    - name: Build with Maven
-      working-directory: .
-      run: |
-        set -o pipefail
-        ./compile.sh | tee compile.log
 
     - name: Run reviewdog to report deprecation warnings
       env:

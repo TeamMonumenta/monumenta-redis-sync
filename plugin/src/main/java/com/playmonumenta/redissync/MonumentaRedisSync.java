@@ -73,6 +73,9 @@ public class MonumentaRedisSync extends JavaPlugin {
 		mRedisAPI = new RedisAPI(Conf.getHost(), Conf.getPort());
 		getServer().getPluginManager().registerEvents(new DataEventListener(this.getLogger(), mVersionAdapter), this);
 		getServer().getPluginManager().registerEvents(new ScoreboardCleanupListener(this, this.getLogger(), mVersionAdapter), this);
+		if (Conf.getTicksPerPlayerAutosave() > 0) {
+			getServer().getPluginManager().registerEvents(new AutoSaveListener(this, mVersionAdapter), this);
+		}
 
 		this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
 	}
@@ -104,8 +107,9 @@ public class MonumentaRedisSync extends JavaPlugin {
 		String domain = config.getString("server_domain", "default_domain");
 		String shard = config.getString("shard_name", "default_shard");
 		int history = config.getInt("history_amount", 20);
+		int ticksPerPlayerAutosave = config.getInt("ticksPerPlayerAutosave", 6060);
 		boolean savingDisabled = config.getBoolean("saving_disabled", false);
 		boolean scoreboardCleanupEnabled = config.getBoolean("scoreboard_cleanup_enabled", true);
-		new Conf(host, port, domain, shard, history, savingDisabled, scoreboardCleanupEnabled);
+		new Conf(host, port, domain, shard, history, ticksPerPlayerAutosave, savingDisabled, scoreboardCleanupEnabled);
 	}
 }

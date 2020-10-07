@@ -1,6 +1,7 @@
 package com.playmonumenta.redissync;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -33,8 +34,6 @@ public class ScoreboardCleanupListener implements Listener {
 		mAdapter = adapter;
 	}
 
-	/********************* Data Save/Load Event Handlers *********************/
-
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void playerAdvancementDataLoadEvent(PlayerAdvancementDataLoadEvent event) {
 		cancelCleanupTask(event.getPlayer());
@@ -44,8 +43,6 @@ public class ScoreboardCleanupListener implements Listener {
 	public void playerDataLoadEvent(PlayerDataLoadEvent event) {
 		cancelCleanupTask(event.getPlayer());
 	}
-
-	/********************* Transferring Restriction Event Handlers *********************/
 
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void playerJoinEvent(PlayerJoinEvent event) {
@@ -58,6 +55,14 @@ public class ScoreboardCleanupListener implements Listener {
 
 		if (!Conf.getScoreboardCleanupEnabled()) {
 			return;
+		}
+
+		// Remove any completed runnables from the map to keep things clean
+		Iterator<Map.Entry<UUID, BukkitRunnable>> iter = mCleanupTasks.entrySet().iterator();
+		while (iter.hasNext()) {
+			if (iter.next().getValue().isCancelled()) {
+				iter.remove();
+			}
 		}
 
 		BukkitRunnable cleanupTask = new BukkitRunnable() {

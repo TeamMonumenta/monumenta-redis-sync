@@ -19,49 +19,49 @@ jobs:
         mkdir -p $HOME/bin && curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s -- -b $HOME/bin
         echo ::add-path::$HOME/bin
 
-    # Checkstyle
-    - name: Run checkstyle
-      working-directory: ./plugin
-      run: mvn checkstyle:checkstyle -f checkstyle_pom.xml
-    - name: Run reviewdog
-      env:
-        REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: git config
       run: |
-        cat plugin/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle" -reporter=github-pr-check
+        git config --global user.name "Monumenta CI"
+        git config --global user.email "Monumenta.CI@NotARealEmail.com"
 
-    # PMD
-    - name: Run pmd
-      working-directory: ./plugin
-      run: mvn pmd:pmd -f checkstyle_pom.xml
-    - name: Run reviewdog
+    - name: Cache maven dependencies
+      uses: actions/cache@v2
       env:
-        REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        cat plugin/target/pmd.txt | reviewdog -efm="%f:%l:	%m" -name="pmd" -reporter=github-pr-check
+        cache-name: cache-maven-dependencies
+      with:
+        # maven files are stored in `~/.m2/repository`
+        path: ~/.m2/repository
+        # Create the key based on runner os, cache name, and a hash of all the pom.xml files
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pom.xml') }}
 
-    # Build paper
-    - name: git config user.name
-      run: git config --global user.name "Monumenta CI"
-    - name: git config user.email
-      run: git config --global user.email "Monumenta.CI@NotARealEmail.com"
-    - name: Get Paper
+    - name: Build Paper
       run: |
+        if [[ ! -d ~/.m2/repository/com/destroystokyo/paper ]]; then
           git clone https://github.com/TeamMonumenta/Paper.git
           cd Paper
+          git checkout 1.13
+          ./paper jar
           git checkout 1.15
-    - name: Build Paper
-      working-directory: ./Paper
-      run: ./paper jar
+          ./paper jar
+          git checkout 1.16
+          ./paper jar
+        fi
 
-    # Build & compiler warnings
-    - name: Build with Maven
-      working-directory: ./plugin
-      run: |
-        set -o pipefail
-        ./compile.sh | tee ../compile.log
-
-    - name: Run reviewdog to report deprecation warnings
+    - name: Build and report style/pmd/warnings
       env:
         REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        set -o pipefail
+        ./compile.sh --batch-mode --no-snapshot-updates | tee compile.log
+        set +o pipefail
         cat compile.log | grep '^\[WARNING\].*\.java' | reviewdog -efm="[WARNING] %f:[%l,%c] %m" -name="compiler-warnings" -reporter=github-pr-check
+        set -o pipefail
+
+        ./mvn_version_wrapper.sh checkstyle:checkstyle --batch-mode --no-snapshot-updates
+        cat adapterapi/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (adapterapi)" -reporter=github-pr-check
+        cat v1_15_R1/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (v1_15_R1)" -reporter=github-pr-check
+        cat v1_16_R2/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (v1_16_R2)" -reporter=github-pr-check
+        cat plugin/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (plugin)" -reporter=github-pr-check
+
+        ./mvn_version_wrapper.sh pmd:pmd --batch-mode --no-snapshot-updates
+        cat v1_15_R1/target/pmd.txt plugin/target/pmd.txt adapterapi/target/pmd.txt v1_16_R2/target/pmd.txt | reviewdog -efm="%f:%l:	%m" -name="pmd" -reporter=github-pr-check

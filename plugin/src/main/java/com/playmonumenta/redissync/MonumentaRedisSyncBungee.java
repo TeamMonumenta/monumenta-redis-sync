@@ -42,6 +42,6 @@ public class MonumentaRedisSyncBungee extends Plugin {
 			this.getLogger().warning("Failed to load config file " + configFile.getPath() + " : " + ex.getMessage());
 			return;
 		}
-		new Conf(host, port, "bungee");
+		new Conf(host, port, null, "bungee", -1, -1, true, false);
 	}
 }

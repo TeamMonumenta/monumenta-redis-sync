@@ -22,6 +22,16 @@ jobs:
           git config --global user.name "Monumenta CI"
           git config --global user.email "Monumenta.CI@NotARealEmail.com"
 
+    - name: Cache maven dependencies
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-maven-dependencies
+      with:
+        # maven files are stored in `~/.m2/repository`
+        path: ~/.m2/repository
+        # Create the key based on runner os, cache name, and a hash of all the pom.xml files
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pom.xml') }}
+
     - name: Build Paper
       run: |
           git clone https://github.com/TeamMonumenta/Paper.git

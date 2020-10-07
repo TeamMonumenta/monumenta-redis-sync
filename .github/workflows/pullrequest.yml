@@ -19,26 +19,6 @@ jobs:
         mkdir -p $HOME/bin && curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s -- -b $HOME/bin
         echo ::add-path::$HOME/bin
 
-    # Checkstyle
-    - name: Run checkstyle
-      working-directory: ./plugin
-      run: mvn checkstyle:checkstyle -f checkstyle_pom.xml
-    - name: Run reviewdog
-      env:
-        REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        cat plugin/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle" -reporter=github-pr-check
-
-    # PMD
-    - name: Run pmd
-      working-directory: ./plugin
-      run: mvn pmd:pmd -f checkstyle_pom.xml
-    - name: Run reviewdog
-      env:
-        REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        cat plugin/target/pmd.txt | reviewdog -efm="%f:%l:	%m" -name="pmd" -reporter=github-pr-check
-
     # Build paper
     - name: git config user.name
       run: git config --global user.name "Monumenta CI"
@@ -48,17 +28,43 @@ jobs:
       run: |
           git clone https://github.com/TeamMonumenta/Paper.git
           cd Paper
-          git checkout 1.15
-    - name: Build Paper
+    - name: Build Paper 1.15
       working-directory: ./Paper
-      run: ./paper jar
+      run: |
+          git checkout 1.15
+          ./paper jar
+    - name: Build Paper 1.16
+      working-directory: ./Paper
+      run: |
+          git checkout 1.16
+          ./paper jar
+
+    # Checkstyle
+    - name: Run checkstyle
+      working-directory: .
+      run: mvn checkstyle:checkstyle
+    - name: Run reviewdog
+      env:
+        REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        cat v1_15_R1/target/checkstyle-result.xml plugin/target/checkstyle-result.xml adapterapi/target/checkstyle-result.xml v1_16_R2/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle" -reporter=github-pr-check
+
+    # PMD
+    - name: Run pmd
+      working-directory: .
+      run: mvn pmd:pmd
+    - name: Run reviewdog
+      env:
+        REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        cat v1_15_R1/target/pmd.txt plugin/target/pmd.txt adapterapi/target/pmd.txt v1_16_R2/target/pmd.txt | reviewdog -efm="%f:%l:	%m" -name="pmd" -reporter=github-pr-check
 
     # Build & compiler warnings
     - name: Build with Maven
-      working-directory: ./plugin
+      working-directory: .
       run: |
         set -o pipefail
-        ./compile.sh | tee ../compile.log
+        ./compile.sh | tee compile.log
 
     - name: Run reviewdog to report deprecation warnings
       env:

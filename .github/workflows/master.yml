@@ -20,16 +20,24 @@ jobs:
       run: git config --global user.name "Monumenta CI"
     - name: git config user.email
       run: git config --global user.email "Monumenta.CI@NotARealEmail.com"
+
     - name: Get Paper
       run: |
           git clone https://github.com/TeamMonumenta/Paper.git
           cd Paper
-          git checkout 1.15
-    - name: Build Paper
+    - name: Build Paper 1.15
       working-directory: ./Paper
-      run: ./paper jar
-    - name: Deploy to Github Package Registry
-      working-directory: ./plugin
+      run: |
+          git checkout 1.15
+          ./paper jar
+    - name: Build Paper 1.16
+      working-directory: ./Paper
+      run: |
+          git checkout 1.16
+          ./paper jar
+
+    - name: Build and deploy to Github Package Registry
+      working-directory: .
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |

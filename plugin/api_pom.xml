@@ -68,7 +68,7 @@
         </dependency>
         <dependency>
             <groupId>com.destroystokyo.paper</groupId>
-            <artifactId>paper</artifactId>
+            <artifactId>paper-api</artifactId>
             <version>${min.minecraft.server.version}</version>
             <scope>provided</scope>
         </dependency>

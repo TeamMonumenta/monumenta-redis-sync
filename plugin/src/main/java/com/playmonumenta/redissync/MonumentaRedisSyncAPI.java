@@ -600,8 +600,8 @@ public class MonumentaRedisSyncAPI {
 	 * @param consumer			A function to call with the data when it has finished saving.
 	 *
 	 * @return
-	 *   If data saving is successful, consumer will be called with (null)
-	 *   If data saving was not successful, consumer will be called with an (Exception)
+	 *     If data saving is successful, consumer will be called with (null)
+	 *     If data saving was not successful, consumer will be called with an (Exception)
 	 */
 	public static void savePlayerPluginData(@Nonnull UUID uuid, @Nonnull String pluginIdentifier, @Nonnull String data, @Nonnull Plugin plugin, @Nonnull Consumer<Exception> consumer) {
 		/* Start the data save request on the main thread */
@@ -635,16 +635,15 @@ public class MonumentaRedisSyncAPI {
 	 * Starts saving player plugin data asynchronously, and returns a future that can be read to check the status.
 	 *
 	 * This is the more complicated of the two methods to use. Recommend using the other version unless you have a need for this.
+	 * This function will not block and is suitable for the main thread, but .get() on the returned value will - potentially for several seconds
+	 * depending on the latency of the connection to the redis database. You should not call .get() on the main thread.
 	 *
 	 * @param uuid              Player's UUID to get data for
 	 * @param pluginIdentifier  A unique string key identifying which plugin data to get for this player
 	 * @param data              The data to save. Recommend compacted JSON string or similar. Unicode is supported.
 	 *
 	 * @return
-	 *   Consumer that can be used to check whether data was saved successfully when .get() is called on it.
-	 *
-	 * This function will not block and is suitable for the main thread, but .get() on the returned value will - potentially for several seconds
-	 * depending on the latency of the connection to the redis database. You should not call .get() on the main thread.
+	 *     Consumer that can be used to check whether data was saved successfully when .get() is called on it.
 	 */
 	@Nonnull
 	public static CompletableFuture<Boolean> savePlayerPluginData(@Nonnull UUID uuid, @Nonnull String pluginIdentifier, @Nonnull String data) {
@@ -664,9 +663,9 @@ public class MonumentaRedisSyncAPI {
 	 * @param Consumer			A function to call with the data when it has finished loading.
 	 *
 	 * @return
-	 *   If data loading is successful and data was retrieved, consumer will be called with (String, null)
-	 *   If redis request was successful but there was no data to load, consumer will be called with (null, null)
-	 *   If the redis request failed, consumer will be called with (null, Exception)
+	 *     If data loading is successful and data was retrieved, consumer will be called with (String, null)
+	 *     If redis request was successful but there was no data to load, consumer will be called with (null, null)
+	 *     If the redis request failed, consumer will be called with (null, Exception)
 	 */
 	public static void loadPlayerPluginData(@Nonnull UUID uuid, @Nonnull String pluginIdentifier, @Nonnull Plugin plugin, @Nonnull BiConsumer<String, Exception> consumer) {
 		/* Start the data load request on the main thread */
@@ -696,14 +695,14 @@ public class MonumentaRedisSyncAPI {
 	 *
 	 * This is the more complicated of the two methods to use. Recommend using the other version unless you have a need for this.
 	 *
+	 * This function will not block and is suitable for the main thread, but .get() on the returned value will - potentially for several seconds
+	 * depending on the latency of the connection to the redis database. You should not call .get() on the main thread.
+	 *
 	 * @param uuid              Player's UUID to get data for
 	 * @param pluginIdentifier  A unique string key identifying which plugin data to get for this player
 	 *
 	 * @return
-	 *   Consumer that will return the data when .get() is called on it.
-	 *
-	 * This function will not block and is suitable for the main thread, but .get() on the returned value will - potentially for several seconds
-	 * depending on the latency of the connection to the redis database. You should not call .get() on the main thread.
+	 *     Consumer that will return the data when .get() is called on it.
 	 */
 	@Nonnull
 	public static CompletableFuture<String> loadPlayerPluginData(@Nonnull UUID uuid, @Nonnull String pluginIdentifier) {

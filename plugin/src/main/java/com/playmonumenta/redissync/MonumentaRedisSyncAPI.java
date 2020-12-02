@@ -590,6 +590,9 @@ public class MonumentaRedisSyncAPI {
 	/**
 	 * Saves player plugin data asynchronously, and calls the provided callback function when the request completes
 	 *
+	 * Note that it may take up to several seconds to service the request, depending on the latency of the connection to the redis database
+	 * This function will not block and will return very quickly, suitable for use on the main thread.
+	 *
 	 * @param uuid              Player's UUID to get data for
 	 * @param pluginIdentifier  A unique string key identifying which plugin data to get for this player
 	 * @param data              The data to save. Recommend compacted JSON string or similar. Unicode is supported.
@@ -597,12 +600,8 @@ public class MonumentaRedisSyncAPI {
 	 * @param consumer			A function to call with the data when it has finished saving.
 	 *
 	 * @return
-	 *   If data saving is successful, consumer will be called with <null>
-	 *   If data saving was not successful, consumer will be called with an <Exception>
-	 *
-	 * Note that it may take up to several seconds to service the request, depending on the latency of the connection to the redis database
-	 *
-	 * This function will not block and will return very quickly, suitable for use on the main thread.
+	 *   If data saving is successful, consumer will be called with (null)
+	 *   If data saving was not successful, consumer will be called with an (Exception)
 	 */
 	public static void savePlayerPluginData(@Nonnull UUID uuid, @Nonnull String pluginIdentifier, @Nonnull String data, @Nonnull Plugin plugin, @Nonnull Consumer<Exception> consumer) {
 		/* Start the data save request on the main thread */
@@ -656,19 +655,18 @@ public class MonumentaRedisSyncAPI {
 	/**
 	 * Loads player plugin data asynchronously, and calls the provided callback function when the request completes
 	 *
+	 * Note that it may take up to several seconds to service the request, depending on the latency of the connection to the redis database
+	 * This function will not block and will return very quickly, suitable for use on the main thread.
+	 *
 	 * @param uuid              Player's UUID to get data for
 	 * @param pluginIdentifier  A unique string key identifying which plugin data to get for this player
 	 * @param plugin			An enabled plugin handle to schedule Bukkit tasks under
 	 * @param Consumer			A function to call with the data when it has finished loading.
 	 *
 	 * @return
-	 *   If data loading is successful and data was retrieved, consumer will be called with <String, null>
-	 *   If redis request was successful but there was no data to load, consumer will be called with <null, null>
-	 *   If the redis request failed, consumer will be called with <null, Exception>
-	 *
-	 * Note that it may take up to several seconds to service the request, depending on the latency of the connection to the redis database
-	 *
-	 * This function will not block and will return very quickly, suitable for use on the main thread.
+	 *   If data loading is successful and data was retrieved, consumer will be called with (String, null)
+	 *   If redis request was successful but there was no data to load, consumer will be called with (null, null)
+	 *   If the redis request failed, consumer will be called with (null, Exception)
 	 */
 	public static void loadPlayerPluginData(@Nonnull UUID uuid, @Nonnull String pluginIdentifier, @Nonnull Plugin plugin, @Nonnull BiConsumer<String, Exception> consumer) {
 		/* Start the data load request on the main thread */

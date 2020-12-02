@@ -10,6 +10,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
@@ -585,12 +587,126 @@ public class MonumentaRedisSyncAPI {
 		}
 	}
 
+	/**
+	 * Saves player plugin data asynchronously, and calls the provided callback function when the request completes
+	 *
+	 * @param uuid              Player's UUID to get data for
+	 * @param pluginIdentifier  A unique string key identifying which plugin data to get for this player
+	 * @param data              The data to save. Recommend compacted JSON string or similar. Unicode is supported.
+	 * @param plugin			An enabled plugin handle to schedule Bukkit tasks under
+	 * @param consumer			A function to call with the data when it has finished saving.
+	 *
+	 * @return
+	 *   If data saving is successful, consumer will be called with <null>
+	 *   If data saving was not successful, consumer will be called with an <Exception>
+	 *
+	 * Note that it may take up to several seconds to service the request, depending on the latency of the connection to the redis database
+	 *
+	 * This function will not block and will return very quickly, suitable for use on the main thread.
+	 */
+	public static void savePlayerPluginData(@Nonnull UUID uuid, @Nonnull String pluginIdentifier, @Nonnull String data, @Nonnull Plugin plugin, @Nonnull Consumer<Exception> consumer) {
+		/* Start the data save request on the main thread */
+		final CompletableFuture<Boolean> future = savePlayerPluginData(uuid, pluginIdentifier, data);
+
+		Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+			Boolean saveResult;
+			try {
+				/* On an async thread, block until the result is available */
+				saveResult = future.get();
+
+				Bukkit.getScheduler().runTask(plugin, () -> {
+					if (saveResult) {
+						// Success
+						consumer.accept(null);
+					} else {
+						// Failed - throw an exception for consistency
+						consumer.accept(new Exception("Data saving returned False"));
+					}
+				});
+			} catch (InterruptedException | ExecutionException e) {
+				Bukkit.getScheduler().runTask(plugin, () -> {
+					// Pass the exception to the consumer
+					consumer.accept(e);
+				});
+			}
+		});
+	}
+
+	/**
+	 * Starts saving player plugin data asynchronously, and returns a future that can be read to check the status.
+	 *
+	 * This is the more complicated of the two methods to use. Recommend using the other version unless you have a need for this.
+	 *
+	 * @param uuid              Player's UUID to get data for
+	 * @param pluginIdentifier  A unique string key identifying which plugin data to get for this player
+	 * @param data              The data to save. Recommend compacted JSON string or similar. Unicode is supported.
+	 *
+	 * @return
+	 *   Consumer that can be used to check whether data was saved successfully when .get() is called on it.
+	 *
+	 * This function will not block and is suitable for the main thread, but .get() on the returned value will - potentially for several seconds
+	 * depending on the latency of the connection to the redis database. You should not call .get() on the main thread.
+	 */
 	@Nonnull
 	public static CompletableFuture<Boolean> savePlayerPluginData(@Nonnull UUID uuid, @Nonnull String pluginIdentifier, @Nonnull String data) {
 		RedisAPI api = RedisAPI.getInstance();
 		return api.async().hset(getRedisPluginDataPath(uuid), pluginIdentifier, data).toCompletableFuture();
 	}
 
+	/**
+	 * Loads player plugin data asynchronously, and calls the provided callback function when the request completes
+	 *
+	 * @param uuid              Player's UUID to get data for
+	 * @param pluginIdentifier  A unique string key identifying which plugin data to get for this player
+	 * @param plugin			An enabled plugin handle to schedule Bukkit tasks under
+	 * @param Consumer			A function to call with the data when it has finished loading.
+	 *
+	 * @return
+	 *   If data loading is successful and data was retrieved, consumer will be called with <String, null>
+	 *   If redis request was successful but there was no data to load, consumer will be called with <null, null>
+	 *   If the redis request failed, consumer will be called with <null, Exception>
+	 *
+	 * Note that it may take up to several seconds to service the request, depending on the latency of the connection to the redis database
+	 *
+	 * This function will not block and will return very quickly, suitable for use on the main thread.
+	 */
+	public static void loadPlayerPluginData(@Nonnull UUID uuid, @Nonnull String pluginIdentifier, @Nonnull Plugin plugin, @Nonnull BiConsumer<String, Exception> consumer) {
+		/* Start the data load request on the main thread */
+		final CompletableFuture<String> data = loadPlayerPluginData(uuid, pluginIdentifier);
+
+		Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+			String jsonData;
+			try {
+				/* On an async thread, block until the data is available */
+				jsonData = data.get();
+
+				Bukkit.getScheduler().runTask(plugin, () -> {
+					// Pass the data to the consumer
+					consumer.accept(jsonData, null);
+				});
+			} catch (InterruptedException | ExecutionException e) {
+				Bukkit.getScheduler().runTask(plugin, () -> {
+					// Pass the exception to the consumer
+					consumer.accept(null, e);
+				});
+			}
+		});
+	}
+
+	/**
+	 * Starts loading player plugin data asynchronously, and returns a future that can be read later to get the data.
+	 *
+	 * This is the more complicated of the two methods to use. Recommend using the other version unless you have a need for this.
+	 *
+	 * @param uuid              Player's UUID to get data for
+	 * @param pluginIdentifier  A unique string key identifying which plugin data to get for this player
+	 *
+	 * @return
+	 *   Consumer that will return the data when .get() is called on it.
+	 *
+	 * This function will not block and is suitable for the main thread, but .get() on the returned value will - potentially for several seconds
+	 * depending on the latency of the connection to the redis database. You should not call .get() on the main thread.
+	 */
 	@Nonnull
 	public static CompletableFuture<String> loadPlayerPluginData(@Nonnull UUID uuid, @Nonnull String pluginIdentifier) {
 		RedisAPI api = RedisAPI.getInstance();

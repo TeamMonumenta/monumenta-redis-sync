@@ -41,14 +41,20 @@ Here's a list of currently supported things:
 - Exposes the Redis API (via Lettuce) for access by other plugins
 - Also loads on Bungeecord, though currently does nothing there besides provide
   access to the Lettuce API
+- An API to allow plugins to save additional information about the player for
+  transfer
 
 Planned features:
 - Automatic config file creation
 - API documentation
 - An API for a global, plugin-accessible scoreboard
-- An API to allow plugins to save additional information about the player for
-  transfer
 - Storage of player stats data
+
+# Example Dependant Plugin
+
+See the [example](example) directory for a complete example on how you might
+use this plugin as a dependency of one of your plugins, either for Paper or
+bungeecord.
 
 ## Dependencies
 

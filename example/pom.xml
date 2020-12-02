@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>parent</artifactId>
+        <groupId>com.playmonumenta.redissync</groupId>
+        <version>dev</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <groupId>com.playmonumenta</groupId>
+    <artifactId>redissync-example</artifactId>
+    <packaging>jar</packaging>
+
+    <repositories>
+        <!-- This example will work on Paper or Bungeecord or both. You don't need both -->
+        <!-- Paper -->
+        <repository>
+            <id>papermc</id>
+            <url>https://papermc.io/repo/repository/maven-public/</url>
+        </repository>
+
+        <!-- Bungee -->
+        <repository>
+            <id>bungeecord-repo</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.playmonumenta</groupId>
+            <artifactId>redissync</artifactId>
+            <version>dev</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- This example will work on Paper or Bungeecord or both. You don't need both -->
+        <!-- Paper -->
+        <dependency>
+            <groupId>com.destroystokyo.paper</groupId>
+            <artifactId>paper-api</artifactId>
+            <version>${min.minecraft.server.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Bungee -->
+        <dependency>
+            <groupId>net.md-5</groupId>
+            <artifactId>bungeecord-api</artifactId>
+            <version>1.15-SNAPSHOT</version>
+            <type>jar</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.md-5</groupId>
+            <artifactId>bungeecord-api</artifactId>
+            <version>1.15-SNAPSHOT</version>
+            <type>javadoc</type>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>MonumentaRedisSyncExample_${project.version}_${maven.build.timestamp}</finalName>
+    </build>
+</project>

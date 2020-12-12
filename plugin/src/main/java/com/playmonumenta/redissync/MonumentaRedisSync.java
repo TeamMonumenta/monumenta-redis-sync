@@ -3,6 +3,7 @@ package com.playmonumenta.redissync;
 import java.io.File;
 import java.util.logging.Logger;
 
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -75,6 +76,10 @@ public class MonumentaRedisSync extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new ScoreboardCleanupListener(this, this.getLogger(), mVersionAdapter), this);
 		if (Conf.getTicksPerPlayerAutosave() > 0) {
 			getServer().getPluginManager().registerEvents(new AutoSaveListener(this, mVersionAdapter), this);
+		}
+
+		if (Bukkit.getPluginManager().isPluginEnabled("OpenInv")) {
+			getServer().getPluginManager().registerEvents(new OpenInvIntegration(), this);
 		}
 
 		this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");

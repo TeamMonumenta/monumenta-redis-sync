@@ -25,6 +25,17 @@
 
     <repositories>
         <repository>
+            <id>repo</id>
+            <releases>
+                <enabled>true</enabled>
+                <checksumPolicy>ignore</checksumPolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <url>file://${project.baseUri}/repo</url>
+        </repository>
+        <repository>
             <id>commandapi</id>
             <url>https://raw.githubusercontent.com/JorelAli/CommandAPI/mvn-repo/</url>
         </repository>
@@ -77,6 +88,12 @@
             <groupId>com.destroystokyo.paper</groupId>
             <artifactId>paper</artifactId>
             <version>${min.minecraft.server.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.lishid</groupId>
+            <artifactId>openinv</artifactId>
+            <version>4.1.5</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

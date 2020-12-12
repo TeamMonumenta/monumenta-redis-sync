@@ -33,7 +33,9 @@ public class OpenInvIntegration implements Listener {
 	private void closeAll(Iterable<HumanEntity> viewers) {
 		Iterator<HumanEntity> iterator = viewers.iterator();
 		while (iterator.hasNext()) {
-			iterator.next().closeInventory();
+			HumanEntity viewer = iterator.next();
+			viewer.closeInventory();
+			mLogger.info("Closed viewer " + viewer.getName());
 		}
 	}
 }

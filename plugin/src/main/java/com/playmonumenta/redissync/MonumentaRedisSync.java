@@ -79,7 +79,7 @@ public class MonumentaRedisSync extends JavaPlugin {
 		}
 
 		if (Bukkit.getPluginManager().isPluginEnabled("OpenInv")) {
-			getServer().getPluginManager().registerEvents(new OpenInvIntegration(), this);
+			getServer().getPluginManager().registerEvents(new OpenInvIntegration(this.getLogger()), this);
 		}
 
 		this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");

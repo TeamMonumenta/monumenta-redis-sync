@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
@@ -676,6 +677,7 @@ public class MonumentaRedisSyncAPI {
 			String advancements = new String(result.get(1), StandardCharsets.UTF_8);
 			String scores = new String(result.get(2), StandardCharsets.UTF_8);
 			String history = new String(result.get(3), StandardCharsets.UTF_8);
+			/* TODO plugindata */
 
 			return new RedisPlayerData(uuid, mrs.getVersionAdapter().retrieveSaveData(data, null), advancements, scores, history);
 		} catch (Exception e) {
@@ -711,6 +713,7 @@ public class MonumentaRedisSyncAPI {
 		if (result.isEmpty() || result.size() != 4 || result.get(0) == null
 		    || result.get(1) == null || result.get(2) == null || result.get(3) == null) {
 			mrs.getCustomLogger().severe("Failed to commit player data");
+			/* TODO plugindata */
 			return false;
 		}
 
@@ -735,5 +738,217 @@ public class MonumentaRedisSyncAPI {
 		commands.lpush(MonumentaRedisSyncAPI.getRedisHistoryPath(data.getUniqueId()), data.getHistory().getBytes(StandardCharsets.UTF_8));
 
 		return commands.exec().thenApply((TransactionResult result) -> transformPlayerSaveResult(mrs, result)).toCompletableFuture();
+	}
+
+	/*********************************************************************************
+	 * rboard API
+	 */
+
+	@Nonnull
+	public static String getRedisRboardPath(@Nonnull String name) {
+		return String.format("%s:rboard:%s", Conf.getDomain(), name);
+	}
+
+	@Nonnull
+	public static String getRedisRboardPath(@Nonnull UUID uuid) {
+		return getRedisRboardPath(uuid.toString());
+	}
+
+	/********************* Set *********************/
+	public static CompletableFuture<Long> rboardSet(UUID uuid, Map<String, String> data) throws Exception {
+		return rboardSetInternal(getRedisRboardPath(uuid), data);
+	}
+
+	public static CompletableFuture<Long> rboardSet(String name, Map<String, String> data) throws Exception {
+		return rboardSetInternal(getRedisRboardPath(name), data);
+	}
+
+	private static CompletableFuture<Long> rboardSetInternal(String path, Map<String, String> data) throws Exception {
+		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
+		if (mrs == null) {
+			throw new Exception("MonumentaRedisSync invoked but is not loaded");
+		}
+
+		RedisAsyncCommands<String,String> commands = RedisAPI.getInstance().async();
+		return commands.hset(path, data).toCompletableFuture();
+	}
+
+	/********************* Add *********************/
+	public static CompletableFuture<Long> rboardAdd(UUID uuid, String key, long amount) throws Exception {
+		return rboardAddInternal(getRedisRboardPath(uuid), key, amount);
+	}
+
+	public static CompletableFuture<Long> rboardAdd(String name, String key, long amount) throws Exception {
+		return rboardAddInternal(getRedisRboardPath(name), key, amount);
+	}
+
+	private static CompletableFuture<Long> rboardAddInternal(String path, String key, long amount) throws Exception {
+		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
+		if (mrs == null) {
+			throw new Exception("MonumentaRedisSync invoked but is not loaded");
+		}
+
+		RedisAsyncCommands<String,String> commands = RedisAPI.getInstance().async();
+		return commands.hincrby(path, key, amount).toCompletableFuture();
+	}
+
+	/********************* Get *********************/
+	public static CompletableFuture<Map<String, String>> rboardGet(UUID uuid, String... keys) throws Exception {
+		return rboardGetInternal(getRedisRboardPath(uuid), keys);
+	}
+
+	public static CompletableFuture<Map<String, String>> rboardGet(String name, String... keys) throws Exception {
+		return rboardGetInternal(getRedisRboardPath(name), keys);
+	}
+
+	private static CompletableFuture<Map<String, String>> rboardGetInternal(String path, String... keys) throws Exception {
+		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
+		if (mrs == null) {
+			throw new Exception("MonumentaRedisSync invoked but is not loaded");
+		}
+
+		RedisAsyncCommands<String,String> commands = RedisAPI.getInstance().async();
+		return commands.hmget(path, keys).toCompletableFuture().thenApply(list -> {
+			Map<String, String> transformed = new LinkedHashMap<>();
+			list.forEach(item -> transformed.put(item.getKey(), item.getValue()));
+			return transformed;
+		});
+	}
+
+	/********************* GetAndReset *********************/
+	public static CompletableFuture<Map<String, String>> rboardGetAndReset(UUID uuid, String... keys) throws Exception {
+		return rboardGetAndResetInternal(getRedisRboardPath(uuid), keys);
+	}
+
+	public static CompletableFuture<Map<String, String>> rboardGetAndReset(String name, String... keys) throws Exception {
+		return rboardGetAndResetInternal(getRedisRboardPath(name), keys);
+	}
+
+	private static CompletableFuture<Map<String, String>> rboardGetAndResetInternal(String path, String... keys) throws Exception {
+		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
+		if (mrs == null) {
+			throw new Exception("MonumentaRedisSync invoked but is not loaded");
+		}
+
+		RedisAsyncCommands<String,String> commands = RedisAPI.getInstance().async();
+		commands.multi();
+		CompletableFuture<Map<String, String>> retval = commands.hmget(path, keys).toCompletableFuture().thenApply(list -> {
+			Map<String, String> transformed = new LinkedHashMap<>();
+			list.forEach(item -> transformed.put(item.getKey(), item.getValue()));
+			return transformed;
+		});
+		commands.hdel(path, keys).toCompletableFuture();
+		commands.exec();
+		return retval;
+	}
+
+	/********************* GetKeys *********************/
+	public static CompletableFuture<List<String>> rboardGetKeys(UUID uuid) throws Exception {
+		return rboardGetKeysInternal(getRedisRboardPath(uuid));
+	}
+
+	public static CompletableFuture<List<String>> rboardGetKeys(String name) throws Exception {
+		return rboardGetKeysInternal(getRedisRboardPath(name));
+	}
+
+	private static CompletableFuture<List<String>> rboardGetKeysInternal(String path) throws Exception {
+		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
+		if (mrs == null) {
+			throw new Exception("MonumentaRedisSync invoked but is not loaded");
+		}
+
+		RedisAsyncCommands<String,String> commands = RedisAPI.getInstance().async();
+		return commands.hkeys(path).toCompletableFuture();
+	}
+
+	/********************* GetAll *********************/
+	public static CompletableFuture<Map<String, String>> rboardGetAll(UUID uuid) throws Exception {
+		return rboardGetAllInternal(getRedisRboardPath(uuid));
+	}
+
+	public static CompletableFuture<Map<String, String>> rboardGetAll(String name) throws Exception {
+		return rboardGetAllInternal(getRedisRboardPath(name));
+	}
+
+	private static CompletableFuture<Map<String, String>> rboardGetAllInternal(String path) throws Exception {
+		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
+		if (mrs == null) {
+			throw new Exception("MonumentaRedisSync invoked but is not loaded");
+		}
+
+		RedisAsyncCommands<String,String> commands = RedisAPI.getInstance().async();
+		return commands.hgetall(path).toCompletableFuture();
+	}
+
+	/********************* Reset *********************/
+	public static CompletableFuture<Long> rboardReset(UUID uuid, String... keys) throws Exception {
+		return rboardResetInternal(getRedisRboardPath(uuid), keys);
+	}
+
+	public static CompletableFuture<Long> rboardReset(String name, String... keys) throws Exception {
+		return rboardResetInternal(getRedisRboardPath(name), keys);
+	}
+
+	private static CompletableFuture<Long> rboardResetInternal(String path, String... keys) throws Exception {
+		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
+		if (mrs == null) {
+			throw new Exception("MonumentaRedisSync invoked but is not loaded");
+		}
+
+		RedisAsyncCommands<String,String> commands = RedisAPI.getInstance().async();
+		return commands.hdel(path, keys).toCompletableFuture();
+	}
+
+	/********************* ResetAll *********************/
+	public static CompletableFuture<Long> rboardResetAll(UUID uuid) throws Exception {
+		return rboardResetAllInternal(getRedisRboardPath(uuid));
+	}
+
+	public static CompletableFuture<Long> rboardResetAll(String name) throws Exception {
+		return rboardResetAllInternal(getRedisRboardPath(name));
+	}
+
+	private static CompletableFuture<Long> rboardResetAllInternal(String path) throws Exception {
+		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
+		if (mrs == null) {
+			throw new Exception("MonumentaRedisSync invoked but is not loaded");
+		}
+
+		RedisAsyncCommands<String,String> commands = RedisAPI.getInstance().async();
+		return commands.del(path).toCompletableFuture();
+	}
+
+	/*
+	 * rboard API
+	 *********************************************************************************/
+
+	/**
+	 * Runs the result of an asynchronous transaction on the main thread after it is completed
+	 *
+	 * Will always call the callback function eventually, even if the resulting transaction fails or is lost.
+	 *
+	 * When the function is called, either data will be non-null and exception null,
+	 * or data will be null and the exception will be non-null
+	 */
+	public static <T> void runWhenAvailable(Plugin plugin, CompletableFuture<T> input, BiConsumer<T, Exception> func) {
+		Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+			Exception ex;
+			T data;
+
+			try {
+				data = input.get();
+				ex = null;
+			} catch (Exception e) {
+				data = null;
+				ex = e;
+			}
+
+			final T result = data;
+			final Exception except = ex;
+
+			Bukkit.getScheduler().runTask(plugin, () -> {
+				func.accept(result, except);
+			});
+		});
 	}
 }

@@ -45,28 +45,20 @@ public class ScoreboardUtils {
 		}
 	}
 
-	public static int getScoreboardValue(Entity entity, String scoreboardValue) {
+	public static int getScoreboardValue(String name, String scoreboardValue) {
 		Objective objective = Bukkit.getScoreboardManager().getMainScoreboard().getObjective(scoreboardValue);
 		if (objective != null) {
-			if (entity instanceof Player) {
-				return objective.getScore(entity.getName()).getScore();
-			} else {
-				return objective.getScore(entity.getUniqueId().toString()).getScore();
-			}
+			return objective.getScore(name).getScore();
 		}
 
 		return 0;
 	}
 
-	public static void setScoreboardValue(Entity entity, String scoreboardValue, int value) {
+	public static void setScoreboardValue(String name, String scoreboardValue, int value) {
 		Objective objective = Bukkit.getScoreboardManager().getMainScoreboard().getObjective(scoreboardValue);
 		if (objective != null) {
 			final Score score;
-			if (entity instanceof Player) {
-				score = objective.getScore(entity.getName());
-			} else {
-				score = objective.getScore(entity.getUniqueId().toString());
-			}
+			score = objective.getScore(name);
 			score.setScore(value);
 		}
 	}

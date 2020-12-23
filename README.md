@@ -43,11 +43,14 @@ Here's a list of currently supported things:
   access to the Lettuce API
 - An API to allow plugins to save additional information about the player for
   transfer
+- An API and in-game commands to access a global redis scoreboard (the 'rboard')
+  which lets you access and share data from different minecraft servers
+  concurrently. This is particularly useful for data that needs to be accessed
+  from both bungeecord and minecraft servers simultaneously.
 
 Planned features:
 - Automatic config file creation
 - API documentation
-- An API for a global, plugin-accessible scoreboard
 - Storage of player stats data
 
 ## Example Dependant Plugin

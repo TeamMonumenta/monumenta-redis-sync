@@ -365,6 +365,10 @@ public class DataEventListener implements Listener {
 
 		/* Get the existing plugin data */
 		JsonObject pluginData = mPluginData.get(player.getUniqueId());
+		if (pluginData == null) {
+			pluginData = new JsonObject();
+			mPluginData.put(player.getUniqueId(), pluginData);
+		}
 
 		/* Call a custom save event that gives other plugins a chance to add data */
 		long startTime = System.currentTimeMillis();
@@ -374,9 +378,6 @@ public class DataEventListener implements Listener {
 		/* Merge any data from the save event to the player's locally cached plugin data */
 		Map<String, JsonObject> eventData = newEvent.getPluginData();
 		if (eventData != null) {
-			if (pluginData == null) {
-				pluginData = new JsonObject();
-			}
 			for (Map.Entry<String, JsonObject> ent : eventData.entrySet()) {
 				pluginData.add(ent.getKey(), ent.getValue());
 			}
@@ -410,13 +411,11 @@ public class DataEventListener implements Listener {
 			commands.ltrim(histPath, 0, Conf.getHistory());
 
 			/* plugindata */
-			if (pluginData != null) {
-				String pluginDataPath = MonumentaRedisSyncAPI.getRedisPluginDataPath(player);
-				String pluginDataStr = mGson.toJson(pluginData);
-				mLogger.finer("plugindata: " + pluginDataStr);
-				commands.lpush(pluginDataPath, pluginDataStr);
-				commands.ltrim(pluginDataPath, 0, Conf.getHistory());
-			}
+			String pluginDataPath = MonumentaRedisSyncAPI.getRedisPluginDataPath(player);
+			String pluginDataStr = mGson.toJson(pluginData);
+			mLogger.finer("plugindata: " + pluginDataStr);
+			commands.lpush(pluginDataPath, pluginDataStr);
+			commands.ltrim(pluginDataPath, 0, Conf.getHistory());
 
 			futures.add(commands.exec()); /* MULTI > */
 		} catch (IOException ex) {

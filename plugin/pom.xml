@@ -15,14 +15,6 @@
     <artifactId>redissync</artifactId>
     <packaging>jar</packaging>
 
-    <distributionManagement>
-        <repository>
-            <id>github</id>
-            <name>GitHub OWNER Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/TeamMonumenta/monumenta-redis-sync</url>
-        </repository>
-    </distributionManagement>
-
     <repositories>
         <repository>
             <id>commandapi</id>

@@ -22,6 +22,7 @@
         <module>adapterapi</module>
         <module>v1_15_R1</module>
         <module>v1_16_R2</module>
+        <module>v1_16_R3</module>
         <module>plugin</module>
         <module>example</module>
     </modules>

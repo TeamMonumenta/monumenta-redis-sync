@@ -68,8 +68,8 @@ is a significantly more cumbersome requirement than most plugins.
 The patch is available here:
 https://github.com/TeamMonumenta/Paper/commit/4d1bb15aa59602f32182c20ce97cc6fd10d0c9f9
 
-A patch already exists for 1.13 and 1.15, but other versions shouldn't be too
-hard to get working too.
+Similar patches exist for 1.13, 1.15, 1.16.3 and 1.16.4. Other versions are relatively
+easy to get working too.
 
 If you are interested in getting this working / trying it out yourself, join
 the Monumenta Discord (https://discord.gg/eep9qcu) and message @Combustible.

@@ -64,7 +64,7 @@ public class RboardCommand {
 		List<Argument> fakePlayerArguments = new ArrayList<>(40);
 		for (Argument arg : arguments) {
 			if (arg.getNodeName().equals("players")) {
-				arguments.add(new TextArgument("name"));
+				fakePlayerArguments.add(new TextArgument("name"));
 			} else {
 				fakePlayerArguments.add(arg);
 			}

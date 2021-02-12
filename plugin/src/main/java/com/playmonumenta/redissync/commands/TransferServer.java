@@ -1,7 +1,6 @@
 package com.playmonumenta.redissync.commands;
 
 import java.util.Collection;
-import java.util.LinkedHashMap;
 
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 
@@ -24,13 +23,10 @@ public class TransferServer {
 	public static void register(Plugin plugin) {
 		String command = "transferserver";
 		CommandPermission perms = CommandPermission.fromString("monumenta.command.transferserver");
-		LinkedHashMap<String, Argument> arguments;
 
-		arguments = new LinkedHashMap<>();
-		arguments.put("players", new EntitySelectorArgument(EntitySelector.MANY_PLAYERS));
-		arguments.put("server", new StringArgument());
 		new CommandAPICommand(command)
-			.withArguments(arguments)
+			.withArguments(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS))
+			.withArguments(new StringArgument("server"))
 			.withPermission(perms)
 			.executes((sender, args) -> {
 				for (Player player : (Collection<Player>)args[0]) {
@@ -43,9 +39,10 @@ public class TransferServer {
 			}
 		).register();
 
-		arguments.put("location", new LocationArgument());
 		new CommandAPICommand(command)
-			.withArguments(arguments)
+			.withArguments(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS))
+			.withArguments(new StringArgument("server"))
+			.withArguments(new LocationArgument("location"))
 			.withPermission(perms)
 			.executes((sender, args) -> {
 				for (Player player : (Collection<Player>)args[0]) {
@@ -58,10 +55,12 @@ public class TransferServer {
 			}
 		).register();
 
-		arguments.put("yaw", new FloatArgument());
-		arguments.put("pitch", new FloatArgument());
 		new CommandAPICommand(command)
-			.withArguments(arguments)
+			.withArguments(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS))
+			.withArguments(new StringArgument("server"))
+			.withArguments(new LocationArgument("location"))
+			.withArguments(new FloatArgument("yaw"))
+			.withArguments(new FloatArgument("pitch"))
 			.withPermission(perms)
 			.executes((sender, args) -> {
 				for (Player player : (Collection<Player>)args[0]) {
@@ -75,10 +74,8 @@ public class TransferServer {
 		).register();
 
 		/* Single player alias */
-		arguments = new LinkedHashMap<>();
-		arguments.put("server", new StringArgument());
 		new CommandAPICommand(command)
-			.withArguments(arguments)
+			.withArguments(new StringArgument("server"))
 			.withPermission(perms)
 			.withAliases("s")
 			.executes((sender, args) -> {

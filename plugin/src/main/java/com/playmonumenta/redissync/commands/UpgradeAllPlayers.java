@@ -1,7 +1,6 @@
 package com.playmonumenta.redissync.commands;
 
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.UUID;
 
@@ -20,15 +19,8 @@ import dev.jorel.commandapi.arguments.Argument;
 
 public class UpgradeAllPlayers {
 	public static void register(MonumentaRedisSync plugin) {
-		String command = "upgradeallplayers";
-		CommandPermission perms = CommandPermission.fromString("monumenta.command.upgradeallplayers");
-		LinkedHashMap<String, Argument> arguments;
-
-		arguments = new LinkedHashMap<>();
-
-		new CommandAPICommand(command)
-			.withArguments(arguments)
-			.withPermission(perms)
+		new CommandAPICommand("upgradeallplayers")
+			.withPermission(CommandPermission.fromString("monumenta.command.upgradeallplayers"))
 			.executes((sender, args) -> {
 				try {
 					run(plugin);

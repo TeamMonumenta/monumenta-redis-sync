@@ -1,6 +1,5 @@
 package com.playmonumenta.redissync.commands;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
@@ -21,15 +20,9 @@ import dev.jorel.commandapi.arguments.EntitySelectorArgument.EntitySelector;
 
 public class PlayerHistory {
 	public static void register(Plugin plugin) {
-		String command = "playerhistory";
-		CommandPermission perms = CommandPermission.fromString("monumenta.command.playerhistory");
-		LinkedHashMap<String, Argument> arguments;
-
-		arguments = new LinkedHashMap<>();
-		arguments.put("player", new EntitySelectorArgument(EntitySelector.ONE_PLAYER));
-		new CommandAPICommand(command)
-			.withArguments(arguments)
-			.withPermission(perms)
+		new CommandAPICommand("playerhistory")
+			.withArguments(new EntitySelectorArgument("player", EntitySelector.ONE_PLAYER))
+			.withPermission(CommandPermission.fromString("monumenta.command.playerhistory"))
 			.executes((sender, args) -> {
 				if (!(sender instanceof Player)) {
 					CommandAPI.fail("This command can only be run by players");

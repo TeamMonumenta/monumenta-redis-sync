@@ -81,7 +81,7 @@
         <dependency>
             <groupId>dev.jorel</groupId>
             <artifactId>commandapi-core</artifactId>
-            <version>4.3</version>
+            <version>5.2</version>
             <scope>provided</scope>
         </dependency>
         <!-- This one needs to be shaded in! -->

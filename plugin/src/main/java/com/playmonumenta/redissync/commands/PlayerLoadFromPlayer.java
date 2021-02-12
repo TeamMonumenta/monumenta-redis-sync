@@ -1,7 +1,5 @@
 package com.playmonumenta.redissync.commands;
 
-import java.util.LinkedHashMap;
-
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 
 import org.bukkit.entity.Player;
@@ -16,16 +14,10 @@ import dev.jorel.commandapi.arguments.EntitySelectorArgument.EntitySelector;
 
 public class PlayerLoadFromPlayer {
 	public static void register() {
-		String command = "playerloadfromplayer";
-		CommandPermission perms = CommandPermission.fromString("monumenta.command.playerloadfromplayer");
-		LinkedHashMap<String, Argument> arguments;
-
-		arguments = new LinkedHashMap<>();
-		arguments.put("player", new EntitySelectorArgument(EntitySelector.ONE_PLAYER));
-		arguments.put("index", new IntegerArgument(0));
-		new CommandAPICommand(command)
-			.withArguments(arguments)
-			.withPermission(perms)
+		new CommandAPICommand("playerloadfromplayer")
+			.withPermission(CommandPermission.fromString("monumenta.command.playerloadfromplayer"))
+			.withArguments(new EntitySelectorArgument("player", EntitySelector.ONE_PLAYER))
+			.withArguments(new IntegerArgument("index", 0))
 			.executes((sender, args) -> {
 				if (!(sender instanceof Player)) {
 					CommandAPI.fail("This command can only be run by players");

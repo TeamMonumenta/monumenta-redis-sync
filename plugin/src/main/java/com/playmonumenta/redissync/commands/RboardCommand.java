@@ -1,7 +1,9 @@
 package com.playmonumenta.redissync.commands;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
@@ -37,7 +39,7 @@ public class RboardCommand {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static void regWrapper(LinkedHashMap<String, Argument> arguments, RboardAction exec) {
+	private static void regWrapper(List<Argument> arguments, RboardAction exec) {
 		CommandExecutor cmdExec = (sender, args) -> {
 			try {
 				if (args[0] instanceof Collection<?>) {
@@ -59,12 +61,12 @@ public class RboardCommand {
 		};
 
 		/* Replace the players argument with a simple string for fakeplayers */
-		LinkedHashMap<String, Argument> fakePlayerArguments = new LinkedHashMap<>();
-		for (Map.Entry<String, Argument> entry : arguments.entrySet()) {
-			if (entry.getKey().equals("players")) {
-				fakePlayerArguments.put("name", new TextArgument());
+		List<Argument> fakePlayerArguments = new ArrayList<>(40);
+		for (Argument arg : arguments) {
+			if (arg.getNodeName().equals("players")) {
+				arguments.add(new TextArgument("name"));
 			} else {
-				fakePlayerArguments.put(entry.getKey(), entry.getValue());
+				fakePlayerArguments.add(arg);
 			}
 		}
 
@@ -86,9 +88,7 @@ public class RboardCommand {
 	}
 
 	public static void register(Plugin plugin) {
-		LinkedHashMap<String, Argument> arguments;
-
-		arguments = new LinkedHashMap<>();
+		List<Argument> arguments = new ArrayList<Argument>(40);
 
 		/********************* Set *********************/
 		RboardAction action = (sender, args, rboardName, scoreboardName) -> {
@@ -100,11 +100,11 @@ public class RboardCommand {
 		};
 
 		arguments.clear();
-		arguments.put("set", new LiteralArgument("set"));
-		arguments.put("players", new EntitySelectorArgument(EntitySelector.MANY_PLAYERS));
+		arguments.add(new LiteralArgument("set"));
+		arguments.add(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS));
 		for (int i = 0; i < 6; i++) {
-			arguments.put("objective" + i, new ObjectiveArgument());
-			arguments.put("value" + i, new IntegerArgument());
+			arguments.add(new ObjectiveArgument("objective" + i));
+			arguments.add(new IntegerArgument("value" + i));
 			regWrapper(arguments, action);
 		}
 
@@ -118,29 +118,29 @@ public class RboardCommand {
 		};
 
 		arguments.clear();
-		arguments.put("store", new LiteralArgument("store"));
-		arguments.put("players", new EntitySelectorArgument(EntitySelector.MANY_PLAYERS));
+		arguments.add(new LiteralArgument("store"));
+		arguments.add(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS));
 		for (int i = 0; i < 6; i++) {
-			arguments.put("objective" + i, new ObjectiveArgument());
+			arguments.add(new ObjectiveArgument("objective" + i));
 			regWrapper(arguments, action);
 		}
 
 		/********************* Add *********************/
 		arguments.clear();
-		arguments.put("add", new LiteralArgument("add"));
-		arguments.put("players", new EntitySelectorArgument(EntitySelector.MANY_PLAYERS));
-		arguments.put("objective", new ObjectiveArgument());
-		arguments.put("value", new IntegerArgument());
+		arguments.add(new LiteralArgument("add"));
+		arguments.add(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS));
+		arguments.add(new ObjectiveArgument("objective"));
+		arguments.add(new IntegerArgument("value"));
 		regWrapper(arguments, (sender, args, rboardName, scoreboardName) -> {
 			MonumentaRedisSyncAPI.rboardAdd(rboardName, (String)args[1], (Integer)args[2]);
 		});
 
 		/********************* AddScore *********************/
 		arguments.clear();
-		arguments.put("addscore", new LiteralArgument("addscore"));
-		arguments.put("players", new EntitySelectorArgument(EntitySelector.MANY_PLAYERS));
-		arguments.put("objective", new ObjectiveArgument());
-		arguments.put("objectiveToAdd", new ObjectiveArgument());
+		arguments.add(new LiteralArgument("addscore"));
+		arguments.add(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS));
+		arguments.add(new ObjectiveArgument("objective"));
+		arguments.add(new ObjectiveArgument("objectiveToAdd"));
 		regWrapper(arguments, (sender, args, rboardName, scoreboardName) -> {
 			MonumentaRedisSyncAPI.rboardAdd(rboardName, (String)args[1], ScoreboardUtils.getScoreboardValue(scoreboardName, (String)args[2]));
 		});
@@ -155,10 +155,10 @@ public class RboardCommand {
 		};
 
 		arguments.clear();
-		arguments.put("reset", new LiteralArgument("reset"));
-		arguments.put("players", new EntitySelectorArgument(EntitySelector.MANY_PLAYERS));
+		arguments.add(new LiteralArgument("reset"));
+		arguments.add(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS));
 		for (int i = 0; i < 6; i++) {
-			arguments.put("objective" + i, new ObjectiveArgument());
+			arguments.add(new ObjectiveArgument("objective" + i));
 			regWrapper(arguments, action);
 		}
 
@@ -168,8 +168,8 @@ public class RboardCommand {
 		};
 
 		arguments.clear();
-		arguments.put("resetall", new LiteralArgument("resetall"));
-		arguments.put("players", new EntitySelectorArgument(EntitySelector.MANY_PLAYERS));
+		arguments.add(new LiteralArgument("resetall"));
+		arguments.add(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS));
 		regWrapper(arguments, action);
 
 		/********************* GetAll *********************/
@@ -197,8 +197,8 @@ public class RboardCommand {
 		};
 
 		arguments.clear();
-		arguments.put("getall", new LiteralArgument("getall"));
-		arguments.put("players", new EntitySelectorArgument(EntitySelector.MANY_PLAYERS));
+		arguments.add(new LiteralArgument("getall"));
+		arguments.add(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS));
 		regWrapper(arguments, action);
 
 		/********************* Get *********************/
@@ -225,11 +225,11 @@ public class RboardCommand {
 		};
 
 		arguments.clear();
-		arguments.put("get", new LiteralArgument("get"));
-		arguments.put("players", new EntitySelectorArgument(EntitySelector.MANY_PLAYERS));
-		arguments.put("function", new FunctionArgument());
+		arguments.add(new LiteralArgument("get"));
+		arguments.add(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS));
+		arguments.add(new FunctionArgument("function"));
 		for (int i = 0; i < 15; i++) {
-			arguments.put("objective" + i, new ObjectiveArgument());
+			arguments.add(new ObjectiveArgument("objective" + i));
 			regWrapper(arguments, action);
 		}
 
@@ -251,11 +251,11 @@ public class RboardCommand {
 		};
 
 		arguments.clear();
-		arguments.put("addandget", new LiteralArgument("addandget"));
-		arguments.put("players", new EntitySelectorArgument(EntitySelector.MANY_PLAYERS));
-		arguments.put("function", new FunctionArgument());
-		arguments.put("objective", new ObjectiveArgument());
-		arguments.put("value", new IntegerArgument());
+		arguments.add(new LiteralArgument("addandget"));
+		arguments.add(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS));
+		arguments.add(new FunctionArgument("function"));
+		arguments.add(new ObjectiveArgument("objective"));
+		arguments.add(new IntegerArgument("value"));
 		regWrapper(arguments, action);
 
 		/********************* GetAndReset *********************/
@@ -282,11 +282,11 @@ public class RboardCommand {
 		};
 
 		arguments.clear();
-		arguments.put("getandreset", new LiteralArgument("getandreset"));
-		arguments.put("players", new EntitySelectorArgument(EntitySelector.MANY_PLAYERS));
-		arguments.put("function", new FunctionArgument());
+		arguments.add(new LiteralArgument("getandreset"));
+		arguments.add(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS));
+		arguments.add(new FunctionArgument("function"));
 		for (int i = 0; i < 6; i++) {
-			arguments.put("objective" + i, new ObjectiveArgument());
+			arguments.add(new ObjectiveArgument("objective" + i));
 			regWrapper(arguments, action);
 		}
 	}

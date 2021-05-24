@@ -24,6 +24,10 @@
             <id>bungeecord-repo</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </repository>
+        <repository>
+            <id>monumenta-network-relay</id>
+            <url>https://raw.githubusercontent.com/TeamMonumenta/monumenta-network-relay/master/mvn-repo/</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -70,6 +74,12 @@
             <artifactId>bungeecord-api</artifactId>
             <version>1.15-SNAPSHOT</version>
             <type>javadoc</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.playmonumenta</groupId>
+            <artifactId>monumenta-network-relay</artifactId>
+            <version>0.4</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

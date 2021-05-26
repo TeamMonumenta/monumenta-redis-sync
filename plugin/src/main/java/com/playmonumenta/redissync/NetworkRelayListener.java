@@ -1,6 +1,5 @@
 package com.playmonumenta.redissync;
 
-import java.util.Set;
 import java.util.UUID;
 
 import com.google.gson.JsonObject;

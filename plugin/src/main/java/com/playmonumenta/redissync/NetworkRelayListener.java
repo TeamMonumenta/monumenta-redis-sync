@@ -92,6 +92,7 @@ public class NetworkRelayListener implements Listener {
 			return;
 		}
 
-		MonumentaRedisSyncAPI.updatePlayerName(playerUuid, playerName);
+		MonumentaRedisSyncAPI.updateUuidToName(playerUuid, playerName);
+		MonumentaRedisSyncAPI.updateNameToUuid(playerName, playerUuid);
 	}
 }

@@ -76,15 +76,27 @@ import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.output.KeyValueStreamingChannel;
 
 public class DataEventListener implements Listener {
-	private class PlayerUuidNameStreamingChannel implements KeyValueStreamingChannel<String, String> {
-		public void onKeyValue(String key, String value) {
+	private class PlayerUuidToNameStreamingChannel implements KeyValueStreamingChannel<String, String> {
+		public void onKeyValue(String key /*UUID*/, String value /*name*/) {
 			UUID uuid;
 			try {
 				uuid = UUID.fromString(key);
 			} catch (Exception e) {
 				return;
 			}
-			MonumentaRedisSyncAPI.updatePlayerName(uuid, value);
+			MonumentaRedisSyncAPI.updateUuidToName(uuid, value);
+		}
+	}
+
+	private class PlayerNameToUuidStreamingChannel implements KeyValueStreamingChannel<String, String> {
+		public void onKeyValue(String key /*name*/, String value /*UUID*/) {
+			UUID uuid;
+			try {
+				uuid = UUID.fromString(value);
+			} catch (Exception e) {
+				return;
+			}
+			MonumentaRedisSyncAPI.updateNameToUuid(key, uuid);
 		}
 	}
 
@@ -109,8 +121,11 @@ public class DataEventListener implements Listener {
 		INSTANCE = this;
 
 		Bukkit.getServer().getScheduler().runTaskAsynchronously(MonumentaRedisSync.getInstance(), () -> {
-			KeyValueStreamingChannel<String, String> streamingChannel = new PlayerUuidNameStreamingChannel();
-			RedisAPI.getInstance().async().hgetall(streamingChannel, "uuid2name");
+			KeyValueStreamingChannel<String, String> uuidToNameChannel = new PlayerUuidToNameStreamingChannel();
+			RedisAPI.getInstance().async().hgetall(uuidToNameChannel, "uuid2name");
+
+			KeyValueStreamingChannel<String, String> nameToUuidChannel = new PlayerNameToUuidStreamingChannel();
+			RedisAPI.getInstance().async().hgetall(nameToUuidChannel, "name2uuid");
 		});
 	}
 
@@ -479,7 +494,8 @@ public class DataEventListener implements Listener {
 		Bukkit.getServer().getScheduler().runTaskAsynchronously(MonumentaRedisSync.getInstance(), () -> {
 			RedisAPI.getInstance().async().hset("uuid2name", uuidStr, nameStr);
 			RedisAPI.getInstance().async().hset("name2uuid", nameStr, uuidStr);
-			MonumentaRedisSyncAPI.updatePlayerName(uuid, nameStr);
+			MonumentaRedisSyncAPI.updateUuidToName(uuid, nameStr);
+			MonumentaRedisSyncAPI.updateNameToUuid(nameStr, uuid);
 		});
 	}
 

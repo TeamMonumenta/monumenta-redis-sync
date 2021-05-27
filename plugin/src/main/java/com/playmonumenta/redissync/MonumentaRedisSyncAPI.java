@@ -120,9 +120,12 @@ public class MonumentaRedisSyncAPI {
 	private static Map<String, UUID> mNameToUuid = new ConcurrentHashMap<>();
 	private static Map<UUID, String> mUuidToName = new ConcurrentHashMap<>();
 
-	protected static void updatePlayerName(UUID uuid, String name) {
-		mNameToUuid.put(name, uuid);
+	protected static void updateUuidToName(UUID uuid, String name) {
 		mUuidToName.put(uuid, name);
+	}
+
+	protected static void updateNameToUuid(String name, UUID uuid) {
+		mNameToUuid.put(name, uuid);
 	}
 
 	public static CompletableFuture<String> uuidToName(UUID uuid) {
@@ -157,6 +160,14 @@ public class MonumentaRedisSyncAPI {
 
 	public static Set<UUID> getAllCachedPlayerUuids() {
 		return new ConcurrentSkipListSet<>(mUuidToName.keySet());
+	}
+
+	public static String getCachedCurrentName(String oldName) {
+		UUID uuid = cachedNameToUuid(oldName);
+		if (uuid == null) {
+			return null;
+		}
+		return cachedUuidToName(uuid);
 	}
 
 	/* TODO In CommandAPI 6.0.0, use a Trie to handle IGN suggestions */

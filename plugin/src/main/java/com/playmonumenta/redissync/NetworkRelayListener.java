@@ -15,7 +15,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerLoginEvent;
 
 public class NetworkRelayListener implements Listener {
-	private static final String LOGIN_EVENT_CHANNEL = "com.playmonumenta.redissync.DataEventListener.loginEvent";
+	private static final String LOGIN_EVENT_CHANNEL = "com.playmonumenta.redissync.NetworkRelayListener.loginEvent";
 	private static CustomLogger mLogger;
 	private static String mShardName;
 
@@ -45,8 +45,8 @@ public class NetworkRelayListener implements Listener {
 			try {
 				JsonObject eventData = new JsonObject();
 				eventData.addProperty("shard", mShardName);
-				eventData.addProperty("name", nameStr);
-				eventData.addProperty("uuid", uuidStr);
+				eventData.addProperty("playerName", nameStr);
+				eventData.addProperty("playerUuid", uuidStr);
 				NetworkRelayAPI.sendBroadcastMessage(LOGIN_EVENT_CHANNEL, eventData);
 			} catch (Exception e) {
 				mLogger.warning("Failed to broadcast login event for " + nameStr);

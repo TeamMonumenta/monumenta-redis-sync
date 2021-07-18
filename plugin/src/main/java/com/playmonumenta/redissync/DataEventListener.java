@@ -207,7 +207,7 @@ public class DataEventListener implements Listener {
 			public void run() {
 				blockingWaitForPlayerToSave(player);
 
-				mLogger.fine("Committing save took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds");
+				mLogger.fine(() -> "Committing save took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds");
 
 				/* Run the callback after about 150ms have passed to make sure the redis changes commit */
 				if (sync) {
@@ -258,20 +258,20 @@ public class DataEventListener implements Listener {
 
 		try {
 			/* Advancements */
-			String jsonData = advanceFuture.get();
-			mLogger.finer("Data:" + jsonData);
-			if (jsonData != null) {
-				event.setJsonData(jsonData);
+			final String advanceData = advanceFuture.get();
+			mLogger.finer(() -> "Data:" + advanceData);
+			if (advanceData != null) {
+				event.setJsonData(advanceData);
 			} else {
 				mLogger.warning("No advancements data for player '" + player.getName() + "' - if they are not new, this is a serious error!");
 			}
 
 			/* Scoreboards */
 			mLogger.fine("Loading scoreboard data for player=" + player.getName());
-			jsonData = scoreFuture.get();
-			mLogger.finer("Data:" + jsonData);
-			if (jsonData != null) {
-				JsonObject obj = mGson.fromJson(jsonData, JsonObject.class);
+			final String scoreData = scoreFuture.get();
+			mLogger.finer(() -> "Data:" + scoreData);
+			if (scoreData != null) {
+				JsonObject obj = mGson.fromJson(scoreData, JsonObject.class);
 				if (obj != null) {
 					ScoreboardUtils.loadFromJsonObject(player, obj);
 				} else {
@@ -315,7 +315,7 @@ public class DataEventListener implements Listener {
 
 		/* Advancements */
 		mLogger.fine("Saving advancements data for player=" + player.getName());
-		mLogger.finer("Data:" + event.getJsonData());
+		mLogger.finer(() -> "Data:" + event.getJsonData());
 		String advPath = MonumentaRedisSyncAPI.getRedisAdvancementsPath(player);
 		commands.lpush(advPath, event.getJsonData());
 		commands.ltrim(advPath, 0, Conf.getHistory());
@@ -324,8 +324,8 @@ public class DataEventListener implements Listener {
 		mLogger.fine("Saving scoreboard data for player=" + player.getName());
 		long startTime = System.currentTimeMillis();
 		String data = mGson.toJson(mAdapter.getPlayerScoresAsJson(player.getName(), Bukkit.getScoreboardManager().getMainScoreboard()));
-		mLogger.fine("Scoreboard saving took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds on main thread");
-		mLogger.finer("Data:" + data);
+		mLogger.fine(() -> "Scoreboard saving took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds on main thread");
+		mLogger.finer(() -> "Data:" + data);
 		String scorePath = MonumentaRedisSyncAPI.getRedisScoresPath(player);
 		commands.lpush(scorePath, data);
 		commands.ltrim(scorePath, 0, Conf.getHistory());
@@ -361,7 +361,7 @@ public class DataEventListener implements Listener {
 				mLogger.warning("No data for player '" + player.getName() + "' - if they are not new, this is a serious error!");
 				return;
 			}
-			mLogger.finer("data: " + b64encode(data));
+			mLogger.finer(() -> "data: " + b64encode(data));
 
 			/* Load per-shard data */
 			String shardData = shardDataFuture.get();
@@ -369,7 +369,7 @@ public class DataEventListener implements Listener {
 				/* This is not an error - this will happen whenever a player first visits a new shard */
 				mLogger.fine("Player '" + player.getName() + "' has never been to this shard before");
 			} else {
-				mLogger.finer("sharddata: " + shardData);
+				mLogger.finer(() -> "sharddata: " + shardData);
 			}
 
 			/* Load plugin data */
@@ -378,7 +378,7 @@ public class DataEventListener implements Listener {
 				mLogger.fine("Player '" + player.getName() + "' has no plugin data");
 			} else {
 				mPluginData.put(player.getUniqueId(), mGson.fromJson(pluginData, JsonObject.class));
-				mLogger.finer("plugindata: " + pluginData);
+				mLogger.finer(() -> "plugindata: " + pluginData);
 			}
 
 			Object nbtTagCompound = mAdapter.retrieveSaveData(data, shardData);
@@ -432,14 +432,14 @@ public class DataEventListener implements Listener {
 				pluginData.add(ent.getKey(), ent.getValue());
 			}
 		}
-		mLogger.fine("Getting plugindata from other plugins took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds");
+		mLogger.fine(() -> "Getting plugindata from other plugins took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds");
 
 		try {
 			/* Grab the return parameters if they were set when starting transfer. If they are null, that's fine too */
 			ReturnParams returnParams = mReturnParams.get(player.getUniqueId());
 			SaveData data = mAdapter.extractSaveData(event.getData(), returnParams);
 
-			mLogger.finer("data: " + b64encode(data.getData()));
+			mLogger.finer(() -> "data: " + b64encode(data.getData()));
 			String dataPath = MonumentaRedisSyncAPI.getRedisDataPath(player);
 			futures.add(RedisAPI.getInstance().asyncStringBytes().lpush(dataPath, data.getData()));
 			futures.add(RedisAPI.getInstance().asyncStringBytes().ltrim(dataPath, 0, Conf.getHistory()));
@@ -449,21 +449,21 @@ public class DataEventListener implements Listener {
 			futures.add(commands.multi()); /* < MULTI */
 
 			/* sharddata */
-			mLogger.finer("sharddata: " + data.getShardData());
+			mLogger.finer(() -> "sharddata: " + data.getShardData());
 			String shardDataPath = MonumentaRedisSyncAPI.getRedisPerShardDataPath(player);
 			commands.hset(shardDataPath, Conf.getShard(), data.getShardData());
 
 			/* history */
 			String histPath = MonumentaRedisSyncAPI.getRedisHistoryPath(player);
 			String history = Conf.getShard() + "|" + Long.toString(System.currentTimeMillis()) + "|" + player.getName();
-			mLogger.finer("history: " + history);
+			mLogger.finer(() -> "history: " + history);
 			commands.lpush(histPath, history);
 			commands.ltrim(histPath, 0, Conf.getHistory());
 
 			/* plugindata */
 			String pluginDataPath = MonumentaRedisSyncAPI.getRedisPluginDataPath(player);
 			String pluginDataStr = mGson.toJson(pluginData);
-			mLogger.finer("plugindata: " + pluginDataStr);
+			mLogger.finer(() -> "plugindata: " + pluginDataStr);
 			commands.lpush(pluginDataPath, pluginDataStr);
 			commands.ltrim(pluginDataPath, 0, Conf.getHistory());
 
@@ -629,7 +629,7 @@ public class DataEventListener implements Listener {
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void entitySpawnEvent(EntitySpawnEvent event) {
 		if (mTransferringPlayerShoulderEntities.containsKey(event.getEntity().getUniqueId())) {
-			mLogger.fine("Refused to spawn shoulder entity id: " + event.getEntity().getType().toString() + " uuid: " + event.getEntity().getUniqueId().toString());
+			mLogger.fine(() -> "Refused to spawn shoulder entity id: " + event.getEntity().getType().toString() + " uuid: " + event.getEntity().getUniqueId().toString());
 			event.setCancelled(true);
 		}
 	}

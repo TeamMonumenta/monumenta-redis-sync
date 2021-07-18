@@ -1,5 +1,6 @@
 package com.playmonumenta.redissync;
 
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -16,6 +17,27 @@ public class CustomLogger extends Logger {
 	@Override
 	public void setLevel(Level level) {
 		mLevel = level;
+	}
+
+	@Override
+	public void finest(Supplier<String> msg) {
+		if (mLevel == Level.FINEST) {
+			mLogger.info(msg);
+		}
+	}
+
+	@Override
+	public void finer(Supplier<String> msg) {
+		if (mLevel == Level.FINER || mLevel == Level.FINEST) {
+			mLogger.info(msg);
+		}
+	}
+
+	@Override
+	public void fine(Supplier<String> msg) {
+		if (mLevel == Level.FINE || mLevel == Level.FINER || mLevel == Level.FINEST) {
+			mLogger.info(msg);
+		}
 	}
 
 	@Override

@@ -258,7 +258,7 @@ public class MonumentaRedisSyncAPI {
 			player.sendPluginMessage(mrs, "BungeeCord", out.toByteArray());
 		});
 
-		mrs.getLogger().fine("Transferring players took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds on main thread");
+		mrs.getLogger().fine(() -> "Transferring players took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds on main thread");
 	}
 
 	public static void stashPut(Player player, String name) throws Exception {

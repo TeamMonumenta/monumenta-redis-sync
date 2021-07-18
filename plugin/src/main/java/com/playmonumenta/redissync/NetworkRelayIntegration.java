@@ -14,12 +14,12 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerLoginEvent;
 
-public class NetworkRelayListener implements Listener {
-	private static final String LOGIN_EVENT_CHANNEL = "com.playmonumenta.redissync.NetworkRelayListener.loginEvent";
+public class NetworkRelayIntegration implements Listener {
+	private static final String LOGIN_EVENT_CHANNEL = "com.playmonumenta.redissync.loginEvent";
 	private static Logger mLogger;
 	private static String mShardName;
 
-	protected NetworkRelayListener(Logger logger) {
+	protected NetworkRelayIntegration(Logger logger) {
 		mLogger = logger;
 		try {
 			mShardName = NetworkRelayAPI.getShardName();

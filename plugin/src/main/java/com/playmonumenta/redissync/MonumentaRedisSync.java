@@ -84,7 +84,7 @@ public class MonumentaRedisSync extends JavaPlugin {
 		}
 
 		if (getServer().getPluginManager().isPluginEnabled("MonumentaNetworkRelay")) {
-			getServer().getPluginManager().registerEvents(new NetworkRelayListener(this.getLogger()), this);
+			getServer().getPluginManager().registerEvents(new NetworkRelayIntegration(this.getLogger()), this);
 		}
 
 		this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");

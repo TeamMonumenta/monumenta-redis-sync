@@ -1,6 +1,5 @@
 package com.playmonumenta.redissync;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.UUID;

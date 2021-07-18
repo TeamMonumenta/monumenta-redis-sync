@@ -1,9 +1,13 @@
 package com.playmonumenta.redissync;
 
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkrelay.GatherHeartbeatDataEvent;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 
@@ -15,18 +19,16 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerLoginEvent;
 
 public class NetworkRelayIntegration implements Listener {
+	private static NetworkRelayIntegration INSTANCE = null;
 	private static final String LOGIN_EVENT_CHANNEL = "com.playmonumenta.redissync.loginEvent";
-	private static Logger mLogger;
-	private static String mShardName;
+	private static final String PLUGIN_IDENTIFIER = "com.playmonumenta.redissync";
+	private final Logger mLogger;
+	private final String mShardName;
 
-	protected NetworkRelayIntegration(Logger logger) {
+	protected NetworkRelayIntegration(Logger logger) throws Exception {
+		INSTANCE = this;
 		mLogger = logger;
-		try {
-			mShardName = NetworkRelayAPI.getShardName();
-		} catch (Exception e) {
-			mLogger.severe("Could not determine shard name");
-			mShardName = null;
-		}
+		mShardName = NetworkRelayAPI.getShardName();
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST)
@@ -70,6 +72,35 @@ public class NetworkRelayIntegration implements Listener {
 		}
 	}
 
+	@EventHandler(priority = EventPriority.LOW)
+	public void gatherHeartbeatDataEvent(GatherHeartbeatDataEvent event) throws Exception {
+		mLogger.finer("Got relay request for heartbeat data");
+		/* Don't actually need to set any data - just being present is sufficient */
+		event.setPluginData(PLUGIN_IDENTIFIER, new JsonObject());
+	}
+
+	public static String[] getOnlineTransferTargets() {
+		if (INSTANCE != null) {
+			try {
+				Set<String> shards = NetworkRelayAPI.getOnlineShardNames();
+
+				Iterator<String> iter = shards.iterator();
+				while (iter.hasNext()) {
+					String shardName = iter.next();
+					if (NetworkRelayAPI.getHeartbeatPluginData(shardName, PLUGIN_IDENTIFIER) == null ||
+						shardName.equals(INSTANCE.mShardName)) {
+						iter.remove();
+					}
+				}
+				return shards.toArray(new String[shards.size()]);
+			} catch (Exception ex) {
+				INSTANCE.mLogger.warning("NetworkRelayAPI.getOnlineShardNames failed: " + ex.getMessage());
+				ex.printStackTrace();
+			}
+		}
+		return new String[0];
+	}
+
 	private void remoteLoginEvent(JsonObject data) {
 		if (mShardName == null) {
 			return;
@@ -87,6 +118,8 @@ public class NetworkRelayIntegration implements Listener {
 			mLogger.severe("Got " + LOGIN_EVENT_CHANNEL + " channel with invalid data");
 			return;
 		}
+
+		mLogger.fine("Got relay remoteLoginEvent for " + playerName);
 
 		if (mShardName.equals(remoteShardName)) {
 			return;

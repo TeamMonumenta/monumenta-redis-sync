@@ -3,6 +3,7 @@ package com.playmonumenta.redissync.commands;
 import java.util.Collection;
 
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
+import com.playmonumenta.redissync.NetworkRelayIntegration;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -24,7 +25,7 @@ public class TransferServer {
 
 		new CommandAPICommand(command)
 			.withArguments(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS))
-			.withArguments(new StringArgument("server"))
+			.withArguments(new StringArgument("server").overrideSuggestions((sender) -> NetworkRelayIntegration.getOnlineTransferTargets()))
 			.withPermission(perms)
 			.executes((sender, args) -> {
 				for (Player player : (Collection<Player>)args[0]) {
@@ -39,7 +40,7 @@ public class TransferServer {
 
 		new CommandAPICommand(command)
 			.withArguments(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS))
-			.withArguments(new StringArgument("server"))
+			.withArguments(new StringArgument("server").overrideSuggestions((sender) -> NetworkRelayIntegration.getOnlineTransferTargets()))
 			.withArguments(new LocationArgument("location"))
 			.withPermission(perms)
 			.executes((sender, args) -> {
@@ -55,7 +56,7 @@ public class TransferServer {
 
 		new CommandAPICommand(command)
 			.withArguments(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS))
-			.withArguments(new StringArgument("server"))
+			.withArguments(new StringArgument("server").overrideSuggestions((sender) -> NetworkRelayIntegration.getOnlineTransferTargets()))
 			.withArguments(new LocationArgument("location"))
 			.withArguments(new FloatArgument("yaw"))
 			.withArguments(new FloatArgument("pitch"))
@@ -73,7 +74,7 @@ public class TransferServer {
 
 		/* Single player alias */
 		new CommandAPICommand(command)
-			.withArguments(new StringArgument("server"))
+			.withArguments(new StringArgument("server").overrideSuggestions((sender) -> NetworkRelayIntegration.getOnlineTransferTargets()))
 			.withPermission(perms)
 			.withAliases("s")
 			.executes((sender, args) -> {

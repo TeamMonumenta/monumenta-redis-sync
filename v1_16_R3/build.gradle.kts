@@ -12,3 +12,4 @@ dependencies {
 }
 
 description = "v1_16_R3"
+version = rootProject.version

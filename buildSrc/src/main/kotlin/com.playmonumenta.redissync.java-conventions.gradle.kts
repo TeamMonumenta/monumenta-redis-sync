@@ -31,7 +31,6 @@ repositories {
 }
 
 group = "com.playmonumenta.redissync"
-version = "dev"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 publishing {

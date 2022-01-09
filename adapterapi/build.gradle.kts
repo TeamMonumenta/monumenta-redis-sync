@@ -11,3 +11,4 @@ dependencies {
 }
 
 description = "adapterapi"
+version = rootProject.version

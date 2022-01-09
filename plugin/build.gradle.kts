@@ -21,3 +21,4 @@ dependencies {
 
 group = "com.playmonumenta"
 description = "redissync"
+version = rootProject.version

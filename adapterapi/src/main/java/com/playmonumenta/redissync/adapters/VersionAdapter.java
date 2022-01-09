@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Scoreboard;
 
 public interface VersionAdapter {
-	public static class ReturnParams {
+	class ReturnParams {
 		public final Location mReturnLoc;
 		public final Float mReturnYaw;
 		public final Float mReturnPitch;
@@ -21,7 +21,7 @@ public interface VersionAdapter {
 		}
 	}
 
-	public static class SaveData {
+	class SaveData {
 		private final byte[] mData;
 		private final String mShardData;
 

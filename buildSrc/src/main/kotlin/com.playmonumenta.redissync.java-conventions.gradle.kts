@@ -2,6 +2,7 @@ plugins {
     `java-library`
     `maven-publish`
     checkstyle
+    pmd
 }
 
 repositories {
@@ -35,7 +36,25 @@ publishing {
         from(components["java"])
     }
 }
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/TeamMonumenta/monumenta-redis-sync")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+}
 
 tasks.withType<JavaCompile>() {
     options.encoding = "UTF-8"
+}
+
+pmd {
+    isConsoleOutput = true
+    toolVersion = "6.31.0"
+    ruleSets = listOf("pmd-ruleset.xml")
 }

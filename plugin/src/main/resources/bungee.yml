@@ -1,5 +1,0 @@
-name: MonumentaRedisSync
-main: com.playmonumenta.redissync.MonumentaRedisSyncBungee
-version: 0.0.1
-author: Combustible
-depends: []

@@ -20,7 +20,7 @@ dependencies {
 }
 
 group = "com.playmonumenta"
-description = "redissync"
+description = "System for storing player data in a Redis database"
 version = rootProject.version
 
 // Configure plugin.yml generation
@@ -28,6 +28,7 @@ bukkit {
     load = BukkitPluginDescription.PluginLoadOrder.STARTUP
     main = "com.playmonumenta.redissync.MonumentaRedisSync"
     apiVersion = "1.15"
+    name = "MonumentaRedisSync"
     authors = listOf("Combustible")
     depend = listOf("CommandAPI")
     softDepend = listOf("MonumentaNetworkRelay")
@@ -35,6 +36,7 @@ bukkit {
 
 // Configure bungee.yml generation
 bungee {
+    name = "MonumentaRedisSync"
     main = "com.playmonumenta.redissync.MonumentaRedisSyncBungee"
     author = "Combustible"
 }

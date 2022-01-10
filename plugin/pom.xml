@@ -41,13 +41,6 @@
         </dependency>
         <dependency>
             <groupId>com.playmonumenta.redissync</groupId>
-            <artifactId>v1_15_R1</artifactId>
-            <version>dev</version>
-            <scope>compile</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.playmonumenta.redissync</groupId>
             <artifactId>v1_16_R3</artifactId>
             <version>dev</version>
             <scope>compile</scope>

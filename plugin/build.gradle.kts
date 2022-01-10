@@ -11,6 +11,7 @@ dependencies {
     implementation(project(":adapterapi"))
     implementation(project(":v1_16_R3"))
     implementation(project(":v1_17_R1"))
+    implementation(project(":v1_18_R1"))
     implementation("io.lettuce:lettuce-core:5.3.5.RELEASE")
     compileOnly("net.md-5:bungeecord-api:1.15-SNAPSHOT")
     compileOnly("com.playmonumenta:monumenta-network-relay:1.0")

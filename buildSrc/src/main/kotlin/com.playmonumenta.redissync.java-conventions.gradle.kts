@@ -23,6 +23,11 @@ repositories {
         url = uri("https://oss.sonatype.org/content/repositories/snapshots")
     }
 
+    // NBT API
+    maven {
+        url = uri("https://repo.codemc.org/repository/maven-public/")
+    }
+
     maven {
         url = uri("https://raw.githubusercontent.com/TeamMonumenta/monumenta-network-relay/master/mvn-repo/")
     }

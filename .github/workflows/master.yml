@@ -41,11 +41,13 @@ jobs:
       run: |
         if [[ ! -d ~/.m2/repository/com/destroystokyo/paper ]]; then
           git clone https://github.com/TeamMonumenta/Paper.git
-          ./paper jar
-          git checkout 1.15
-          ./paper jar
+          cd Paper
           git checkout 1.16
           ./paper jar
+          git checkout 1.17
+          ./gradlew applyPatches
+          ./gradlew reobfJar
+          ./gradlew publishToMavenLocal
         fi
 
     - name: Build and deploy to Github Package Registry
@@ -53,4 +55,5 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         mkdir -p ~/.m2
-        ./gradlew publish
+        # TODO: publish
+        ./gradlew build

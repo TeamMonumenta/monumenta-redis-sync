@@ -45,6 +45,10 @@ jobs:
           cd Paper
           git checkout 1.16
           ./paper jar
+          git checkout 1.17
+          ./gradlew applyPatches
+          ./gradlew reobfJar
+          ./gradlew publishToMavenLocal
         fi
 
     - name: Build and report style/pmd/warnings

@@ -28,16 +28,19 @@ jobs:
         cache-name: cache-maven-dependencies
       with:
         # maven files are stored in `~/.m2/repository`
-        path: ~/.m2/repository
+        path: |
+          ~/.m2/repository
+          ~/.gradle/caches
+          ~/.gradle/wrapper
         # Create the key based on runner os, cache name, and a hash of all the pom.xml files
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pom.xml') }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
 
     - name: Build Paper
       run: |
         if [[ ! -d ~/.m2/repository/com/destroystokyo/paper ]]; then
           git clone https://github.com/TeamMonumenta/Paper.git
-          cd Paper
-          git checkout 1.13
           ./paper jar
           git checkout 1.15
           ./paper jar
@@ -50,5 +53,4 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         mkdir -p ~/.m2
-        echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-        ./deploy.sh --batch-mode
+        ./gradlew publish

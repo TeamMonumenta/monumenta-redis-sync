@@ -29,22 +29,23 @@ jobs:
         cache-name: cache-maven-dependencies
       with:
         # maven files are stored in `~/.m2/repository`
-        path: ~/.m2/repository
+        path: |
+          ~/.m2/repository
+          ~/.gradle/caches
+          ~/.gradle/wrapper
         # Create the key based on runner os, cache name, and a hash of all the pom.xml files
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pom.xml') }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
 
     - name: Build Paper
       run: |
         if [[ ! -d ~/.m2/repository/com/destroystokyo/paper ]]; then
           git clone https://github.com/TeamMonumenta/Paper.git
           cd Paper
-          git checkout 1.13
-          ./paper jar
           git checkout 1.15
           ./paper jar
           git checkout 1.16
-          ./paper jar
-          git checkout 1.17
           ./paper jar
         fi
 
@@ -53,17 +54,19 @@ jobs:
         REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         set -o pipefail
-        ./compile.sh --batch-mode --no-snapshot-updates | tee compile.log
+        ./gradlew build --console=plain | tee compile.log
         set +o pipefail
         cat compile.log | grep '^\[WARNING\].*\.java' | reviewdog -efm="[WARNING] %f:[%l,%c] %m" -name="compiler-warnings" -reporter=github-pr-check
         set -o pipefail
 
-        ./mvn_version_wrapper.sh checkstyle:checkstyle --batch-mode --no-snapshot-updates
-        cat adapterapi/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (adapterapi)" -reporter=github-pr-check
-        cat v1_15_R1/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (v1_15_R1)" -reporter=github-pr-check
-        cat v1_16_R3/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (v1_16_R3)" -reporter=github-pr-check
-        cat v1_17_R1/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (v1_17_R1)" -reporter=github-pr-check
-        cat plugin/target/checkstyle-result.xml | reviewdog -f=checkstyle -name="checkstyle (plugin)" -reporter=github-pr-check
+        ./gradlew checkstyleMain
+        cat ./adapterapi/build/reports/checkstyle/main.xml | reviewdog -f=checkstyle -name="checkstyle (adapterapi)" -reporter=github-pr-check
+        cat ./v1_15_R1/build/reports/checkstyle/main.xml | reviewdog -f=checkstyle -name="checkstyle (v1_15_R1)" -reporter=github-pr-check
+        cat ./v1_16_R3/build/reports/checkstyle/main.xml | reviewdog -f=checkstyle -name="checkstyle (v1_16_R3)" -reporter=github-pr-check
+        cat ./v1_17_R1/build/reports/checkstyle/main.xml | reviewdog -f=checkstyle -name="checkstyle (v1_17_R1)" -reporter=github-pr-check
+        cat ./plugin/build/reports/checkstyle/main.xml | reviewdog -f=checkstyle -name="checkstyle (plugin)" -reporter=github-pr-check
+        cat ./example/build/reports/checkstyle/main.xml | reviewdog -f=checkstyle -name="checkstyle (example)" -reporter=github-pr-check
 
-        ./mvn_version_wrapper.sh pmd:pmd --batch-mode --no-snapshot-updates
-        cat v1_15_R1/target/pmd.txt plugin/target/pmd.txt adapterapi/target/pmd.txt v1_16_R3/target/pmd.txt v1_17_R1/target/pmd.txt | reviewdog -efm="%f:%l:	%m" -name="pmd" -reporter=github-pr-check
+        # TODO: These need re-enabling
+        # ./mvn_version_wrapper.sh pmd:pmd --batch-mode --no-snapshot-updates
+        # cat v1_15_R1/target/pmd.txt plugin/target/pmd.txt adapterapi/target/pmd.txt v1_16_R3/target/pmd.txt v1_17_R1/target/pmd.txt | reviewdog -efm="%f:%l:	%m" -name="pmd" -reporter=github-pr-check

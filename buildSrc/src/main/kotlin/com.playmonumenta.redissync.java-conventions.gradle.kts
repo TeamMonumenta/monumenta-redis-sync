@@ -57,4 +57,5 @@ pmd {
     isConsoleOutput = true
     toolVersion = "6.31.0"
     ruleSets = listOf("pmd-ruleset.xml")
+    setIgnoreFailures(true)
 }

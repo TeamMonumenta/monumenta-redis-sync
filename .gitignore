@@ -139,3 +139,6 @@ run/
 build
 .gradle
 /*.jar
+
+# Monumenta misc
+upload*.sh

@@ -35,7 +35,7 @@ jobs:
         # Create the key based on runner os, cache name, and a hash of all the pom.xml files
         key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
         restore-keys: |
-          ${{ runner.os }}-gradle-
+          ${{ runner.os }}-build-
 
     - name: Build Paper
       run: |
@@ -54,6 +54,4 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        mkdir -p ~/.m2
-        # TODO: publish
-        ./gradlew build
+        ./gradlew publish

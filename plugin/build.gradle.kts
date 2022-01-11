@@ -50,3 +50,19 @@ tasks {
        relocate("reactor.util", "com.playmonumenta.redissync.internal.reactor.util")
     }
 }
+
+publishing {
+    publications.create<MavenPublication>("maven") {
+        project.shadow.component(this)
+    }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/TeamMonumenta/monumenta-redis-sync")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+}

@@ -10,8 +10,8 @@ import dev.jorel.commandapi.CommandPermission;
 public class ChangeLogLevel {
 	public static void register(MonumentaRedisSync plugin) {
 		new CommandAPICommand("monumenta")
-			.withSubcommand(new CommandAPICommand("redisSync")
-				.withSubcommand(new CommandAPICommand("changeLogLevel")
+			.withSubcommand(new CommandAPICommand("redissync")
+				.withSubcommand(new CommandAPICommand("changeloglevel")
 					.withPermission(CommandPermission.fromString("monumenta.redissync.changeloglevel"))
 					.withSubcommand(new CommandAPICommand("INFO")
 						.executes((sender, args) -> {

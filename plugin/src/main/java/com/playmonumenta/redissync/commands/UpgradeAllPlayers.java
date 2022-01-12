@@ -19,8 +19,8 @@ import dev.jorel.commandapi.CommandPermission;
 public class UpgradeAllPlayers {
 	public static void register(MonumentaRedisSync plugin) {
 		new CommandAPICommand("monumenta")
-			.withSubcommand(new CommandAPICommand("redisSync")
-				.withSubcommand(new CommandAPICommand("UpgradeAllPlayers"))
+			.withSubcommand(new CommandAPICommand("redissync")
+				.withSubcommand(new CommandAPICommand("upgradeallplayers"))
 					.withPermission(CommandPermission.fromString("monumenta.redissync.upgradeallplayers"))
 					.executes((sender, args) -> {
 						try {

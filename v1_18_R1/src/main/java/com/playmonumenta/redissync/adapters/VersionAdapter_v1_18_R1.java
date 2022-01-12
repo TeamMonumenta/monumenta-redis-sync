@@ -177,7 +177,7 @@ public class VersionAdapter_v1_18_R1 implements VersionAdapter {
 		PlayerList playerList = ((CraftServer)Bukkit.getServer()).getHandle();
 
 		if (mSaveMethod == null) {
-			mSaveMethod = PlayerList.class.getDeclaredMethod("save", ServerPlayer.class);
+			mSaveMethod = PlayerList.class.getDeclaredMethod("b", ServerPlayer.class);
 			mSaveMethod.setAccessible(true);
 		}
 

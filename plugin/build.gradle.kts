@@ -25,7 +25,7 @@ version = rootProject.version
 
 // Configure plugin.yml generation
 bukkit {
-    load = BukkitPluginDescription.PluginLoadOrder.STARTUP
+    load = BukkitPluginDescription.PluginLoadOrder.POSTWORLD
     main = "com.playmonumenta.redissync.MonumentaRedisSync"
     apiVersion = "1.16"
     name = "MonumentaRedisSync"

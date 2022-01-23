@@ -6,5 +6,5 @@ dependencies {
     compileOnly("com.destroystokyo.paper:paper-api:1.15.2-R0.1-SNAPSHOT")
 }
 
-description = "adapterapi"
+description = "adapter_api"
 version = rootProject.version

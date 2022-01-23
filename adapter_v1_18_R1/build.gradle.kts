@@ -4,17 +4,12 @@ plugins {
 }
 
 dependencies {
-    compileOnly(project(":adapterapi"))
+    compileOnly(project(":adapter_api"))
     paperDevBundle("1.18.1-R0.1-SNAPSHOT")
 }
 
 description = "v1_18_R1"
 version = rootProject.version
-
-java {
-    // Configure the java toolchain. This allows gradle to auto-provision JDK 17 on systems that only have JDK 8 installed for example.
-    toolchain.languageVersion.set(JavaLanguageVersion.of(17))
-}
 
 tasks {
     // Configure reobfJar to run when invoking the build task

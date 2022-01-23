@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    compileOnly(project(":adapterapi"))
+    compileOnly(project(":adapter_api"))
     compileOnly("com.destroystokyo.paper:paper:1.16.5-R0.1-SNAPSHOT")
 }
 

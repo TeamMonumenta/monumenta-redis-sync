@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    compileOnly(project(":adapterapi"))
+    compileOnly(project(":adapter_api"))
     compileOnly("io.papermc.paper:paper:1.17.1-R0.1-SNAPSHOT")
 }
 

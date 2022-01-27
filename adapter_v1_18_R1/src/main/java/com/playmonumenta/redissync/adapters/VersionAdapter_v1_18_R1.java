@@ -211,20 +211,20 @@ public class VersionAdapter_v1_18_R1 implements VersionAdapter {
 		}
 
 		JsonElement element = dynamic.getValue();
-        element.getAsJsonObject().addProperty("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
+		element.getAsJsonObject().addProperty("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
 
 		return advancementsGson.toJson(element);
 	}
 
 	protected ListTag toDoubleList(double... doubles) {
-        ListTag nbttaglist = new ListTag();
+		ListTag nbttaglist = new ListTag();
 
 		for (double d : doubles) {
-            nbttaglist.add(DoubleTag.valueOf(d));
+			nbttaglist.add(DoubleTag.valueOf(d));
 		}
 
-        return nbttaglist;
-    }
+		return nbttaglist;
+	}
 
 	private void applyStr(JsonObject obj, CompoundTag nbt, String key) {
 		if (obj.has(key)) {

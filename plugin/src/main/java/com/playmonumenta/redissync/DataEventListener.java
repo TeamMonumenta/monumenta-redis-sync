@@ -632,7 +632,7 @@ public class DataEventListener implements Listener {
 		mPendingSaves.put(player.getUniqueId(), futures);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void serverKickEvent(ServerKickEvent event) {
 		UUID playerUuid = event.getPlayer().getUniqueId();
 		@Nullable Player player = Bukkit.getPlayer(playerUuid);

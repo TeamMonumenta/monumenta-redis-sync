@@ -30,6 +30,8 @@ import com.playmonumenta.redissync.event.PlayerJoinSetWorldEvent;
 import com.playmonumenta.redissync.event.PlayerSaveEvent;
 import com.playmonumenta.redissync.utils.ScoreboardUtils;
 
+import net.md_5.bungee.api.event.ServerKickEvent;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -142,6 +144,11 @@ public class DataEventListener implements Listener {
 		if (INSTANCE.mTransferringPlayers.contains(player.getUniqueId())) {
 			throw new Exception("Player " + player.getName() + " is already transferring");
 		}
+
+		TransferFailEvent event;
+		event = new TransferFailEvent(player);
+		Bukkit.getPluginManager().callEvent(event);
+
 		INSTANCE.mTransferringPlayers.add(player.getUniqueId());
 
 		/* Record transferring player shoulder entity UUIDs to prevent them from being duplicated into the world by timing exploit */
@@ -177,6 +184,10 @@ public class DataEventListener implements Listener {
 
 		/* Remove the shoulder entity spawn block (i.e. parrot) when player is not transferring anymore */
 		INSTANCE.mTransferringPlayerShoulderEntities.entrySet().removeIf(entry -> entry.getValue().equals(player.getUniqueId()));
+
+		TransferFailEvent event;
+		event = new TransferFailEvent(player);
+		Bukkit.getPluginManager().callEvent(event);
 	}
 
 	protected static boolean isPlayerTransferring(Player player) {
@@ -619,6 +630,19 @@ public class DataEventListener implements Listener {
 
 		/* Don't block - store the pending futures for completion later */
 		mPendingSaves.put(player.getUniqueId(), futures);
+	}
+
+	@EventHandler(priority = EventPriority.LOWEST)
+	public void serverKickEvent(ServerKickEvent event) {
+		UUID playerUuid = event.getPlayer().getUniqueId();
+		@Nullable Player player = Bukkit.getPlayer(playerUuid);
+
+		if (player != null) {
+			if (DataEventListener.isPlayerTransferring(player)) {
+				player.sendMessage(ChatColor.RED + "Could not transfer to target shard and your player has been unlocked");
+				DataEventListener.setPlayerAsNotTransferring(player);
+			}
+		}
 	}
 
 	/********************* Transferring Restriction Event Handlers *********************/

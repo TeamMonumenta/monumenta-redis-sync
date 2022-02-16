@@ -641,6 +641,10 @@ public class DataEventListener implements Listener {
 			if (DataEventListener.isPlayerTransferring(player)) {
 				player.sendMessage(ChatColor.RED + "Could not transfer to target shard and your player has been unlocked");
 				DataEventListener.setPlayerAsNotTransferring(player);
+				@Nullable BukkitTask task = TRANSFER_UNLOCK_TASKS.remove(player.getUniqueId());
+				if (task != null) {
+					task.cancel();
+				}
 			}
 		}
 	}

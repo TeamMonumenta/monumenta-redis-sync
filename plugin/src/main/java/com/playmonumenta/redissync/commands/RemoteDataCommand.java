@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import com.playmonumenta.redissync.MonumentaRedisSyncAPI;
 
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
 import dev.jorel.commandapi.CommandAPI;
@@ -36,22 +35,18 @@ public class RemoteDataCommand {
 						CommandAPI.fail("Got uuid '" + uuid + "' that matches no known player");
 					}
 
-					Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-						try {
-							Map<String, String> data = MonumentaRedisSyncAPI.getAllRemoteData(finalUUID).get();
-							Bukkit.getScheduler().runTask(plugin, () -> {
-								if (data.isEmpty()) {
-									sender.sendMessage("Player '" + name + "' has no remote data");
-								} else {
-									sender.sendMessage("Remote data for player '" + name + "':");
-									for (Map.Entry<String, String> entry : data.entrySet()) {
-										sender.sendMessage("  '" + entry.getKey() + "':'" + entry.getValue() + "'");
-									}
+					MonumentaRedisSyncAPI.runOnMainThreadWhenComplete(plugin, MonumentaRedisSyncAPI.remoteDataGetAll(finalUUID), (data, ex) -> {
+						if (ex != null) {
+							sender.sendMessage("remoteDataGetAll exception: " + ex.getMessage());
+						} else {
+							if (data.isEmpty()) {
+								sender.sendMessage("Player '" + name + "' has no remote data");
+							} else {
+								sender.sendMessage("Remote data for player '" + name + "':");
+								for (Map.Entry<String, String> entry : data.entrySet()) {
+									sender.sendMessage("  '" + entry.getKey() + "':'" + entry.getValue() + "'");
 								}
-							});
-						} catch (Exception ex) {
-							sender.sendMessage("Got exception: " + ex.getMessage());
-							return;
+							}
 						}
 					});
 				}))
@@ -76,19 +71,15 @@ public class RemoteDataCommand {
 						CommandAPI.fail("Got uuid '" + uuid + "' that matches no known player");
 					}
 
-					Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-						try {
-							String data = MonumentaRedisSyncAPI.getRemoteData(finalUUID, key).get();
-							Bukkit.getScheduler().runTask(plugin, () -> {
-								if (data == null) {
-									sender.sendMessage("Key '" + key + "' not set for player '" + name + "'");
-								} else {
-									sender.sendMessage("Remote data for player '" + name + "'  '" + key + "':'" + data + "'");
-								}
-							});
-						} catch (Exception ex) {
-							sender.sendMessage("Got exception: " + ex.getMessage());
-							return;
+					MonumentaRedisSyncAPI.runOnMainThreadWhenComplete(plugin, MonumentaRedisSyncAPI.remoteDataGet(finalUUID, key), (data, ex) -> {
+						if (ex != null) {
+							sender.sendMessage("remoteDataGet exception: " + ex.getMessage());
+						} else {
+							if (data == null) {
+								sender.sendMessage("Key '" + key + "' not set for player '" + name + "'");
+							} else {
+								sender.sendMessage("Remote data for player '" + name + "'  '" + key + "':'" + data + "'");
+							}
 						}
 					});
 				}))
@@ -115,16 +106,12 @@ public class RemoteDataCommand {
 						CommandAPI.fail("Got uuid '" + uuid + "' that matches no known player");
 					}
 
-					Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-						try {
-							Boolean data = MonumentaRedisSyncAPI.setRemoteData(finalUUID, key, value).get();
-							Bukkit.getScheduler().runTask(plugin, () -> {
-								sender.sendMessage("Set remote data for player '" + name + "':");
-								sender.sendMessage("  '" + key + "':'" + data + "'");
-							});
-						} catch (Exception ex) {
-							sender.sendMessage("Got exception: " + ex.getMessage());
-							return;
+					MonumentaRedisSyncAPI.runOnMainThreadWhenComplete(plugin, MonumentaRedisSyncAPI.remoteDataSet(finalUUID, key, value), (data, ex) -> {
+						if (ex != null) {
+							sender.sendMessage("remoteDataSet exception: " + ex.getMessage());
+						} else {
+							sender.sendMessage("Set remote data for player '" + name + "':");
+							sender.sendMessage("  '" + key + "':'" + data + "'");
 						}
 					});
 				}))
@@ -149,19 +136,15 @@ public class RemoteDataCommand {
 						CommandAPI.fail("Got uuid '" + uuid + "' that matches no known player");
 					}
 
-					Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-						try {
-							Boolean data = MonumentaRedisSyncAPI.delRemoteData(finalUUID, key).get();
-							Bukkit.getScheduler().runTask(plugin, () -> {
-								if (data == null || !data) {
-									sender.sendMessage("Key '" + key + "' not set for player '" + name + "'");
-								} else {
-									sender.sendMessage("Key '" + key + "' deleted for player '" + name + "'");
-								}
-							});
-						} catch (Exception ex) {
-							sender.sendMessage("Got exception: " + ex.getMessage());
-							return;
+					MonumentaRedisSyncAPI.runOnMainThreadWhenComplete(plugin, MonumentaRedisSyncAPI.remoteDataDel(finalUUID, key), (data, ex) -> {
+						if (ex != null) {
+							sender.sendMessage("remoteDataDel exception: " + ex.getMessage());
+						} else {
+							if (data == null || !data) {
+								sender.sendMessage("Key '" + key + "' not set for player '" + name + "'");
+							} else {
+								sender.sendMessage("Key '" + key + "' deleted for player '" + name + "'");
+							}
 						}
 					});
 				}))

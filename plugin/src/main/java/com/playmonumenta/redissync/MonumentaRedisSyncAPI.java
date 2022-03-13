@@ -551,44 +551,78 @@ public class MonumentaRedisSyncAPI {
 	}
 
 	/**
-	 * Gets a specific remote data entry for a player
+	 * Gets a specific remote data entry for a player.
+	 *
+	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.
+	 * WARNING: These complete async, if you need to run a sync task on completion you need to schedule it yourself (or wrap with runOnMainThreadWhenComplete)
 	 *
 	 * @return null if no entry was present, String otherwise
 	 */
-	public static CompletableFuture<String> getRemoteData(UUID uuid, String key) throws Exception {
+	public static CompletableFuture<String> remoteDataGet(UUID uuid, String key) {
 		RedisAPI api = RedisAPI.getInstance();
 		if (api == null) {
-			throw new Exception("MonumentaRedisSync is not loaded!");
+			CompletableFuture<String> future = new CompletableFuture<>();
+			future.completeExceptionally(new Exception("MonumentaRedisSync is not loaded!"));
+			return future;
 		}
 
 		return api.async().hget(getRedisRemoteDataPath(uuid), key).toCompletableFuture();
 	}
 
 	/**
-	 * Sets a specific remote data entry for a player
+	 * Gets multiple remote data entries for a player.
+	 *
+	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.
+	 * WARNING: These complete async, if you need to run a sync task on completion you need to schedule it yourself (or wrap with runOnMainThreadWhenComplete)
+	 *
+	 * @return null if no entry was present, String otherwise
+	 */
+	public static CompletableFuture<Map<String, String>> remoteDataGetMulti(UUID uuid, String... keys) {
+		RedisAPI api = RedisAPI.getInstance();
+		if (api == null) {
+			CompletableFuture<Map<String, String>> future = new CompletableFuture<>();
+			future.completeExceptionally(new Exception("MonumentaRedisSync is not loaded!"));
+			return future;
+		}
+
+		return api.async().hmget(getRedisRemoteDataPath(uuid), keys).toCompletableFuture().thenApply((listResult) -> listResult.stream().collect(Collectors.toMap((entry) -> entry.getKey(), (entry) -> entry.getValue())));
+	}
+
+	/**
+	 * Sets a specific remote data entry for a player.
+	 *
+	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.
+	 * WARNING: These complete async, if you need to run a sync task on completion you need to schedule it yourself (or wrap with runOnMainThreadWhenComplete)
 	 *
 	 * @return True if an entry was set, False otherwise
 	 */
-	public static CompletableFuture<Boolean> setRemoteData(UUID uuid, String key, String value) throws Exception {
+	public static CompletableFuture<Boolean> remoteDataSet(UUID uuid, String key, String value) {
 		RedisAPI api = RedisAPI.getInstance();
 		if (api == null) {
-			throw new Exception("MonumentaRedisSync is not loaded!");
+			CompletableFuture<Boolean> future = new CompletableFuture<>();
+			future.completeExceptionally(new Exception("MonumentaRedisSync is not loaded!"));
+			return future;
 		}
 
 		return api.async().hset(getRedisRemoteDataPath(uuid), key, value).toCompletableFuture();
 	}
 
 	/**
-	 * Atomically increments a specific remote data entry for a player
+	 * Atomically increments a specific remote data entry for a player.
 	 *
 	 * Note that this will interpret the hash value as an integer (default 0 if not existing)
 	 *
+	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.
+	 * WARNING: These complete async, if you need to run a sync task on completion you need to schedule it yourself (or wrap with runOnMainThreadWhenComplete)
+	 *
 	 * @return Resulting value
 	 */
-	public static CompletableFuture<Long> incrementRemoteData(UUID uuid, String key, int incby) throws Exception {
+	public static CompletableFuture<Long> remoteDataIncrement(UUID uuid, String key, int incby) {
 		RedisAPI api = RedisAPI.getInstance();
 		if (api == null) {
-			throw new Exception("MonumentaRedisSync is not loaded!");
+			CompletableFuture<Long> future = new CompletableFuture<>();
+			future.completeExceptionally(new Exception("MonumentaRedisSync is not loaded!"));
+			return future;
 		}
 
 		return api.async().hincrby(getRedisRemoteDataPath(uuid), key, incby).toCompletableFuture();
@@ -597,26 +631,36 @@ public class MonumentaRedisSyncAPI {
 	/**
 	 * Deletes a specific key in the player's remote data.
 	 *
+	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.
+	 * WARNING: These complete async, if you need to run a sync task on completion you need to schedule it yourself (or wrap with runOnMainThreadWhenComplete)
+	 *
 	 * @return True if an entry was present and was deleted, False if no entry was present to begin with
 	 */
-	public static CompletableFuture<Boolean> delRemoteData(UUID uuid, String key) throws Exception {
+	public static CompletableFuture<Boolean> remoteDataDel(UUID uuid, String key) {
 		RedisAPI api = RedisAPI.getInstance();
 		if (api == null) {
-			throw new Exception("MonumentaRedisSync is not loaded!");
+			CompletableFuture<Boolean> future = new CompletableFuture<>();
+			future.completeExceptionally(new Exception("MonumentaRedisSync is not loaded!"));
+			return future;
 		}
 
 		return api.async().hdel(getRedisRemoteDataPath(uuid), key).thenApply((val) -> val == 1).toCompletableFuture();
 	}
 
 	/**
-	 * Gets a map of all remote data for a player
+	 * Gets a map of all remote data for a player.
+	 *
+	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.
+	 * WARNING: These complete async, if you need to run a sync task on completion you need to schedule it yourself (or wrap with runOnMainThreadWhenComplete)
 	 *
 	 * @return Non-null map of keys:values. If no data, will return an empty map
 	 */
-	public static CompletableFuture<Map<String, String>> getAllRemoteData(UUID uuid) throws Exception {
+	public static CompletableFuture<Map<String, String>> remoteDataGetAll(UUID uuid) {
 		RedisAPI api = RedisAPI.getInstance();
 		if (api == null) {
-			throw new Exception("MonumentaRedisSync is not loaded!");
+			CompletableFuture<Map<String, String>> future = new CompletableFuture<>();
+			future.completeExceptionally(new Exception("MonumentaRedisSync is not loaded!"));
+			return future;
 		}
 
 		return api.async().hgetall(getRedisRemoteDataPath(uuid)).toCompletableFuture();
@@ -1236,5 +1280,13 @@ public class MonumentaRedisSyncAPI {
 	 */
 	public static String[] getOnlineTransferTargets() {
 		return NetworkRelayIntegration.getOnlineTransferTargets();
+	}
+
+	public static <T> void runOnMainThreadWhenComplete(Plugin plugin, CompletableFuture<T> future, BiConsumer<T, Throwable> func) {
+		future.whenComplete((T result, Throwable ex) -> {
+			Bukkit.getScheduler().runTask(plugin, () -> {
+				func.accept(result, ex);
+			});
+		});
 	}
 }

@@ -176,8 +176,7 @@ public class DataEventListener implements Listener {
 	}
 
 	protected static void setPlayerAsNotTransferring(Player player) {
-		boolean wasTransferring = INSTANCE.mTransferringPlayers.contains(player.getUniqueId());
-		INSTANCE.mTransferringPlayers.remove(player.getUniqueId());
+		boolean wasTransferring = INSTANCE.mTransferringPlayers.remove(player.getUniqueId());
 		INSTANCE.mReturnParams.remove(player.getUniqueId());
 
 		/* Remove the shoulder entity spawn block (i.e. parrot) when player is not transferring anymore */

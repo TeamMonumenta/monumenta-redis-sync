@@ -515,6 +515,93 @@ public class MonumentaRedisSyncAPI {
 	}
 
 	/**
+	 * Gets a specific remote data entry for a player
+	 *
+	 * @deprecated Use the much nicer API version that doesn't throw exceptions
+	 *
+	 * @return null if no entry was present, String otherwise
+	 */
+	@Deprecated
+	public static CompletableFuture<String> getRemoteData(UUID uuid, String key) throws Exception {
+		RedisAPI api = RedisAPI.getInstance();
+		if (api == null) {
+			throw new Exception("MonumentaRedisSync is not loaded!");
+		}
+
+		return api.async().hget(getRedisRemoteDataPath(uuid), key).toCompletableFuture();
+	}
+
+	/**
+	 * Sets a specific remote data entry for a player
+	 *
+	 * @deprecated Use the much nicer API version that doesn't throw exceptions
+	 *
+	 * @return True if an entry was set, False otherwise
+	 */
+	@Deprecated
+	public static CompletableFuture<Boolean> setRemoteData(UUID uuid, String key, String value) throws Exception {
+		RedisAPI api = RedisAPI.getInstance();
+		if (api == null) {
+			throw new Exception("MonumentaRedisSync is not loaded!");
+		}
+
+		return api.async().hset(getRedisRemoteDataPath(uuid), key, value).toCompletableFuture();
+	}
+
+	/**
+	 * Atomically increments a specific remote data entry for a player
+	 *
+	 * Note that this will interpret the hash value as an integer (default 0 if not existing)
+	 *
+	 * @deprecated Use the much nicer API version that doesn't throw exceptions
+	 *
+	 * @return Resulting value
+	 */
+	@Deprecated
+	public static CompletableFuture<Long> incrementRemoteData(UUID uuid, String key, int incby) throws Exception {
+		RedisAPI api = RedisAPI.getInstance();
+		if (api == null) {
+			throw new Exception("MonumentaRedisSync is not loaded!");
+		}
+
+		return api.async().hincrby(getRedisRemoteDataPath(uuid), key, incby).toCompletableFuture();
+	}
+
+	/**
+	 * Deletes a specific key in the player's remote data.
+	 *
+	 * @deprecated Use the much nicer API version that doesn't throw exceptions
+	 *
+	 * @return True if an entry was present and was deleted, False if no entry was present to begin with
+	 */
+	@Deprecated
+	public static CompletableFuture<Boolean> delRemoteData(UUID uuid, String key) throws Exception {
+		RedisAPI api = RedisAPI.getInstance();
+		if (api == null) {
+			throw new Exception("MonumentaRedisSync is not loaded!");
+		}
+
+		return api.async().hdel(getRedisRemoteDataPath(uuid), key).thenApply((val) -> val == 1).toCompletableFuture();
+	}
+
+	/**
+	 * Gets a map of all remote data for a player
+	 *
+	 * @deprecated Use the much nicer API version that doesn't throw exceptions
+	 *
+	 * @return Non-null map of keys:values. If no data, will return an empty map
+	 */
+	@Deprecated
+	public static CompletableFuture<Map<String, String>> getAllRemoteData(UUID uuid) throws Exception {
+		RedisAPI api = RedisAPI.getInstance();
+		if (api == null) {
+			throw new Exception("MonumentaRedisSync is not loaded!");
+		}
+
+		return api.async().hgetall(getRedisRemoteDataPath(uuid)).toCompletableFuture();
+	}
+
+	/**
 	 * Gets a specific remote data entry for a player.
 	 *
 	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.

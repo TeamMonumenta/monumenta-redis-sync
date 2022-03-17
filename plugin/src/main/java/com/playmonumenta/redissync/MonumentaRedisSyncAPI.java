@@ -952,7 +952,7 @@ public class MonumentaRedisSyncAPI {
 	 * Only valid if the player is currently on this shard.
 	 *
 	 * @param player  Player's to get data for
-	 * @param world	  World to get data for
+	 * @param world   World to get data for
 	 *
 	 * @return plugin data for this identifier (or null if it doesn't exist or player isn't online)
 	 */
@@ -1048,7 +1048,7 @@ public class MonumentaRedisSyncAPI {
 			throw new Exception("MonumentaRedisSync invoked but is not loaded");
 		}
 
-		RedisAsyncCommands<String,byte[]> commands = RedisAPI.getInstance().asyncStringBytes();
+		RedisAsyncCommands<String, byte[]> commands = RedisAPI.getInstance().asyncStringBytes();
 		commands.multi();
 
 		commands.lindex(MonumentaRedisSyncAPI.getRedisDataPath(uuid), 0);
@@ -1091,7 +1091,7 @@ public class MonumentaRedisSyncAPI {
 			return future;
 		}
 
-		RedisAsyncCommands<String,String> commands = RedisAPI.getInstance().async();
+		RedisAsyncCommands<String, String> commands = RedisAPI.getInstance().async();
 
 		commands.lindex(MonumentaRedisSyncAPI.getRedisScoresPath(uuid), 0)
 			.thenApply(
@@ -1126,7 +1126,7 @@ public class MonumentaRedisSyncAPI {
 			throw new Exception("MonumentaRedisSync invoked but is not loaded");
 		}
 
-		RedisAsyncCommands<String,byte[]> commands = RedisAPI.getInstance().asyncStringBytes();
+		RedisAsyncCommands<String, byte[]> commands = RedisAPI.getInstance().asyncStringBytes();
 		commands.multi();
 
 		SaveData splitData = mrs.getVersionAdapter().extractSaveData(data.getNbtTagCompoundData(), null);
@@ -1152,19 +1152,19 @@ public class MonumentaRedisSyncAPI {
 
 	/********************* Set *********************/
 	public static CompletableFuture<Long> rboardSet(String name, Map<String, String> data) throws Exception {
-		RedisAsyncCommands<String,String> commands = RedisAPI.getInstance().async();
+		RedisAsyncCommands<String, String> commands = RedisAPI.getInstance().async();
 		return commands.hset(getRedisRboardPath(name), data).toCompletableFuture();
 	}
 
 	/********************* Add *********************/
 	public static CompletableFuture<Long> rboardAdd(String name, String key, long amount) throws Exception {
-		RedisAsyncCommands<String,String> commands = RedisAPI.getInstance().async();
+		RedisAsyncCommands<String, String> commands = RedisAPI.getInstance().async();
 		return commands.hincrby(getRedisRboardPath(name), key, amount).toCompletableFuture();
 	}
 
 	/********************* Get *********************/
 	public static CompletableFuture<Map<String, String>> rboardGet(String name, String... keys) throws Exception {
-		RedisAsyncCommands<String,String> commands = RedisAPI.getInstance().async();
+		RedisAsyncCommands<String, String> commands = RedisAPI.getInstance().async();
 		commands.multi();
 		for (String key : keys) {
 			commands.hincrby(getRedisRboardPath(name), key, 0);
@@ -1180,7 +1180,7 @@ public class MonumentaRedisSyncAPI {
 
 	/********************* GetAndReset *********************/
 	public static CompletableFuture<Map<String, String>> rboardGetAndReset(String name, String... keys) throws Exception {
-		RedisAsyncCommands<String,String> commands = RedisAPI.getInstance().async();
+		RedisAsyncCommands<String, String> commands = RedisAPI.getInstance().async();
 		commands.multi();
 		CompletableFuture<Map<String, String>> retval = commands.hmget(getRedisRboardPath(name), keys).toCompletableFuture().thenApply(list -> {
 			Map<String, String> transformed = new LinkedHashMap<>();
@@ -1194,25 +1194,25 @@ public class MonumentaRedisSyncAPI {
 
 	/********************* GetKeys *********************/
 	public static CompletableFuture<List<String>> rboardGetKeys(String name) throws Exception {
-		RedisAsyncCommands<String,String> commands = RedisAPI.getInstance().async();
+		RedisAsyncCommands<String, String> commands = RedisAPI.getInstance().async();
 		return commands.hkeys(getRedisRboardPath(name)).toCompletableFuture();
 	}
 
 	/********************* GetAll *********************/
 	public static CompletableFuture<Map<String, String>> rboardGetAll(String name) throws Exception {
-		RedisAsyncCommands<String,String> commands = RedisAPI.getInstance().async();
+		RedisAsyncCommands<String, String> commands = RedisAPI.getInstance().async();
 		return commands.hgetall(getRedisRboardPath(name)).toCompletableFuture();
 	}
 
 	/********************* Reset *********************/
 	public static CompletableFuture<Long> rboardReset(String name, String... keys) throws Exception {
-		RedisAsyncCommands<String,String> commands = RedisAPI.getInstance().async();
+		RedisAsyncCommands<String, String> commands = RedisAPI.getInstance().async();
 		return commands.hdel(getRedisRboardPath(name), keys).toCompletableFuture();
 	}
 
 	/********************* ResetAll *********************/
 	public static CompletableFuture<Long> rboardResetAll(String name) throws Exception {
-		RedisAsyncCommands<String,String> commands = RedisAPI.getInstance().async();
+		RedisAsyncCommands<String, String> commands = RedisAPI.getInstance().async();
 		return commands.del(getRedisRboardPath(name)).toCompletableFuture();
 	}
 

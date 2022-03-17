@@ -30,7 +30,7 @@ public class NetworkRelayIntegration implements Listener {
 		mShardName = NetworkRelayAPI.getShardName();
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
 	public void playerLoginEvent(PlayerLoginEvent event) {
 		if (mShardName == null) {
 			return;
@@ -55,7 +55,7 @@ public class NetworkRelayIntegration implements Listener {
 		});
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = false)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) throws Exception {
 		switch (event.getChannel()) {
 		case LOGIN_EVENT_CHANNEL:
@@ -71,7 +71,7 @@ public class NetworkRelayIntegration implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = false)
 	public void gatherHeartbeatDataEvent(GatherHeartbeatDataEvent event) throws Exception {
 		mLogger.finest("Got relay request for heartbeat data");
 		/* Don't actually need to set any data - just being present is sufficient */

@@ -86,7 +86,7 @@ public class ExampleServerListener implements Listener {
 	 * This data is retrieved from a cached copy in the redis plugin, it does not
 	 * result in a slow database lookup
 	 */
-	@EventHandler(priority = EventPriority.MONITOR)
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
 	public void playerJoinEvent(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
 
@@ -100,7 +100,7 @@ public class ExampleServerListener implements Listener {
 	}
 
 	/* Whenever player data is saved, also save the local data */
-	@EventHandler(priority = EventPriority.MONITOR)
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
 	public void playerSaveEvent(PlayerSaveEvent event) {
 		Player player = event.getPlayer();
 
@@ -111,7 +111,7 @@ public class ExampleServerListener implements Listener {
 	}
 
 	/* When player leaves, remove it from the local storage a short bit later */
-	@EventHandler(priority = EventPriority.MONITOR)
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
 	public void playerQuitEvent(PlayerQuitEvent event) {
 		Bukkit.getScheduler().runTaskLater(mPlugin, () -> {
 			if (!event.getPlayer().isOnline()) {

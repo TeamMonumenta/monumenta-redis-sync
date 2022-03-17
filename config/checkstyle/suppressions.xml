@@ -8,4 +8,7 @@
 	<suppress files=".*[\\/]VersionAdapter_.*java"
 			  checks="TypeName"
 			  message=".*Type name.*must match pattern.*"/>
+	<suppress files=".*[\\/]BungeeListener\.java"
+			  checks="RegexpSinglelineJava"
+			  message="Event handlers must specify ignoreCancelled"/>
 </suppressions>

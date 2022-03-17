@@ -34,22 +34,22 @@ public class ScoreboardCleanupListener implements Listener {
 		mAdapter = adapter;
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
 	public void playerAdvancementDataLoadEvent(PlayerAdvancementDataLoadEvent event) {
 		cancelCleanupTask(event.getPlayer());
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
 	public void playerDataLoadEvent(PlayerDataLoadEvent event) {
 		cancelCleanupTask(event.getPlayer());
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
 	public void playerJoinEvent(PlayerJoinEvent event) {
 		cancelCleanupTask(event.getPlayer());
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
 	public void playerQuitEvent(PlayerQuitEvent event) {
 		cancelCleanupTask(event.getPlayer());
 

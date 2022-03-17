@@ -212,20 +212,20 @@ public class VersionAdapter_v1_16_R3 implements VersionAdapter {
 		}
 
 		JsonElement element = dynamic.getValue();
-        element.getAsJsonObject().addProperty("DataVersion", SharedConstants.getGameVersion().getWorldVersion());
+		element.getAsJsonObject().addProperty("DataVersion", SharedConstants.getGameVersion().getWorldVersion());
 
 		return advancementsGson.toJson(element);
 	}
 
 	protected NBTTagList toDoubleList(double... doubles) {
-        NBTTagList nbttaglist = new NBTTagList();
+		NBTTagList nbttaglist = new NBTTagList();
 
 		for (double d : doubles) {
-            nbttaglist.add(NBTTagDouble.a(d));
+			nbttaglist.add(NBTTagDouble.a(d));
 		}
 
-        return nbttaglist;
-    }
+		return nbttaglist;
+	}
 
 	private void applyStr(JsonObject obj, NBTTagCompound nbt, String key) {
 		if (obj.has(key)) {

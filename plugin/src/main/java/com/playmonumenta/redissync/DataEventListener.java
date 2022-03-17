@@ -249,7 +249,7 @@ public class DataEventListener implements Listener {
 
 	/********************* Data Save/Load Event Handlers *********************/
 
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
 	public void playerAdvancementDataLoadEvent(PlayerAdvancementDataLoadEvent event) {
 		Player player = event.getPlayer();
 
@@ -284,7 +284,7 @@ public class DataEventListener implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
 	public void playerAdvancementDataSaveEvent(PlayerAdvancementDataSaveEvent event) {
 		/* Always cancel saving the player file to disk with this plugin present */
 		event.setCancelled(true);
@@ -324,7 +324,7 @@ public class DataEventListener implements Listener {
 		mPendingSaves.put(player.getUniqueId(), futures);
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
 	public void playerDataLoadEvent(PlayerDataLoadEvent event) {
 		Player player = event.getPlayer();
 
@@ -453,13 +453,13 @@ public class DataEventListener implements Listener {
 			mLogger.finer("After PlayerJoinSetWorldEvent for player '" + player.getName() + "' got world={" + playerWorld.getUID() + ": " + playerWorld.getName() + "}");
 
 			final JsonObject shardDataJson;
-			if (shardData == null || shardData.isEmpty())  {
+			if (shardData == null || shardData.isEmpty()) {
 				mLogger.finer("No shard data for player '" + player.getName() + "'");
 				shardDataJson = new JsonObject();
 			} else {
 				/* Look up in the shard data first the "world" part - data from this world about where the player should be */
 				String worldShardData = shardData.get(MonumentaRedisSyncAPI.getRedisPerShardDataWorldKey(playerWorld));
-				if (worldShardData == null || worldShardData.isEmpty())  {
+				if (worldShardData == null || worldShardData.isEmpty()) {
 					mLogger.finer("No world shard data for player '" + player.getName() + "', using default");
 					shardDataJson = new JsonObject();
 				} else {
@@ -502,7 +502,7 @@ public class DataEventListener implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
 	public void playerDataSaveEvent(PlayerDataSaveEvent event) {
 		event.setCancelled(true);
 
@@ -626,7 +626,7 @@ public class DataEventListener implements Listener {
 
 	/********************* Transferring Restriction Event Handlers *********************/
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
 	public void playerLoginEvent(PlayerLoginEvent event) {
 		/* NOTE: This runs very early in the login process! Just want to make sure player isn't transferring anymore */
 		Player player = event.getPlayer();
@@ -645,7 +645,7 @@ public class DataEventListener implements Listener {
 		});
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
 	public void playerQuitEvent(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 
@@ -666,114 +666,114 @@ public class DataEventListener implements Listener {
 		}, 50);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void playerInteractEvent(PlayerInteractEvent event) {
 		cancelEventIfTransferring(event.getPlayer(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void blockPlaceEvent(BlockPlaceEvent event) {
 		cancelEventIfTransferring(event.getPlayer(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void playerInteractEntityEvent(PlayerInteractEntityEvent event) {
 		cancelEventIfTransferring(event.getPlayer(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void playerArmorStandManipulateEvent(PlayerArmorStandManipulateEvent event) {
 		cancelEventIfTransferring(event.getPlayer(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void playerDropItemEvent(PlayerDropItemEvent event) {
 		cancelEventIfTransferring(event.getPlayer(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void playerSwapHandItemsEvent(PlayerSwapHandItemsEvent event) {
 		cancelEventIfTransferring(event.getPlayer(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void playerFishEvent(PlayerFishEvent event) {
 		cancelEventIfTransferring(event.getPlayer(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void playerItemConsumeEvent(PlayerItemConsumeEvent event) {
 		cancelEventIfTransferring(event.getPlayer(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void playerItemDamageEvent(PlayerItemDamageEvent event) {
 		cancelEventIfTransferring(event.getPlayer(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void playerBedEnterEvent(PlayerBedEnterEvent event) {
 		cancelEventIfTransferring(event.getPlayer(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void playerGameModeChangeEvent(PlayerGameModeChangeEvent event) {
 		cancelEventIfTransferring(event.getPlayer(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void blockBreakEvent(BlockBreakEvent event) {
 		cancelEventIfTransferring(event.getPlayer(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void entityPickupItemEvent(EntityPickupItemEvent event) {
 		cancelEventIfTransferring(event.getEntity(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void inventoryClickEvent(InventoryClickEvent event) {
 		cancelEventIfTransferring(event.getWhoClicked(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void inventoryDragEvent(InventoryDragEvent event) {
 		cancelEventIfTransferring(event.getWhoClicked(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void inventoryOpenEvent(InventoryOpenEvent event) {
 		cancelEventIfTransferring(event.getPlayer(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void inventoryInteractEvent(InventoryInteractEvent event) {
 		cancelEventIfTransferring(event.getWhoClicked(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void entityCombustByEntityEvent(EntityCombustByEntityEvent event) {
 		cancelEventIfTransferring(event.getEntity(), event);
 		cancelEventIfTransferring(event.getCombuster(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void entityDamageByEntityEvent(EntityDamageByEntityEvent event) {
 		cancelEventIfTransferring(event.getEntity(), event);
 		cancelEventIfTransferring(event.getDamager(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void entityDamageEvent(EntityDamageEvent event) {
 		cancelEventIfTransferring(event.getEntity(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void hangingBreakByEntityEvent(HangingBreakByEntityEvent event) {
 		cancelEventIfTransferring(event.getRemover(), event);
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void projectileLaunchEvent(ProjectileLaunchEvent event) {
 		ProjectileSource shooter = event.getEntity().getShooter();
 		if (shooter != null && shooter instanceof Player) {
@@ -782,7 +782,7 @@ public class DataEventListener implements Listener {
 	}
 
 	/* Prevent shoulder entities of transferring players (i.e. parrots) from being duplicated into the world via timing exploit */
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void entitySpawnEvent(EntitySpawnEvent event) {
 		if (mTransferringPlayerShoulderEntities.containsKey(event.getEntity().getUniqueId())) {
 			mLogger.fine(() -> "Refused to spawn shoulder entity id: " + event.getEntity().getType().toString() + " uuid: " + event.getEntity().getUniqueId().toString());
@@ -790,12 +790,12 @@ public class DataEventListener implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void potionSplashEvent(PotionSplashEvent event) {
 		event.getAffectedEntities().removeIf(entity -> (entity instanceof Player && isPlayerTransferring((Player)entity)));
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void areaEffectCloudApplyEvent(AreaEffectCloudApplyEvent event) {
 		event.getAffectedEntities().removeIf(entity -> (entity instanceof Player && isPlayerTransferring((Player)entity)));
 	}

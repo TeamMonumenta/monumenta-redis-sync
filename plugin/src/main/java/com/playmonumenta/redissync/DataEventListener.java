@@ -12,6 +12,7 @@ import com.playmonumenta.redissync.adapters.VersionAdapter.ReturnParams;
 import com.playmonumenta.redissync.adapters.VersionAdapter.SaveData;
 import com.playmonumenta.redissync.event.PlayerJoinSetWorldEvent;
 import com.playmonumenta.redissync.event.PlayerSaveEvent;
+import com.playmonumenta.redissync.event.PlayerTransferFailEvent;
 import com.playmonumenta.redissync.utils.ScoreboardUtils;
 import io.lettuce.core.LettuceFutures;
 import io.lettuce.core.RedisFuture;
@@ -176,7 +177,7 @@ public class DataEventListener implements Listener {
 		INSTANCE.mTransferringPlayerShoulderEntities.entrySet().removeIf(entry -> entry.getValue().equals(player.getUniqueId()));
 
 		if (wasTransferring) {
-			TransferFailEvent event = new TransferFailEvent(player);
+			PlayerTransferFailEvent event = new PlayerTransferFailEvent(player);
 			Bukkit.getPluginManager().callEvent(event);
 		}
 	}

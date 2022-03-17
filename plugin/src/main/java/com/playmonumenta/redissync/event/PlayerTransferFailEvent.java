@@ -1,15 +1,15 @@
-package com.playmonumenta.redissync;
+package com.playmonumenta.redissync.event;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
-public class TransferFailEvent extends Event {
+public class PlayerTransferFailEvent extends Event {
 	private static final HandlerList handlers = new HandlerList();
 
 	private final Player mPlayer;
 
-	public TransferFailEvent(Player player) {
+	public PlayerTransferFailEvent(Player player) {
 		mPlayer = player;
 	}
 

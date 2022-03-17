@@ -3,8 +3,6 @@ package com.playmonumenta.redissync;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
-import javax.annotation.Nullable;
-
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;

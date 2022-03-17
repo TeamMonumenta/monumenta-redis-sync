@@ -26,6 +26,7 @@ public class RemoteDataCommand {
 							uuid = UUID.fromString(playerNameOrUUID);
 						} catch (Exception ex) {
 							CommandAPI.fail("Argument must be a player name with correct capitalization or a UUID");
+							return; // Needed for proper nullaway exit detection
 						}
 					}
 
@@ -62,6 +63,7 @@ public class RemoteDataCommand {
 							uuid = UUID.fromString(playerNameOrUUID);
 						} catch (Exception ex) {
 							CommandAPI.fail("Argument must be a player name with correct capitalization or a UUID");
+							return; // Needed for proper nullaway exit detection
 						}
 					}
 
@@ -97,6 +99,7 @@ public class RemoteDataCommand {
 							uuid = UUID.fromString(playerNameOrUUID);
 						} catch (Exception ex) {
 							CommandAPI.fail("Argument must be a player name with correct capitalization or a UUID");
+							return; // Needed for proper nullaway exit detection
 						}
 					}
 
@@ -127,6 +130,7 @@ public class RemoteDataCommand {
 							uuid = UUID.fromString(playerNameOrUUID);
 						} catch (Exception ex) {
 							CommandAPI.fail("Argument must be a player name with correct capitalization or a UUID");
+							return; // Needed for proper nullaway exit detection
 						}
 					}
 

@@ -74,7 +74,8 @@ import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitTask;
 
 public class DataEventListener implements Listener {
-	private class PlayerUuidToNameStreamingChannel implements KeyValueStreamingChannel<String, String> {
+	private static class PlayerUuidToNameStreamingChannel implements KeyValueStreamingChannel<String, String> {
+		@Override
 		public void onKeyValue(String key /*UUID*/, String value /*name*/) {
 			UUID uuid;
 			try {
@@ -86,7 +87,8 @@ public class DataEventListener implements Listener {
 		}
 	}
 
-	private class PlayerNameToUuidStreamingChannel implements KeyValueStreamingChannel<String, String> {
+	private static class PlayerNameToUuidStreamingChannel implements KeyValueStreamingChannel<String, String> {
+		@Override
 		public void onKeyValue(String key /*name*/, String value /*UUID*/) {
 			UUID uuid;
 			try {
@@ -100,6 +102,7 @@ public class DataEventListener implements Listener {
 
 	private static final Map<UUID, BukkitTask> TRANSFER_UNLOCK_TASKS = new HashMap<>();
 	private static final int TRANSFER_UNLOCK_TIMEOUT_TICKS = 10 * 20;
+	@SuppressWarnings("NullAway") // Required to avoid many null checks, this class will always be instantiated if this plugin is loaded
 	private static DataEventListener INSTANCE = null;
 
 	private final Gson mGson = new Gson();
@@ -165,7 +168,7 @@ public class DataEventListener implements Listener {
 		}, TRANSFER_UNLOCK_TIMEOUT_TICKS));
 	}
 
-	protected static void setPlayerReturnParams(Player player, Location returnLoc, Float returnYaw, Float returnPitch) {
+	protected static void setPlayerReturnParams(Player player, @Nullable Location returnLoc, @Nullable Float returnYaw, @Nullable Float returnPitch) {
 		INSTANCE.mReturnParams.put(player.getUniqueId(), new ReturnParams(returnLoc, returnYaw, returnPitch));
 	}
 

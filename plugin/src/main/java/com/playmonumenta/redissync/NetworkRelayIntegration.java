@@ -5,6 +5,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import javax.annotation.Nullable;
+
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.GatherHeartbeatDataEvent;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
@@ -18,7 +20,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerLoginEvent;
 
 public class NetworkRelayIntegration implements Listener {
-	private static NetworkRelayIntegration INSTANCE = null;
+	private static @Nullable NetworkRelayIntegration INSTANCE = null;
 	private static final String LOGIN_EVENT_CHANNEL = "com.playmonumenta.redissync.loginEvent";
 	private static final String PLUGIN_IDENTIFIER = "com.playmonumenta.redissync";
 	private final Logger mLogger;
@@ -128,7 +130,7 @@ public class NetworkRelayIntegration implements Listener {
 		MonumentaRedisSyncAPI.updateNameToUuid(playerName, playerUuid);
 	}
 
-	public static String getShardName() {
+	public static @Nullable String getShardName() {
 		if (INSTANCE != null) {
 			try {
 				return NetworkRelayAPI.getShardName();

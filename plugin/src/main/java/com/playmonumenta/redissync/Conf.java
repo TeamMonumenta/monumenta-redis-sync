@@ -3,6 +3,7 @@ package com.playmonumenta.redissync;
 import java.util.logging.Logger;
 
 public class Conf {
+	@SuppressWarnings("NullAway") // Required to avoid many null checks, this class will always be instantiated if this plugin is loaded
 	private static Conf INSTANCE = null;
 
 	private final String mHost;

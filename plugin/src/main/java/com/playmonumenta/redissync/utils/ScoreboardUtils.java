@@ -11,6 +11,8 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
 
+import net.kyori.adventure.text.Component;
+
 public class ScoreboardUtils {
 	@Deprecated
 	/* Use the method in the VersionAdapter instead */
@@ -36,7 +38,7 @@ public class ScoreboardUtils {
 
 			Objective objective = scoreboard.getObjective(name);
 			if (objective == null) {
-				objective = scoreboard.registerNewObjective(name, "dummy", name);
+				objective = scoreboard.registerNewObjective(name, "dummy", Component.text(name));
 			}
 
 			Score score = objective.getScore(player.getName());

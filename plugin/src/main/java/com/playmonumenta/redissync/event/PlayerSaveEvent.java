@@ -3,6 +3,8 @@ package com.playmonumenta.redissync.event;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import javax.annotation.Nullable;
+
 import com.google.gson.JsonObject;
 
 import org.bukkit.entity.Player;
@@ -13,7 +15,7 @@ public class PlayerSaveEvent extends PlayerEvent {
 
 	private static final HandlerList handlers = new HandlerList();
 
-	private Map<String, JsonObject> mPluginData = null;
+	private @Nullable Map<String, JsonObject> mPluginData = null;
 
 	public PlayerSaveEvent(Player player) {
 		super(player);
@@ -35,7 +37,7 @@ public class PlayerSaveEvent extends PlayerEvent {
 	/**
 	 * Gets the plugin data that has been set by other plugins
 	 */
-	public Map<String, JsonObject> getPluginData() {
+	public @Nullable Map<String, JsonObject> getPluginData() {
 		return mPluginData;
 	}
 

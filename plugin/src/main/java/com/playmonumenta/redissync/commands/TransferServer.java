@@ -25,14 +25,14 @@ public class TransferServer {
 
 		new CommandAPICommand(command)
 			.withArguments(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS))
-			.withArguments(new StringArgument("server").overrideSuggestions((sender) -> NetworkRelayIntegration.getOnlineTransferTargets()))
+			.withArguments(new StringArgument("server").replaceSuggestions((sender) -> NetworkRelayIntegration.getOnlineTransferTargets()))
 			.withPermission(perms)
 			.executes((sender, args) -> {
 				for (Player player : (Collection<Player>)args[0]) {
 					try {
-					 MonumentaRedisSyncAPI.sendPlayer(player, (String)args[1]);
+						MonumentaRedisSyncAPI.sendPlayer(player, (String)args[1]);
 					} catch (Exception ex) {
-					 CommandAPI.fail(ex.getMessage());
+						CommandAPI.fail(ex.getMessage());
 					}
 				}
 			}
@@ -40,15 +40,15 @@ public class TransferServer {
 
 		new CommandAPICommand(command)
 			.withArguments(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS))
-			.withArguments(new StringArgument("server").overrideSuggestions((sender) -> NetworkRelayIntegration.getOnlineTransferTargets()))
+			.withArguments(new StringArgument("server").replaceSuggestions((sender) -> NetworkRelayIntegration.getOnlineTransferTargets()))
 			.withArguments(new LocationArgument("location"))
 			.withPermission(perms)
 			.executes((sender, args) -> {
 				for (Player player : (Collection<Player>)args[0]) {
 					try {
-					  MonumentaRedisSyncAPI.sendPlayer(player, (String)args[1], (Location)args[2]);
+						MonumentaRedisSyncAPI.sendPlayer(player, (String)args[1], (Location)args[2]);
 					} catch (Exception ex) {
-					  CommandAPI.fail(ex.getMessage());
+						CommandAPI.fail(ex.getMessage());
 					}
 				}
 			}
@@ -56,7 +56,7 @@ public class TransferServer {
 
 		new CommandAPICommand(command)
 			.withArguments(new EntitySelectorArgument("players", EntitySelector.MANY_PLAYERS))
-			.withArguments(new StringArgument("server").overrideSuggestions((sender) -> NetworkRelayIntegration.getOnlineTransferTargets()))
+			.withArguments(new StringArgument("server").replaceSuggestions((sender) -> NetworkRelayIntegration.getOnlineTransferTargets()))
 			.withArguments(new LocationArgument("location"))
 			.withArguments(new FloatArgument("yaw"))
 			.withArguments(new FloatArgument("pitch"))
@@ -74,7 +74,7 @@ public class TransferServer {
 
 		/* Single player alias */
 		new CommandAPICommand(command)
-			.withArguments(new StringArgument("server").overrideSuggestions((sender) -> NetworkRelayIntegration.getOnlineTransferTargets()))
+			.withArguments(new StringArgument("server").replaceSuggestions((sender) -> NetworkRelayIntegration.getOnlineTransferTargets()))
 			.withPermission(perms)
 			.withAliases("s")
 			.executes((sender, args) -> {

@@ -4,6 +4,8 @@ import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.Nullable;
+
 import com.playmonumenta.redissync.adapters.VersionAdapter;
 import com.playmonumenta.redissync.commands.ChangeLogLevel;
 import com.playmonumenta.redissync.commands.PlayerHistory;
@@ -20,10 +22,10 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class MonumentaRedisSync extends JavaPlugin {
-	private static MonumentaRedisSync INSTANCE = null;
-	private RedisAPI mRedisAPI = null;
-	private VersionAdapter mVersionAdapter = null;
-	private CustomLogger mLogger = null;
+	private static @Nullable MonumentaRedisSync INSTANCE = null;
+	private @Nullable RedisAPI mRedisAPI = null;
+	private @Nullable VersionAdapter mVersionAdapter = null;
+	private @Nullable CustomLogger mLogger = null;
 
 	private void loadVersionAdapter() {
 		/* From https://github.com/mbax/AbstractionExamplePlugin */
@@ -107,10 +109,12 @@ public class MonumentaRedisSync extends JavaPlugin {
 		getServer().getScheduler().cancelTasks(this);
 	}
 
+	@SuppressWarnings("NullAway") // Intentionally don't mark this as nullable - if this plugin is working, this will not be null
 	protected static MonumentaRedisSync getInstance() {
 		return INSTANCE;
 	}
 
+	@SuppressWarnings("NullAway") // Intentionally don't mark this as nullable - if this plugin is working, this will not be null
 	public VersionAdapter getVersionAdapter() {
 		return mVersionAdapter;
 	}

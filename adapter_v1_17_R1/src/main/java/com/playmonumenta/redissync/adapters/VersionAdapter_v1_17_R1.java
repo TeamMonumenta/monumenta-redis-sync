@@ -9,6 +9,8 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import javax.annotation.Nullable;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -85,7 +87,7 @@ public class VersionAdapter_v1_17_R1 implements VersionAdapter {
 		nmsScoreboard.resetPlayerScores(playerName, null);
 	}
 
-	public Object retrieveSaveData(byte[] data, JsonObject shardData) throws IOException {
+	public Object retrieveSaveData(byte[] data, @Nullable JsonObject shardData) throws IOException {
 		ByteArrayInputStream inBytes = new ByteArrayInputStream(data);
 		NBTTagCompound nbt = NBTCompressedStreamTools.a(inBytes);
 
@@ -122,7 +124,7 @@ public class VersionAdapter_v1_17_R1 implements VersionAdapter {
 		return nbt;
 	}
 
-	public SaveData extractSaveData(Object nbtObj, VersionAdapter.ReturnParams returnParams) throws IOException {
+	public SaveData extractSaveData(Object nbtObj, @Nullable VersionAdapter.ReturnParams returnParams) throws IOException {
 		NBTTagCompound nbt = (NBTTagCompound) nbtObj;
 
 		JsonObject obj = new JsonObject();

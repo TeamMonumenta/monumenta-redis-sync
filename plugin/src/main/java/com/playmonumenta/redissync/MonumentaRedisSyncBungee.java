@@ -5,14 +5,16 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.Nullable;
+
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
 import net.md_5.bungee.config.YamlConfiguration;
 
 public class MonumentaRedisSyncBungee extends Plugin {
-	private RedisAPI mRedisAPI = null;
-	private CustomLogger mLogger = null;
+	private @Nullable RedisAPI mRedisAPI = null;
+	private @Nullable CustomLogger mLogger = null;
 
 	@Override
 	public void onEnable() {
@@ -44,7 +46,7 @@ public class MonumentaRedisSyncBungee extends Plugin {
 		}
 		String host = config.getString("redis_host", "redis");
 		int port = config.getInt("redis_port", 6379);
-		String domain = null;
+		String domain = "bungee";
 		String shard = "bungee";
 		int history = -1;
 		int ticksPerPlayerAutosave = -1;

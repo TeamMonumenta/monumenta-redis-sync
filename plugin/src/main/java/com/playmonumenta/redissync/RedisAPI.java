@@ -3,6 +3,8 @@ package com.playmonumenta.redissync;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
+import javax.annotation.Nullable;
+
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
@@ -47,11 +49,12 @@ public class RedisAPI {
 		}
 	}
 
+	@SuppressWarnings("NullAway") // Required to avoid many null checks, this class will always be instantiated if this plugin is loaded
 	private static RedisAPI INSTANCE = null;
 
-	private RedisClient mRedisClient = null;
-	private StatefulRedisConnection<String, String> mConnection = null;
-	private StatefulRedisConnection<String, byte[]> mStringByteConnection = null;
+	private final RedisClient mRedisClient;
+	private final StatefulRedisConnection<String, String> mConnection;
+	private final StatefulRedisConnection<String, byte[]> mStringByteConnection;
 
 	protected RedisAPI(String hostname, int port) {
 		mRedisClient = RedisClient.create(RedisURI.Builder.redis(hostname, port).build());
@@ -62,11 +65,8 @@ public class RedisAPI {
 
 	protected void shutdown() {
 		mConnection.close();
-		mConnection = null;
 		mStringByteConnection.close();
-		mStringByteConnection = null;
 		mRedisClient.shutdown();
-		mRedisClient = null;
 	}
 
 	public static RedisAPI getInstance() {

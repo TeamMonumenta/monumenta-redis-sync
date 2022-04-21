@@ -130,7 +130,7 @@ tasks.create("dev1-deploy") {
             session(basicssh) {
                 val dstFile = shadowJar.archiveFileName.get().replace("Monumenta", "")
                 execute("cd /home/epic/dev1_shard_plugins && rm -f RedisSync*.jar")
-                execute("cd /home/epic/dev4_shard_plugins && rm -f redissync*.jar")
+                execute("cd /home/epic/dev1_shard_plugins && rm -f redissync*.jar")
                 put(shadowJar.archiveFile.get().getAsFile(), File("/home/epic/dev1_shard_plugins", dstFile))
             }
         }
@@ -145,7 +145,7 @@ tasks.create("dev2-deploy") {
             session(basicssh) {
                 val dstFile = shadowJar.archiveFileName.get().replace("Monumenta", "")
                 execute("cd /home/epic/dev2_shard_plugins && rm -f RedisSync*.jar")
-                execute("cd /home/epic/dev4_shard_plugins && rm -f redissync*.jar")
+                execute("cd /home/epic/dev2_shard_plugins && rm -f redissync*.jar")
                 put(shadowJar.archiveFile.get().getAsFile(), File("/home/epic/dev2_shard_plugins", dstFile))
             }
         }
@@ -160,7 +160,7 @@ tasks.create("dev3-deploy") {
             session(basicssh) {
                 val dstFile = shadowJar.archiveFileName.get().replace("Monumenta", "")
                 execute("cd /home/epic/dev3_shard_plugins && rm -f RedisSync*.jar")
-                execute("cd /home/epic/dev4_shard_plugins && rm -f redissync*.jar")
+                execute("cd /home/epic/dev3_shard_plugins && rm -f redissync*.jar")
                 put(shadowJar.archiveFile.get().getAsFile(), File("/home/epic/dev3_shard_plugins", dstFile))
             }
         }

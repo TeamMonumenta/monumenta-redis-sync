@@ -911,22 +911,56 @@ public class MonumentaRedisSyncAPI {
 	/** Future returns non-null if successfully loaded data, null on error */
 	@Nullable
 	private static RedisPlayerData transformPlayerData(MonumentaRedisSync mrs, UUID uuid, TransactionResult result) {
-		if (result.isEmpty() || result.size() != 4 || result.get(0) == null
-		    || result.get(1) == null || result.get(2) == null || result.get(3) == null) {
-			mrs.getLogger().severe("Failed to retrieve player data");
+		if (result.isEmpty() || result.size() == 0 || result.get(0) == null) {
+			mrs.getLogger().warning("Failed to retrieve player data; likely player didn't make it past the tutorial");
+			return null;
+		}
+
+		if (result.size() != 5) {
+			mrs.getLogger().severe("Failed to retrieve player data; only " + result.size() + " / 5 expected data elements retrieved");
 			return null;
 		}
 
 		try {
-			byte[] data = result.get(0);
-			String advancements = new String(result.get(1), StandardCharsets.UTF_8);
-			String scores = new String(result.get(2), StandardCharsets.UTF_8);
-			String pluginData = new String(result.get(3), StandardCharsets.UTF_8);
-			String history = new String(result.get(4), StandardCharsets.UTF_8);
+			String advancements;
+			String scores;
+			String pluginData;
+			String history;
 
-			return new RedisPlayerData(uuid, mrs.getVersionAdapter().retrieveSaveData(data, null), advancements, scores, pluginData, history);
+			byte[] data = result.get(0);
+
+			if (result.get(1) == null) {
+				mrs.getLogger().severe("Player advancements data was missing or corrupted and has been reset");
+				advancements = "{}";
+			} else {
+				advancements = new String(result.get(1), StandardCharsets.UTF_8);
+			}
+
+			if (result.get(2) == null) {
+				mrs.getLogger().severe("Player scores data was missing or corrupted and has been reset");
+				scores = "{}";
+			} else {
+				scores = new String(result.get(2), StandardCharsets.UTF_8);
+			}
+
+			if (result.get(3) == null) {
+				mrs.getLogger().warning("Player pluginData was missing or corrupted and has been reset");
+				pluginData = "{}";
+			} else {
+				pluginData = new String(result.get(3), StandardCharsets.UTF_8);
+			}
+
+			if (result.get(4) == null) {
+				mrs.getLogger().warning("Player history data was missing or corrupted and has been reset");
+				history = "UpdateAllPlayers|" + Long.toString(System.currentTimeMillis()) + "|unknown";
+			} else {
+				history = new String(result.get(4), StandardCharsets.UTF_8);
+			}
+
+			return new RedisPlayerData(uuid, mrs.getVersionAdapter().retrieveSaveData(data, new JsonObject()), advancements, scores, pluginData, history);
 		} catch (Exception e) {
 			mrs.getLogger().severe("Failed to parse player data: " + e.getMessage());
+			e.printStackTrace();
 			return null;
 		}
 	}
@@ -1003,7 +1037,7 @@ public class MonumentaRedisSyncAPI {
 	}
 
 	private static Boolean transformPlayerSaveResult(MonumentaRedisSync mrs, TransactionResult result) {
-		if (result.isEmpty() || result.size() != 4 || result.get(0) == null
+		if (result.isEmpty() || result.size() != 5 || result.get(0) == null
 		    || result.get(1) == null || result.get(2) == null || result.get(3) == null || result.get(4) == null) {
 			mrs.getLogger().severe("Failed to commit player data");
 			return false;

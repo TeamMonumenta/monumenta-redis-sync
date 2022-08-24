@@ -88,7 +88,7 @@ public class VersionAdapter_v1_18_R2 implements VersionAdapter {
 		nmsScoreboard.resetPlayerScore(playerName, null);
 	}
 
-	public Object retrieveSaveData(byte[] data, @Nullable JsonObject shardData) throws IOException {
+	public Object retrieveSaveData(byte[] data, JsonObject shardData) throws IOException {
 		ByteArrayInputStream inBytes = new ByteArrayInputStream(data);
 		CompoundTag nbt = NbtIo.readCompressed(inBytes);
 
@@ -207,7 +207,7 @@ public class VersionAdapter_v1_18_R2 implements VersionAdapter {
 		dynamic = dynamic.remove("DataVersion");
 
 		if (advancementsGson == null) {
-			Field gsonField = PlayerAdvancements.class.getDeclaredField("b");
+			Field gsonField = PlayerAdvancements.class.getDeclaredField("c");
 			gsonField.setAccessible(true);
 			advancementsGson = (Gson)gsonField.get(null);
 		}

@@ -88,7 +88,7 @@ public class VersionAdapter_v1_18_R1 implements VersionAdapter {
 		nmsScoreboard.resetPlayerScore(playerName, null);
 	}
 
-	public Object retrieveSaveData(byte[] data, @Nullable JsonObject shardData) throws IOException {
+	public Object retrieveSaveData(byte[] data, JsonObject shardData) throws IOException {
 		ByteArrayInputStream inBytes = new ByteArrayInputStream(data);
 		CompoundTag nbt = NbtIo.readCompressed(inBytes);
 

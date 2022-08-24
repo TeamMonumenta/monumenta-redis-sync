@@ -13,7 +13,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.CommandPermission;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
@@ -21,15 +20,18 @@ public class UpgradeAllPlayers {
 	public static void register(MonumentaRedisSync plugin) {
 		new CommandAPICommand("monumenta")
 			.withSubcommand(new CommandAPICommand("redissync")
-				.withSubcommand(new CommandAPICommand("upgradeallplayers"))
-					.withPermission(CommandPermission.fromString("monumenta.redissync.upgradeallplayers"))
-					.executes((sender, args) -> {
+				.withSubcommand(new CommandAPICommand("upgradeallplayers")
+					.executesPlayer((player, args) -> {
+						player.sendMessage("This command is only available from the console");
+					})
+					.executesConsole((console, args) -> {
 						try {
 							run(plugin);
 						} catch (Exception ex) {
 							CommandAPI.fail(ex.getMessage());
 						}
-			})).register();
+					})
+			)).register();
 	}
 
 	private static void updatePlayer(MonumentaRedisSync mrs, UUID uuid) {
@@ -38,7 +40,6 @@ public class UpgradeAllPlayers {
 			RedisPlayerData data = MonumentaRedisSyncAPI.getOfflinePlayerData(uuid).get();
 
 			if (data == null) {
-				Bukkit.broadcast(Component.text("Failed to fetch player data: " + uuid.toString()).color(NamedTextColor.RED));
 				return;
 			}
 

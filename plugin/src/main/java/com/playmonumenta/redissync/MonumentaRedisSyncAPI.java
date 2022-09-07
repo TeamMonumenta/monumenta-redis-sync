@@ -1,5 +1,6 @@
 package com.playmonumenta.redissync;
 
+import com.playmonumenta.redissync.utils.Trie;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -114,6 +115,7 @@ public class MonumentaRedisSyncAPI {
 
 	public static final int TIMEOUT_SECONDS = 10;
 
+	private static final Trie<UUID> mNameToUuidTrie = new Trie<>();
 	private static final Map<String, UUID> mNameToUuid = new ConcurrentHashMap<>();
 	private static final Map<UUID, String> mUuidToName = new ConcurrentHashMap<>();
 
@@ -123,6 +125,7 @@ public class MonumentaRedisSyncAPI {
 
 	protected static void updateNameToUuid(String name, UUID uuid) {
 		mNameToUuid.put(name, uuid);
+		mNameToUuidTrie.put(name, uuid);
 	}
 
 	public static CompletableFuture<String> uuidToName(UUID uuid) {
@@ -167,7 +170,13 @@ public class MonumentaRedisSyncAPI {
 		return cachedUuidToName(uuid);
 	}
 
-	/* TODO In CommandAPI 6.0.0, use a Trie to handle IGN suggestions */
+	public static String getClosestPlayerName(String longestPossibleName) {
+		return mNameToUuidTrie.closestKey(longestPossibleName);
+	}
+
+	public static List<String> getSuggestedPlayerNames(String currentInput, int maxSuggestions) {
+		return mNameToUuidTrie.suggestions(currentInput, maxSuggestions);
+	}
 
 	public static void sendPlayer(Player player, String target) throws Exception {
 		sendPlayer(player, target, null);

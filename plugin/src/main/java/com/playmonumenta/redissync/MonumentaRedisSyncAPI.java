@@ -171,7 +171,11 @@ public class MonumentaRedisSyncAPI {
 	}
 
 	public static String getClosestPlayerName(String longestPossibleName) {
-		return mNameToUuidTrie.closestKey(longestPossibleName);
+		@Nullable String result = mNameToUuidTrie.closestKey(longestPossibleName);
+		if (result == null) {
+			return "";
+		}
+		return result;
 	}
 
 	public static List<String> getSuggestedPlayerNames(String currentInput, int maxSuggestions) {

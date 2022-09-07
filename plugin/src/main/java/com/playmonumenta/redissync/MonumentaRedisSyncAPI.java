@@ -114,8 +114,8 @@ public class MonumentaRedisSyncAPI {
 
 	public static final int TIMEOUT_SECONDS = 10;
 
-	private static Map<String, UUID> mNameToUuid = new ConcurrentHashMap<>();
-	private static Map<UUID, String> mUuidToName = new ConcurrentHashMap<>();
+	private static final Map<String, UUID> mNameToUuid = new ConcurrentHashMap<>();
+	private static final Map<UUID, String> mUuidToName = new ConcurrentHashMap<>();
 
 	protected static void updateUuidToName(UUID uuid, String name) {
 		mUuidToName.put(uuid, name);
@@ -135,12 +135,12 @@ public class MonumentaRedisSyncAPI {
 
 	public static CompletableFuture<Set<String>> getAllPlayerNames() {
 		RedisFuture<Map<String, String>> future = RedisAPI.getInstance().async().hgetall("name2uuid");
-		return future.thenApply((data) -> data.keySet()).toCompletableFuture();
+		return future.thenApply(Map::keySet).toCompletableFuture();
 	}
 
 	public static CompletableFuture<Set<UUID>> getAllPlayerUUIDs() {
 		RedisFuture<Map<String, String>> future = RedisAPI.getInstance().async().hgetall("uuid2name");
-		return future.thenApply((data) -> data.keySet().stream().map((uuid) -> UUID.fromString(uuid)).collect(Collectors.toSet())).toCompletableFuture();
+		return future.thenApply((data) -> data.keySet().stream().map(UUID::fromString).collect(Collectors.toSet())).toCompletableFuture();
 	}
 
 	public static @Nullable String cachedUuidToName(UUID uuid) {
@@ -257,11 +257,11 @@ public class MonumentaRedisSyncAPI {
 				RedisFuture<String> pluginFuture = api.async().lindex(MonumentaRedisSyncAPI.getRedisPluginDataPath(player), 0);
 				RedisFuture<String> historyFuture = api.async().lindex(MonumentaRedisSyncAPI.getRedisHistoryPath(player), 0);
 
-				futures.add(api.asyncStringBytes().hset(getStashPath(), saveName.toString() + "-data", dataFuture.get()));
-				futures.add(api.async().hset(getStashPath(), saveName.toString() + "-scores", scoreFuture.get()));
-				futures.add(api.async().hset(getStashPath(), saveName.toString() + "-advancements", advanceFuture.get()));
-				futures.add(api.async().hset(getStashPath(), saveName.toString() + "-plugins", pluginFuture.get()));
-				futures.add(api.async().hset(getStashPath(), saveName.toString() + "-history", historyFuture.get()));
+				futures.add(api.asyncStringBytes().hset(getStashPath(), saveName + "-data", dataFuture.get()));
+				futures.add(api.async().hset(getStashPath(), saveName + "-scores", scoreFuture.get()));
+				futures.add(api.async().hset(getStashPath(), saveName + "-advancements", advanceFuture.get()));
+				futures.add(api.async().hset(getStashPath(), saveName + "-plugins", pluginFuture.get()));
+				futures.add(api.async().hset(getStashPath(), saveName + "-history", historyFuture.get()));
 
 				if (!LettuceFutures.awaitAll(TIMEOUT_SECONDS, TimeUnit.SECONDS, futures.toArray(new RedisFuture[futures.size()]))) {
 					MonumentaRedisSync.getInstance().getLogger().severe("Got timeout waiting to commit stash data for player '" + player.getName() + "'");
@@ -308,11 +308,11 @@ public class MonumentaRedisSyncAPI {
 			try {
 				/* Read from the stash, and push it to the player's data */
 
-				RedisFuture<byte[]> dataFuture = api.asyncStringBytes().hget(getStashPath(), saveName.toString() + "-data");
-				RedisFuture<String> advanceFuture = api.async().hget(getStashPath(), saveName.toString() + "-advancements");
-				RedisFuture<String> scoreFuture = api.async().hget(getStashPath(), saveName.toString() + "-scores");
-				RedisFuture<String> pluginFuture = api.async().hget(getStashPath(), saveName.toString() + "-plugins");
-				RedisFuture<String> historyFuture = api.async().hget(getStashPath(), saveName.toString() + "-history");
+				RedisFuture<byte[]> dataFuture = api.asyncStringBytes().hget(getStashPath(), saveName + "-data");
+				RedisFuture<String> advanceFuture = api.async().hget(getStashPath(), saveName + "-advancements");
+				RedisFuture<String> scoreFuture = api.async().hget(getStashPath(), saveName + "-scores");
+				RedisFuture<String> pluginFuture = api.async().hget(getStashPath(), saveName + "-plugins");
+				RedisFuture<String> historyFuture = api.async().hget(getStashPath(), saveName + "-history");
 
 				/* Make sure there's actually data */
 				if (dataFuture.get() == null || advanceFuture.get() == null || scoreFuture.get() == null || pluginFuture.get() == null || historyFuture.get() == null) {
@@ -363,7 +363,7 @@ public class MonumentaRedisSyncAPI {
 		}
 
 		Bukkit.getScheduler().runTaskAsynchronously(mrs, () -> {
-			String history = api.sync().hget(getStashPath(), saveName.toString() + "-history");
+			String history = api.sync().hget(getStashPath(), saveName + "-history");
 			Bukkit.getScheduler().runTask(mrs, () -> {
 				if (history == null) {
 					if (name == null) {
@@ -376,7 +376,7 @@ public class MonumentaRedisSyncAPI {
 
 				String[] split = history.split("\\|");
 				if (split.length != 3) {
-					player.sendMessage(ChatColor.RED + "Got corrupted history with " + Integer.toString(split.length) + " entries: " + history);
+					player.sendMessage(ChatColor.RED + "Got corrupted history with " + split.length + " entries: " + history);
 					return;
 				}
 
@@ -508,7 +508,7 @@ public class MonumentaRedisSyncAPI {
 			}
 
 			/* Kick the player on the main thread to force rejoin */
-			Bukkit.getServer().getScheduler().runTask(mrs, () -> loadto.kick(Component.text("Data loaded from player " + loadfrom.getName() + " at index " + Integer.toString(index) + " and you can now re-join the server")));
+			Bukkit.getServer().getScheduler().runTask(mrs, () -> loadto.kick(Component.text("Data loaded from player " + loadfrom.getName() + " at index " + index + " and you can now re-join the server")));
 		});
 	}
 
@@ -670,7 +670,7 @@ public class MonumentaRedisSyncAPI {
 
 		String timeStr = "";
 		if (diffDays > 0) {
-			timeStr += Long.toString(diffDays) + " day";
+			timeStr += diffDays + " day";
 			if (diffDays > 1) {
 				timeStr += "s";
 			}
@@ -681,7 +681,7 @@ public class MonumentaRedisSyncAPI {
 		}
 
 		if (diffHours > 0) {
-			timeStr += Long.toString(diffHours) + " hour";
+			timeStr += diffHours + " hour";
 			if (diffHours > 1) {
 				timeStr += "s";
 			}
@@ -692,7 +692,7 @@ public class MonumentaRedisSyncAPI {
 		}
 
 		if (diffMinutes > 0) {
-			timeStr += Long.toString(diffMinutes) + " minute";
+			timeStr += diffMinutes + " minute";
 			if (diffMinutes > 1) {
 				timeStr += "s";
 			}
@@ -703,7 +703,7 @@ public class MonumentaRedisSyncAPI {
 		}
 
 		if (diffSeconds > 0 && (diffDays == 0 && diffHours == 0)) {
-			timeStr += Long.toString(diffSeconds) + " second";
+			timeStr += diffSeconds + " second";
 			if (diffSeconds > 1) {
 				timeStr += "s";
 			}
@@ -952,7 +952,7 @@ public class MonumentaRedisSyncAPI {
 
 			if (result.get(4) == null) {
 				mrs.getLogger().warning("Player history data was missing or corrupted and has been reset");
-				history = "UpdateAllPlayers|" + Long.toString(System.currentTimeMillis()) + "|unknown";
+				history = "UpdateAllPlayers|" + System.currentTimeMillis() + "|unknown";
 			} else {
 				history = new String(result.get(4), StandardCharsets.UTF_8);
 			}
@@ -967,7 +967,7 @@ public class MonumentaRedisSyncAPI {
 
 	public static CompletableFuture<RedisPlayerData> getOfflinePlayerData(UUID uuid) throws Exception {
 		if (Bukkit.getPlayer(uuid) != null) {
-			throw new Exception("Player " + uuid.toString() + " is online");
+			throw new Exception("Player " + uuid + " is online");
 		}
 
 		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
@@ -1010,9 +1010,7 @@ public class MonumentaRedisSyncAPI {
 			Map<String, Integer> scores = new HashMap<>();
 			for (Objective objective : Bukkit.getScoreboardManager().getMainScoreboard().getObjectives()) {
 				Score score = objective.getScore(player.getName());
-				if (score != null) {
-					scores.put(objective.getName(), score.getScore());
-				}
+				scores.put(objective.getName(), score.getScore());
 			}
 			future.complete(scores);
 			return future;
@@ -1022,7 +1020,7 @@ public class MonumentaRedisSyncAPI {
 
 		commands.lindex(MonumentaRedisSyncAPI.getRedisScoresPath(uuid), 0)
 			.thenApply(
-				(scoreData) -> new Gson().fromJson(scoreData, JsonObject.class).entrySet().stream().collect(Collectors.toMap((entry) -> entry.getKey(), (entry) -> entry.getValue().getAsInt())))
+				(scoreData) -> new Gson().fromJson(scoreData, JsonObject.class).entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, (entry) -> entry.getValue().getAsInt())))
 			.whenComplete((scoreMap, ex) -> {
 				Bukkit.getScheduler().runTask(mrs, () -> {
 					if (ex != null) {

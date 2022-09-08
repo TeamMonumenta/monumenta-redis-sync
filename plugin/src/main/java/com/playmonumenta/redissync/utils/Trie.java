@@ -70,7 +70,10 @@ public class Trie<V> implements Cloneable {
 			Character c = key.charAt(mDepth);
 			Trie<V> child = mChildren.get(c);
 			if (child != null) {
-				result = c + child.closestKey(key);
+				String childClosestKey = child.closestKey(key);
+				if (childClosestKey != null) {
+					result = c + child.closestKey(key);
+				}
 			}
 		}
 		if (result == null && mValue != null) {

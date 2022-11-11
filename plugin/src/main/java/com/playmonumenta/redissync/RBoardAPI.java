@@ -1,5 +1,6 @@
 package com.playmonumenta.redissync;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,12 @@ public class RBoardAPI {
 		return commands.hset(getRedisPath(name), data).toCompletableFuture();
 	}
 
+	public static CompletableFuture<Long> set(String name, String key, long amount) throws Exception {
+		Map<String, String> data = new HashMap<>();
+		data.put(key, Long.toString(amount));
+		return set(name, data);
+	}
+
 	/********************* Add *********************/
 	public static CompletableFuture<Long> add(String name, String key, long amount) throws Exception {
 		RedisAsyncCommands<String, String> commands = RedisAPI.getInstance().async();
@@ -42,6 +49,23 @@ public class RBoardAPI {
 		});
 		commands.exec();
 		return retval;
+	}
+
+	public static long getAsLong(String name, String key, long def) throws Exception {
+		Map<String, String> data = get(name, key).get();
+		String value = data.get(key);
+		if (value != null) {
+			try {
+				return Long.parseLong(value);
+			} catch (NumberFormatException nfe) {
+				nfe.printStackTrace();
+			}
+		}
+		return def;
+	}
+
+	public static long getAsLong(String name, String key) throws Exception {
+		return getAsLong(name, key, 0);
 	}
 
 	/********************* GetAndReset *********************/

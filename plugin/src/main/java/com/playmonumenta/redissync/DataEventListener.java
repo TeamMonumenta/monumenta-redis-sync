@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
@@ -217,19 +218,15 @@ public class DataEventListener implements Listener {
 		Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
 			blockingWaitForPlayerToSave(player);
 
-			mLogger.fine(() -> "Committing save took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds");
+			mLogger.fine(() -> "Committing save took " + (System.currentTimeMillis() - startTime) + " milliseconds");
 
 			/* Run the callback after about 150ms have passed to make sure the redis changes commit */
 			if (sync) {
 				/* Run the sync callback on the main thread */
-				Bukkit.getServer().getScheduler().runTaskLater(plugin, () -> {
-					callback.run();
-				}, 3);
+				Bukkit.getServer().getScheduler().runTaskLater(plugin, callback, 3);
 			} else {
 				/* Run the async callback */
-				Bukkit.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> {
-					callback.run();
-				}, 3);
+				Bukkit.getServer().getScheduler().runTaskLaterAsynchronously(plugin, callback, 3);
 			}
 		});
 	}
@@ -280,7 +277,7 @@ public class DataEventListener implements Listener {
 				mLogger.warning("No advancements data for player '" + player.getName() + "' - if they are not new, this is a serious error!");
 			}
 
-			mLogger.fine(() -> "Processing PlayerAdvancementDataLoadEvent took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds on main thread");
+			mLogger.fine(() -> "Processing PlayerAdvancementDataLoadEvent took " + (System.currentTimeMillis() - startTime) + " milliseconds on main thread");
 		} catch (InterruptedException | ExecutionException ex) {
 			mLogger.severe("Failed to get advancements data for player '" + player.getName() + "'. This is very bad!");
 			ex.printStackTrace();
@@ -307,7 +304,7 @@ public class DataEventListener implements Listener {
 		if (futures == null) {
 			futures = new ArrayList<>();
 		} else {
-			futures.removeIf(future -> future.isDone());
+			futures.removeIf(Future::isDone);
 		}
 
 		/* Execute the advancements as a multi() batch */
@@ -389,8 +386,8 @@ public class DataEventListener implements Listener {
 			Map<String, String> shardData = shardDataFuture.get();
 			/* Look up in the shard data first the "overall" part - which world this player was on last time they were on this shard */
 			World playerWorld = null; // If null at the end of this block, will use default world
-			UUID lastSavedWorldUUID = null; // The saved world UUID from shard data. Might be different from the playerWorld if save data indicated one world but it is not loaded so fell back to the default
-			String lastSavedWorldName = null; // The saved world name from shard data. Might be different from the playerWorld if save data indicated one world but it is not loaded so fell back to the default
+			UUID lastSavedWorldUUID = null; // The saved world UUID from shard data. Might be different from the playerWorld if save data indicated one world, but it is not loaded so fell back to the default
+			String lastSavedWorldName = null; // The saved world name from shard data. Might be different from the playerWorld if save data indicated one world, but it is not loaded so fell back to the default
 			if (shardData == null) {
 				/* Maintain a local cache of shard data while the player is logged in here */
 				mShardData.put(player.getUniqueId(), new HashMap<>());
@@ -404,7 +401,7 @@ public class DataEventListener implements Listener {
 				mLogger.finer("Shard data loaded for player=" + player.getName());
 				mLogger.finest(() -> "Shard data: " + mGson.toJson(shardData));
 
-				/* Figure out what world the player's sharddata indicates they should join
+				/* Figure out what world the player's shardData indicates they should join
 				 * If shard data does not contain this shard name, no info on what world to use - use the default one
 				 * If shard data contains this shard name, fetch world parameters from it, preferring UUID, then name. Loaded worlds only, this plugin does not load worlds automatically.
 				 */
@@ -423,7 +420,7 @@ public class DataEventListener implements Listener {
 								playerWorld = world;
 							}
 						} catch (Exception ex) {
-							mLogger.severe("Got sharddata WorldUUID='" + shardDataJson.get("WorldUUID").getAsString() + "' which is invalid: " + ex.getMessage());
+							mLogger.severe("Got shardData WorldUUID='" + shardDataJson.get("WorldUUID").getAsString() + "' which is invalid: " + ex.getMessage());
 							ex.printStackTrace();
 						}
 					}
@@ -498,9 +495,9 @@ public class DataEventListener implements Listener {
 			Object nbtTagCompound = mAdapter.retrieveSaveData(data, shardDataJson);
 			event.setData(nbtTagCompound);
 
-			mLogger.fine(() -> "Processing PlayerDataLoadEvent took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds on main thread");
+			mLogger.fine(() -> "Processing PlayerDataLoadEvent took " + (System.currentTimeMillis() - startTime) + " milliseconds on main thread");
 		} catch (IOException | InterruptedException | ExecutionException ex) {
-			mLogger.severe("Failed to load player data: " + ex.toString());
+			mLogger.severe("Failed to load player data: " + ex);
 			ex.printStackTrace();
 		}
 	}
@@ -526,29 +523,28 @@ public class DataEventListener implements Listener {
 		if (futures == null) {
 			futures = new ArrayList<>();
 		} else {
-			futures.removeIf(future -> future.isDone());
+			futures.removeIf(Future::isDone);
 		}
 
 		/* Get the existing plugin data */
 		JsonObject pluginData = mPluginData.get(player.getUniqueId());
 		if (pluginData == null) {
 			pluginData = new JsonObject();
-			mPluginData.put(player.getUniqueId(), pluginData);
 		}
 
 		/* Call a custom save event that gives other plugins a chance to add data */
 		long startTime = System.currentTimeMillis();
-		PlayerSaveEvent newEvent = new PlayerSaveEvent(player);
+		PlayerSaveEvent newEvent = new PlayerSaveEvent(player, pluginData);
 		Bukkit.getPluginManager().callEvent(newEvent);
 
 		/* Merge any data from the save event to the player's locally cached plugin data */
 		Map<String, JsonObject> eventData = newEvent.getPluginData();
-		if (eventData != null) {
-			for (Map.Entry<String, JsonObject> ent : eventData.entrySet()) {
-				pluginData.add(ent.getKey(), ent.getValue());
-			}
+		pluginData = new JsonObject();
+		for (Map.Entry<String, JsonObject> ent : eventData.entrySet()) {
+			pluginData.add(ent.getKey(), ent.getValue());
 		}
-		mLogger.fine(() -> "Getting plugindata from other plugins took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds");
+		mPluginData.put(player.getUniqueId(), pluginData);
+		mLogger.fine(() -> "Getting pluginData from other plugins took " + (System.currentTimeMillis() - startTime) + " milliseconds");
 
 		try {
 			/* Grab the return parameters if they were set when starting transfer. If they are null, that's fine too */
@@ -560,26 +556,26 @@ public class DataEventListener implements Listener {
 			futures.add(RedisAPI.getInstance().asyncStringBytes().lpush(dataPath, data.getData()));
 			futures.add(RedisAPI.getInstance().asyncStringBytes().ltrim(dataPath, 0, ConfigAPI.getHistoryAmount()));
 
-			/* Execute the sharddata, history and plugin data as a multi() batch */
+			/* Execute the shardData, history and plugin data as a multi() batch */
 			RedisAsyncCommands<String, String> commands = RedisAPI.getInstance().async();
 			futures.add(commands.multi()); /* < MULTI */
 
 			/*
-			 * sharddata
+			 * shardData
 			 * This has two parts - an entry for the overall shard, and an entry for the specific world the player is on
 			 */
 			String shardDataPath = MonumentaRedisSyncAPI.getRedisPerShardDataPath(player);
 			// Save the data specifically for the world the player is currently on
 			String worldKey = MonumentaRedisSyncAPI.getRedisPerShardDataWorldKey(player.getWorld());
 			commands.hset(shardDataPath, worldKey, data.getShardData());
-			// Also update the local sharddata cache
+			// Also update the local shardData cache
 			Map<String, String> shardDataMap = mShardData.get(player.getUniqueId());
 			if (shardDataMap == null) {
 				mLogger.warning("BUG! There was no player entry in the mShardData map for uuid=" + player.getUniqueId() + " name=" + player.getName() + ". This is not a fatal error, but player locations are likely wrong in some corner cases...");
 			} else {
 				shardDataMap.put(worldKey, data.getShardData());
 			}
-			mLogger.finest("sharddata (world): " + worldKey + "=" + data.getShardData());
+			mLogger.finest("shardData (world): " + worldKey + "=" + data.getShardData());
 
 			// Save the data for this shard indicating which world the player is currently on
 			JsonObject overallShardData = new JsonObject();
@@ -590,20 +586,20 @@ public class DataEventListener implements Listener {
 			if (shardDataMap != null) {
 				shardDataMap.put(ConfigAPI.getShardName(), overallShardDataStr);
 			}
-			mLogger.finest("sharddata (overall): " + ConfigAPI.getShardName() + "=" + overallShardDataStr);
+			mLogger.finest("shardData (overall): " + ConfigAPI.getShardName() + "=" + overallShardDataStr);
 
 			/* history */
 			String histPath = MonumentaRedisSyncAPI.getRedisHistoryPath(player);
-			String history = ConfigAPI.getShardName() + "|" + Long.toString(System.currentTimeMillis()) + "|" + player.getName();
+			String history = ConfigAPI.getShardName() + "|" + System.currentTimeMillis() + "|" + player.getName();
 			mLogger.finest(() -> "history: " + history);
 			commands.lpush(histPath, history);
 			commands.ltrim(histPath, 0, ConfigAPI.getHistoryAmount());
 
-			/* plugindata */
+			/* pluginData */
 			String pluginDataPath = MonumentaRedisSyncAPI.getRedisPluginDataPath(player);
 			mPluginData.put(player.getUniqueId(), pluginData); // Update cache
 			String pluginDataStr = mGson.toJson(pluginData);
-			mLogger.finest(() -> "plugindata: " + pluginDataStr);
+			mLogger.finest(() -> "pluginData: " + pluginDataStr);
 			commands.lpush(pluginDataPath, pluginDataStr);
 			commands.ltrim(pluginDataPath, 0, ConfigAPI.getHistoryAmount());
 
@@ -611,7 +607,7 @@ public class DataEventListener implements Listener {
 			mLogger.fine("Saving scoreboard data for player=" + player.getName());
 			long scoreStartTime = System.currentTimeMillis();
 			String scoreboardData = mGson.toJson(mAdapter.getPlayerScoresAsJson(player.getName(), Bukkit.getScoreboardManager().getMainScoreboard()));
-			mLogger.fine(() -> "Scoreboard saving took " + Long.toString(System.currentTimeMillis() - scoreStartTime) + " milliseconds on main thread");
+			mLogger.fine(() -> "Scoreboard saving took " + (System.currentTimeMillis() - scoreStartTime) + " milliseconds on main thread");
 			mLogger.finest(() -> "Data:" + scoreboardData);
 			String scorePath = MonumentaRedisSyncAPI.getRedisScoresPath(player);
 			commands.lpush(scorePath, scoreboardData);
@@ -619,7 +615,7 @@ public class DataEventListener implements Listener {
 
 			futures.add(commands.exec()); /* MULTI > */
 		} catch (IOException ex) {
-			mLogger.severe("Failed to save player data: " + ex.toString());
+			mLogger.severe("Failed to save player data: " + ex);
 			ex.printStackTrace();
 		}
 
@@ -779,7 +775,7 @@ public class DataEventListener implements Listener {
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void projectileLaunchEvent(ProjectileLaunchEvent event) {
 		ProjectileSource shooter = event.getEntity().getShooter();
-		if (shooter != null && shooter instanceof Player) {
+		if (shooter instanceof Player) {
 			cancelEventIfTransferring((Player)shooter, event);
 		}
 	}
@@ -788,7 +784,7 @@ public class DataEventListener implements Listener {
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void entitySpawnEvent(EntitySpawnEvent event) {
 		if (mTransferringPlayerShoulderEntities.containsKey(event.getEntity().getUniqueId())) {
-			mLogger.fine(() -> "Refused to spawn shoulder entity id: " + event.getEntity().getType().toString() + " uuid: " + event.getEntity().getUniqueId().toString());
+			mLogger.fine(() -> "Refused to spawn shoulder entity id: " + event.getEntity().getType() + " uuid: " + event.getEntity().getUniqueId());
 			event.setCancelled(true);
 		}
 	}
@@ -806,7 +802,7 @@ public class DataEventListener implements Listener {
 	/********************* Private Utility Methods *********************/
 
 	private void cancelEventIfTransferring(Entity entity, Cancellable event) {
-		if (entity != null && entity instanceof Player && isPlayerTransferring((Player)entity)) {
+		if (entity instanceof Player && isPlayerTransferring((Player) entity)) {
 			event.setCancelled(true);
 		}
 	}

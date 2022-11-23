@@ -99,7 +99,7 @@ public class ExampleServerListener implements Listener {
 		}
 	}
 
-	/* Whenever player data is saved, also save the local data */
+	/* Whenever player data is saved, also save the local data, or null to delete */
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
 	public void playerSaveEvent(PlayerSaveEvent event) {
 		Player player = event.getPlayer();
@@ -107,6 +107,8 @@ public class ExampleServerListener implements Listener {
 		final CustomData playerData = mAllPlayerData.get(player.getUniqueId());
 		if (playerData != null) {
 			event.setPluginData(IDENTIFIER, playerData.toJsonObject());
+		} else {
+			event.setPluginData(IDENTIFIER, null);
 		}
 	}
 

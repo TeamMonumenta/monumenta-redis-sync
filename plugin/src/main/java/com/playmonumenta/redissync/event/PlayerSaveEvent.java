@@ -1,5 +1,7 @@
 package com.playmonumenta.redissync.event;
 
+import com.google.gson.JsonElement;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -15,10 +17,17 @@ public class PlayerSaveEvent extends PlayerEvent {
 
 	private static final HandlerList handlers = new HandlerList();
 
-	private @Nullable Map<String, JsonObject> mPluginData = null;
+	private final Map<String, JsonObject> mPluginData;
 
-	public PlayerSaveEvent(Player player) {
+	public PlayerSaveEvent(Player player, JsonObject pluginData) {
 		super(player);
+		mPluginData = new HashMap<>();
+		for (Map.Entry<String, JsonElement> entry : pluginData.entrySet()) {
+			JsonElement valueElement = entry.getValue();
+			if (valueElement instanceof JsonObject value) {
+				mPluginData.put(entry.getKey(), value);
+			}
+		}
 	}
 
 	/**
@@ -27,17 +36,18 @@ public class PlayerSaveEvent extends PlayerEvent {
 	 * @param pluginIdentifier  A unique string key identifying which plugin data to get for this player
 	 * @param pluginData        The data to save.
 	 */
-	public void setPluginData(String pluginIdentifier, JsonObject pluginData) {
-		if (mPluginData == null) {
-			mPluginData = new LinkedHashMap<>();
+	public void setPluginData(String pluginIdentifier, @Nullable JsonObject pluginData) {
+		if (pluginData == null) {
+			mPluginData.remove(pluginIdentifier);
+		} else {
+			mPluginData.put(pluginIdentifier, pluginData);
 		}
-		mPluginData.put(pluginIdentifier, pluginData);
 	}
 
 	/**
 	 * Gets the plugin data that has been set by other plugins
 	 */
-	public @Nullable Map<String, JsonObject> getPluginData() {
+	public Map<String, JsonObject> getPluginData() {
 		return mPluginData;
 	}
 

@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
@@ -219,19 +220,15 @@ public class DataEventListener implements Listener {
 		Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
 			blockingWaitForPlayerToSave(player);
 
-			mLogger.fine(() -> "Committing save took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds");
+			mLogger.fine(() -> "Committing save took " + (System.currentTimeMillis() - startTime) + " milliseconds");
 
 			/* Run the callback after about 150ms have passed to make sure the redis changes commit */
 			if (sync) {
 				/* Run the sync callback on the main thread */
-				Bukkit.getServer().getScheduler().runTaskLater(plugin, () -> {
-					callback.run();
-				}, 3);
+				Bukkit.getServer().getScheduler().runTaskLater(plugin, callback, 3);
 			} else {
 				/* Run the async callback */
-				Bukkit.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> {
-					callback.run();
-				}, 3);
+				Bukkit.getServer().getScheduler().runTaskLaterAsynchronously(plugin, callback, 3);
 			}
 		});
 	}
@@ -282,7 +279,7 @@ public class DataEventListener implements Listener {
 				mLogger.warning("No advancements data for player '" + player.getName() + "' - if they are not new, this is a serious error!");
 			}
 
-			mLogger.fine(() -> "Processing PlayerAdvancementDataLoadEvent took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds on main thread");
+			mLogger.fine(() -> "Processing PlayerAdvancementDataLoadEvent took " + (System.currentTimeMillis() - startTime) + " milliseconds on main thread");
 		} catch (InterruptedException | ExecutionException ex) {
 			mLogger.severe("Failed to get advancements data for player '" + player.getName() + "'. This is very bad!");
 			ex.printStackTrace();
@@ -309,7 +306,7 @@ public class DataEventListener implements Listener {
 		if (futures == null) {
 			futures = new ArrayList<>();
 		} else {
-			futures.removeIf(future -> future.isDone());
+			futures.removeIf(Future::isDone);
 		}
 
 		/* Execute the advancements as a multi() batch */
@@ -392,8 +389,8 @@ public class DataEventListener implements Listener {
 			Map<String, String> shardData = shardDataFuture.get();
 			/* Look up in the shard data first the "overall" part - which world this player was on last time they were on this shard */
 			World playerWorld = null; // If null at the end of this block, will use default world
-			UUID lastSavedWorldUUID = null; // The saved world UUID from shard data. Might be different from the playerWorld if save data indicated one world but it is not loaded so fell back to the default
-			String lastSavedWorldName = null; // The saved world name from shard data. Might be different from the playerWorld if save data indicated one world but it is not loaded so fell back to the default
+			UUID lastSavedWorldUUID = null; // The saved world UUID from shard data. Might be different from the playerWorld if save data indicated one world, but it is not loaded so fell back to the default
+			String lastSavedWorldName = null; // The saved world name from shard data. Might be different from the playerWorld if save data indicated one world, but it is not loaded so fell back to the default
 			if (shardData == null) {
 				/* Maintain a local cache of shard data while the player is logged in here */
 				mShardData.put(player.getUniqueId(), new HashMap<>());
@@ -501,9 +498,9 @@ public class DataEventListener implements Listener {
 			Object nbtTagCompound = mAdapter.retrieveSaveData(data, shardDataJson);
 			event.setData(nbtTagCompound);
 
-			mLogger.fine(() -> "Processing PlayerDataLoadEvent took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds on main thread");
+			mLogger.fine(() -> "Processing PlayerDataLoadEvent took " + (System.currentTimeMillis() - startTime) + " milliseconds on main thread");
 		} catch (IOException | InterruptedException | ExecutionException ex) {
-			mLogger.severe("Failed to load player data: " + ex.toString());
+			mLogger.severe("Failed to load player data: " + ex);
 			ex.printStackTrace();
 		}
 	}
@@ -529,7 +526,7 @@ public class DataEventListener implements Listener {
 		if (futures == null) {
 			futures = new ArrayList<>();
 		} else {
-			futures.removeIf(future -> future.isDone());
+			futures.removeIf(Future::isDone);
 		}
 
 		/* Get the existing plugin data */
@@ -553,7 +550,7 @@ public class DataEventListener implements Listener {
 					pluginData.add(ent.getKey(), ent.getValue());
 				}
 			}
-			mLogger.fine(() -> "Getting plugindata from other plugins took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds");
+			mLogger.fine(() -> "Getting plugindata from other plugins took " + (System.currentTimeMillis() - startTime) + " milliseconds");
 		} else {
 			mLogger.fine(() -> "Skipped fetching plugindata from other plugins, as the player hasn't finished joining yet");
 		}
@@ -602,7 +599,7 @@ public class DataEventListener implements Listener {
 
 			/* history */
 			String histPath = MonumentaRedisSyncAPI.getRedisHistoryPath(player);
-			String history = ConfigAPI.getShardName() + "|" + Long.toString(System.currentTimeMillis()) + "|" + player.getName();
+			String history = ConfigAPI.getShardName() + "|" + System.currentTimeMillis() + "|" + player.getName();
 			mLogger.finest(() -> "history: " + history);
 			commands.lpush(histPath, history);
 			commands.ltrim(histPath, 0, ConfigAPI.getHistoryAmount());
@@ -619,7 +616,7 @@ public class DataEventListener implements Listener {
 			mLogger.fine("Saving scoreboard data for player=" + player.getName());
 			long scoreStartTime = System.currentTimeMillis();
 			String scoreboardData = mGson.toJson(mAdapter.getPlayerScoresAsJson(player.getName(), Bukkit.getScoreboardManager().getMainScoreboard()));
-			mLogger.fine(() -> "Scoreboard saving took " + Long.toString(System.currentTimeMillis() - scoreStartTime) + " milliseconds on main thread");
+			mLogger.fine(() -> "Scoreboard saving took " + (System.currentTimeMillis() - scoreStartTime) + " milliseconds on main thread");
 			mLogger.finest(() -> "Data:" + scoreboardData);
 			String scorePath = MonumentaRedisSyncAPI.getRedisScoresPath(player);
 			commands.lpush(scorePath, scoreboardData);
@@ -627,7 +624,7 @@ public class DataEventListener implements Listener {
 
 			futures.add(commands.exec()); /* MULTI > */
 		} catch (IOException ex) {
-			mLogger.severe("Failed to save player data: " + ex.toString());
+			mLogger.severe("Failed to save player data: " + ex);
 			ex.printStackTrace();
 		}
 
@@ -794,7 +791,7 @@ public class DataEventListener implements Listener {
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void projectileLaunchEvent(ProjectileLaunchEvent event) {
 		ProjectileSource shooter = event.getEntity().getShooter();
-		if (shooter != null && shooter instanceof Player) {
+		if (shooter instanceof Player) {
 			cancelEventIfTransferring((Player)shooter, event);
 		}
 	}
@@ -803,7 +800,7 @@ public class DataEventListener implements Listener {
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void entitySpawnEvent(EntitySpawnEvent event) {
 		if (mTransferringPlayerShoulderEntities.containsKey(event.getEntity().getUniqueId())) {
-			mLogger.fine(() -> "Refused to spawn shoulder entity id: " + event.getEntity().getType().toString() + " uuid: " + event.getEntity().getUniqueId().toString());
+			mLogger.fine(() -> "Refused to spawn shoulder entity id: " + event.getEntity().getType() + " uuid: " + event.getEntity().getUniqueId());
 			event.setCancelled(true);
 		}
 	}
@@ -821,7 +818,7 @@ public class DataEventListener implements Listener {
 	/********************* Private Utility Methods *********************/
 
 	private void cancelEventIfTransferring(Entity entity, Cancellable event) {
-		if (entity != null && entity instanceof Player && isPlayerTransferring((Player)entity)) {
+		if (entity instanceof Player && isPlayerTransferring((Player) entity)) {
 			event.setCancelled(true);
 		}
 	}

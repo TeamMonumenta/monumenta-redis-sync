@@ -1,7 +1,6 @@
 rootProject.name = "parent"
 include(":adapter_api")
 include(":adapter_v1_16_R3")
-include(":adapter_v1_17_R1")
 include(":adapter_v1_18_R1")
 include(":adapter_v1_18_R2")
 include(":redissync-example")

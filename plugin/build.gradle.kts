@@ -1,11 +1,11 @@
-import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import net.ltgt.gradle.errorprone.CheckSeverity
+import net.ltgt.gradle.errorprone.errorprone
+import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
 import org.hidetake.groovy.ssh.core.Remote
 import org.hidetake.groovy.ssh.core.RunHandler
 import org.hidetake.groovy.ssh.core.Service
 import org.hidetake.groovy.ssh.session.SessionHandler
-import net.ltgt.gradle.errorprone.errorprone
-import net.ltgt.gradle.errorprone.CheckSeverity
 
 plugins {
     id("com.github.johnrengelman.shadow") version "7.1.2"
@@ -21,7 +21,7 @@ plugins {
 dependencies {
     implementation(project(":adapter_api"))
     implementation(project(":adapter_v1_16_R3"))
-    implementation(project(":adapter_v1_17_R1"))
+    implementation(project(":adapter_v1_17_R1", "reobf"))
     implementation(project(":adapter_v1_18_R1", "reobf"))
     implementation(project(":adapter_v1_18_R2", "reobf"))
     implementation("io.lettuce:lettuce-core:5.3.5.RELEASE")

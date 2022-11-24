@@ -66,6 +66,7 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerItemDamageEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
@@ -115,6 +116,7 @@ public class DataEventListener implements Listener {
 
 	private final Map<UUID, List<RedisFuture<?>>> mPendingSaves = new HashMap<>();
 	private final Map<UUID, JsonObject> mPluginData = new HashMap<>();
+	private final Set<UUID> mLoadingPlayers = new HashSet<>();
 
 	/*
 	 * Cached local copy of shard data to provide to API to get player locations on other worlds
@@ -365,6 +367,7 @@ public class DataEventListener implements Listener {
 			if (pluginData == null) {
 				mLogger.fine("Player '" + player.getName() + "' has no plugin data");
 			} else {
+				mLoadingPlayers.add(player.getUniqueId());
 				mPluginData.put(player.getUniqueId(), mGson.fromJson(pluginData, JsonObject.class));
 				mLogger.finer("Plugin data loaded for player=" + player.getName());
 				mLogger.finest(() -> "Plugin data: " + pluginData);
@@ -537,18 +540,23 @@ public class DataEventListener implements Listener {
 		}
 
 		/* Call a custom save event that gives other plugins a chance to add data */
-		long startTime = System.currentTimeMillis();
-		PlayerSaveEvent newEvent = new PlayerSaveEvent(player);
-		Bukkit.getPluginManager().callEvent(newEvent);
+		/* This is skipped until the join event finishes to prevent losing data if a save happens while joining */
+		if (!mLoadingPlayers.contains(player.getUniqueId())) {
+			long startTime = System.currentTimeMillis();
+			PlayerSaveEvent newEvent = new PlayerSaveEvent(player);
+			Bukkit.getPluginManager().callEvent(newEvent);
 
-		/* Merge any data from the save event to the player's locally cached plugin data */
-		Map<String, JsonObject> eventData = newEvent.getPluginData();
-		if (eventData != null) {
-			for (Map.Entry<String, JsonObject> ent : eventData.entrySet()) {
-				pluginData.add(ent.getKey(), ent.getValue());
+			/* Merge any data from the save event to the player's locally cached plugin data */
+			Map<String, JsonObject> eventData = newEvent.getPluginData();
+			if (eventData != null) {
+				for (Map.Entry<String, JsonObject> ent : eventData.entrySet()) {
+					pluginData.add(ent.getKey(), ent.getValue());
+				}
 			}
+			mLogger.fine(() -> "Getting plugindata from other plugins took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds");
+		} else {
+			mLogger.fine(() -> "Skipped fetching plugindata from other plugins, as the player hasn't finished joining yet");
 		}
-		mLogger.fine(() -> "Getting plugindata from other plugins took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds");
 
 		try {
 			/* Grab the return parameters if they were set when starting transfer. If they are null, that's fine too */
@@ -645,6 +653,13 @@ public class DataEventListener implements Listener {
 			RedisAPI.getInstance().async().hset("name2uuid", nameStr, uuidStr);
 			MonumentaRedisSyncAPI.updateUuidToName(uuid, nameStr);
 			MonumentaRedisSyncAPI.updateNameToUuid(nameStr, uuid);
+		});
+	}
+
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
+	public void playerJoinEvent(PlayerJoinEvent event) {
+		Bukkit.getScheduler().runTask(MonumentaRedisSync.getInstance(), () -> {
+			mLoadingPlayers.remove(event.getPlayer().getUniqueId());
 		});
 	}
 

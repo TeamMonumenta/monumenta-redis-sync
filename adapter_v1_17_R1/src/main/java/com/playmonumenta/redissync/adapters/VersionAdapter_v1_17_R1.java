@@ -1,16 +1,7 @@
 package com.playmonumenta.redissync.adapters;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.StringReader;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.logging.Logger;
-
-import javax.annotation.Nullable;
-
+import ca.spottedleaf.dataconverter.minecraft.MCDataConverter;
+import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -20,27 +11,33 @@ import com.google.gson.stream.JsonReader;
 import com.mojang.datafixers.DataFixer;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
-
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.StringReader;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.logging.Logger;
+import javax.annotation.Nullable;
+import net.minecraft.SharedConstants;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.DoubleTag;
+import net.minecraft.nbt.FloatTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.server.PlayerAdvancements;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.PlayerList;
+import net.minecraft.util.datafix.DataFixTypes;
+import net.minecraft.world.scores.Objective;
+import net.minecraft.world.scores.Score;
+import net.minecraft.world.scores.Scoreboard;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.v1_17_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_17_R1.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_17_R1.scoreboard.CraftScoreboard;
 import org.bukkit.entity.Player;
-
-import net.minecraft.SharedConstants;
-import net.minecraft.nbt.GameProfileSerializer;
-import net.minecraft.nbt.NBTCompressedStreamTools;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagDouble;
-import net.minecraft.nbt.NBTTagFloat;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.server.AdvancementDataPlayer;
-import net.minecraft.server.level.EntityPlayer;
-import net.minecraft.server.players.PlayerList;
-import net.minecraft.util.datafix.DataFixTypes;
-import net.minecraft.world.scores.Scoreboard;
-import net.minecraft.world.scores.ScoreboardObjective;
-import net.minecraft.world.scores.ScoreboardScore;
 
 public class VersionAdapter_v1_17_R1 implements VersionAdapter {
 	private static Gson advancementsGson = null;
@@ -57,25 +54,25 @@ public class VersionAdapter_v1_17_R1 implements VersionAdapter {
 		Scoreboard nmsScoreboard = ((CraftScoreboard)scoreboard).getHandle();
 
 		JsonObject data = new JsonObject();
-		Map<String, Map<ScoreboardObjective, ScoreboardScore>> playerScores = null;
+		Map<String, Map<Objective, Score>> playerScores = null;
 
 		try {
 			Field playerScoresField = Scoreboard.class.getDeclaredField("j");
 			playerScoresField.setAccessible(true);
-			playerScores = (Map<String, Map<ScoreboardObjective, ScoreboardScore>>)playerScoresField.get(nmsScoreboard);
+			playerScores = (Map<String, Map<Objective, Score>>) playerScoresField.get(nmsScoreboard);
 		} catch (NoSuchFieldException | IllegalAccessException ex) {
 			mLogger.severe("Failed to access playerScores scoreboard field: " + ex.getMessage());
 			ex.printStackTrace();
 			return data;
 		}
 
-		Map<ScoreboardObjective, ScoreboardScore> scores = playerScores.get(playerName);
+		Map<Objective, Score> scores = playerScores.get(playerName);
 		if (scores == null) {
 			// No scores for this player
 			return data;
 		}
 
-		for (Map.Entry<ScoreboardObjective, ScoreboardScore> entry : scores.entrySet()) {
+		for (Map.Entry<Objective, Score> entry : scores.entrySet()) {
 			data.addProperty(entry.getKey().getName(), entry.getValue().getScore());
 		}
 
@@ -84,12 +81,12 @@ public class VersionAdapter_v1_17_R1 implements VersionAdapter {
 
 	public void resetPlayerScores(String playerName, org.bukkit.scoreboard.Scoreboard scoreboard) {
 		Scoreboard nmsScoreboard = ((CraftScoreboard)scoreboard).getHandle();
-		nmsScoreboard.resetPlayerScores(playerName, null);
+		nmsScoreboard.resetPlayerScore(playerName, null);
 	}
 
 	public Object retrieveSaveData(byte[] data, JsonObject shardData) throws IOException {
 		ByteArrayInputStream inBytes = new ByteArrayInputStream(data);
-		NBTTagCompound nbt = NBTCompressedStreamTools.a(inBytes);
+		CompoundTag nbt = NbtIo.readCompressed(inBytes);
 
 		applyInt(shardData, nbt, "SpawnX");
 		applyInt(shardData, nbt, "SpawnY");
@@ -99,14 +96,14 @@ public class VersionAdapter_v1_17_R1 implements VersionAdapter {
 		applyStr(shardData, nbt, "SpawnDimension");
 		// flying is nested in the abilities structure
 		if (shardData.has("flying")) {
-			final NBTTagCompound abilities;
-			if (nbt.hasKey("abilities")) {
+			final CompoundTag abilities;
+			if (nbt.contains("abilities")) {
 				abilities = nbt.getCompound("abilities");
 			} else {
-				abilities = new NBTTagCompound();
-				nbt.set("abilities", abilities);
+				abilities = new CompoundTag();
+				nbt.put("abilities", abilities);
 			}
-			abilities.setBoolean("flying", shardData.get("flying").getAsBoolean());
+			abilities.putBoolean("flying", shardData.get("flying").getAsBoolean());
 		}
 		applyBool(shardData, nbt, "FallFlying");
 		applyFloat(shardData, nbt, "FallDistance");
@@ -125,7 +122,7 @@ public class VersionAdapter_v1_17_R1 implements VersionAdapter {
 	}
 
 	public SaveData extractSaveData(Object nbtObj, @Nullable VersionAdapter.ReturnParams returnParams) throws IOException {
-		NBTTagCompound nbt = (NBTTagCompound) nbtObj;
+		CompoundTag nbt = (CompoundTag) nbtObj;
 
 		JsonObject obj = new JsonObject();
 		copyInt(obj, nbt, "SpawnX");
@@ -135,8 +132,8 @@ public class VersionAdapter_v1_17_R1 implements VersionAdapter {
 		copyFloat(obj, nbt, "SpawnAngle");
 		copyStr(obj, nbt, "SpawnDimension");
 		// flying is nested in the abilities structure
-		if (nbt.hasKey("abilities")) {
-			NBTTagCompound abilities = nbt.getCompound("abilities");
+		if (nbt.contains("abilities")) {
+			CompoundTag abilities = nbt.getCompound("abilities");
 			copyBool(obj, abilities, "flying");
 		}
 		copyBool(obj, nbt, "FallFlying");
@@ -170,27 +167,25 @@ public class VersionAdapter_v1_17_R1 implements VersionAdapter {
 		}
 
 		ByteArrayOutputStream outBytes = new ByteArrayOutputStream();
-		NBTCompressedStreamTools.a(nbt, outBytes);
+		NbtIo.writeCompressed(nbt, outBytes);
 		return new SaveData(outBytes.toByteArray(), obj.toString());
 	}
 
 	public void savePlayer(Player player) throws Exception {
-		PlayerList playerList = ((CraftServer)Bukkit.getServer()).getHandle();
+		PlayerList playerList = ((CraftServer) Bukkit.getServer()).getHandle();
 
 		if (mSaveMethod == null) {
-			mSaveMethod = PlayerList.class.getDeclaredMethod("savePlayerFile", EntityPlayer.class);
+			mSaveMethod = PlayerList.class.getDeclaredMethod("savePlayerFile", ServerPlayer.class);
 			mSaveMethod.setAccessible(true);
 		}
 
-		mSaveMethod.invoke(playerList, ((CraftPlayer)player).getHandle());
+		mSaveMethod.invoke(playerList, ((CraftPlayer) player).getHandle());
 	}
 
-	public Object upgradePlayerData(Object nbtTagCompound) {
-		NBTTagCompound nbt = (NBTTagCompound) nbtTagCompound;
-		int i = nbt.hasKeyOfType("DataVersion", 3) ? nbt.getInt("DataVersion") : -1;
-		DataFixer dataFixer = ((CraftServer)Bukkit.getServer()).getHandle().getServer().getDataFixer();
-		nbt = GameProfileSerializer.a(dataFixer, DataFixTypes.b, nbt, i);
-		nbt.setInt("DataVersion", SharedConstants.getGameVersion().getWorldVersion());
+	public Object upgradePlayerData(Object compoundTag) {
+		CompoundTag nbt = (CompoundTag) compoundTag;
+		int i = nbt.contains("DataVersion", 3) ? nbt.getInt("DataVersion") : -1;
+		nbt = MCDataConverter.convertTag(MCTypeRegistry.PLAYER, nbt, i, SharedConstants.getCurrentVersion().getWorldVersion());
 		return nbt;
 	}
 
@@ -203,165 +198,165 @@ public class VersionAdapter_v1_17_R1 implements VersionAdapter {
 			dynamic = dynamic.set("DataVersion", dynamic.createInt(1343));
 		}
 
-		DataFixer dataFixer = ((CraftServer)Bukkit.getServer()).getHandle().getServer().getDataFixer();
-		dynamic = dataFixer.update(DataFixTypes.i.a(), dynamic, dynamic.get("DataVersion").asInt(0), SharedConstants.getGameVersion().getWorldVersion());
+		DataFixer dataFixer = ((CraftServer) Bukkit.getServer()).getHandle().getServer().getFixerUpper();
+		dynamic = dataFixer.update(DataFixTypes.ADVANCEMENTS.getType(), dynamic, dynamic.get("DataVersion").asInt(0), SharedConstants.getCurrentVersion().getWorldVersion());
 		dynamic = dynamic.remove("DataVersion");
 
 		if (advancementsGson == null) {
-			Field gsonField = AdvancementDataPlayer.class.getDeclaredField("b");
+			Field gsonField = PlayerAdvancements.class.getDeclaredField("b");
 			gsonField.setAccessible(true);
-			advancementsGson = (Gson)gsonField.get(null);
+			advancementsGson = (Gson) gsonField.get(null);
 		}
 
 		JsonElement element = dynamic.getValue();
-		element.getAsJsonObject().addProperty("DataVersion", SharedConstants.getGameVersion().getWorldVersion());
+		element.getAsJsonObject().addProperty("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
 
 		return advancementsGson.toJson(element);
 	}
 
-	protected NBTTagList toDoubleList(double... doubles) {
-		NBTTagList nbttaglist = new NBTTagList();
+	protected ListTag toDoubleList(double... doubles) {
+		ListTag listTag = new ListTag();
 
 		for (double d : doubles) {
-			nbttaglist.add(NBTTagDouble.a(d));
+			listTag.add(DoubleTag.valueOf(d));
 		}
 
-		return nbttaglist;
+		return listTag;
 	}
 
-	private void applyStr(JsonObject obj, NBTTagCompound nbt, String key) {
+	private void applyStr(JsonObject obj, CompoundTag nbt, String key) {
 		if (obj.has(key)) {
-			nbt.setString(key, obj.get(key).getAsString());
+			nbt.putString(key, obj.get(key).getAsString());
 		}
 	}
 
-	private void applyInt(JsonObject obj, NBTTagCompound nbt, String key) {
+	private void applyInt(JsonObject obj, CompoundTag nbt, String key) {
 		if (obj.has(key)) {
-			nbt.setInt(key, obj.get(key).getAsInt());
+			nbt.putInt(key, obj.get(key).getAsInt());
 		}
 	}
 
-	private void applyLong(JsonObject obj, NBTTagCompound nbt, String key) {
+	private void applyLong(JsonObject obj, CompoundTag nbt, String key) {
 		if (obj.has(key)) {
-			nbt.setLong(key, obj.get(key).getAsLong());
+			nbt.putLong(key, obj.get(key).getAsLong());
 		}
 	}
 
-	private void applyFloat(JsonObject obj, NBTTagCompound nbt, String key) {
+	private void applyFloat(JsonObject obj, CompoundTag nbt, String key) {
 		if (obj.has(key)) {
-			nbt.setFloat(key, obj.get(key).getAsFloat());
+			nbt.putFloat(key, obj.get(key).getAsFloat());
 		}
 	}
 
-	private void applyBool(JsonObject obj, NBTTagCompound nbt, String key) {
+	private void applyBool(JsonObject obj, CompoundTag nbt, String key) {
 		if (obj.has(key)) {
-			nbt.setBoolean(key, obj.get(key).getAsBoolean());
+			nbt.putBoolean(key, obj.get(key).getAsBoolean());
 		}
 	}
 
-	private void applyFloatList(JsonObject obj, NBTTagCompound nbt, String key) {
+	private void applyFloatList(JsonObject obj, CompoundTag nbt, String key) {
 		if (obj.has(key)) {
 			JsonElement element = obj.get(key);
 			if (element.isJsonArray()) {
-				NBTTagList nbttaglist = new NBTTagList();
+				ListTag listTag = new ListTag();
 				for (JsonElement val : element.getAsJsonArray()) {
-					nbttaglist.add(NBTTagFloat.a(val.getAsFloat()));
+					listTag.add(FloatTag.valueOf(val.getAsFloat()));
 				}
-				nbt.set(key, nbttaglist);
+				nbt.put(key, listTag);
 			}
 		}
 	}
 
-	private void applyDoubleList(JsonObject obj, NBTTagCompound nbt, String key) {
+	private void applyDoubleList(JsonObject obj, CompoundTag nbt, String key) {
 		if (obj.has(key)) {
 			JsonElement element = obj.get(key);
 			if (element.isJsonArray()) {
-				NBTTagList nbttaglist = new NBTTagList();
+				ListTag listTag = new ListTag();
 				for (JsonElement val : element.getAsJsonArray()) {
-					nbttaglist.add(NBTTagDouble.a(val.getAsDouble()));
+					listTag.add(DoubleTag.valueOf(val.getAsDouble()));
 				}
-				nbt.set(key, nbttaglist);
+				nbt.put(key, listTag);
 			}
 		}
 	}
 
-	private void applyCompoundOfDoubles(JsonObject obj, NBTTagCompound nbt, String key) {
+	private void applyCompoundOfDoubles(JsonObject obj, CompoundTag nbt, String key) {
 		if (obj.has(key)) {
 			JsonElement element = obj.get(key);
 			if (element.isJsonObject()) {
-				NBTTagCompound nbtcomp = new NBTTagCompound();
+				CompoundTag nbtcomp = new CompoundTag();
 				for (Map.Entry<String, JsonElement> subentry : element.getAsJsonObject().entrySet()) {
-					nbtcomp.setDouble(subentry.getKey(), subentry.getValue().getAsDouble());
+					nbtcomp.putDouble(subentry.getKey(), subentry.getValue().getAsDouble());
 				}
-				nbt.set(key, nbtcomp);
+				nbt.put(key, nbtcomp);
 			}
 		}
 	}
 
-	private void copyStr(JsonObject obj, NBTTagCompound nbt, String key) {
-		if (nbt.hasKey(key)) {
+	private void copyStr(JsonObject obj, CompoundTag nbt, String key) {
+		if (nbt.contains(key)) {
 			obj.addProperty(key, nbt.getString(key));
 			nbt.remove(key);
 		}
 	}
 
-	private void copyInt(JsonObject obj, NBTTagCompound nbt, String key) {
-		if (nbt.hasKey(key)) {
+	private void copyInt(JsonObject obj, CompoundTag nbt, String key) {
+		if (nbt.contains(key)) {
 			obj.addProperty(key, nbt.getInt(key));
 			nbt.remove(key);
 		}
 	}
 
-	private void copyLong(JsonObject obj, NBTTagCompound nbt, String key) {
-		if (nbt.hasKey(key)) {
+	private void copyLong(JsonObject obj, CompoundTag nbt, String key) {
+		if (nbt.contains(key)) {
 			obj.addProperty(key, nbt.getLong(key));
 			nbt.remove(key);
 		}
 	}
 
-	private void copyFloat(JsonObject obj, NBTTagCompound nbt, String key) {
-		if (nbt.hasKey(key)) {
+	private void copyFloat(JsonObject obj, CompoundTag nbt, String key) {
+		if (nbt.contains(key)) {
 			obj.addProperty(key, nbt.getFloat(key));
 			nbt.remove(key);
 		}
 	}
 
-	private void copyBool(JsonObject obj, NBTTagCompound nbt, String key) {
-		if (nbt.hasKey(key)) {
+	private void copyBool(JsonObject obj, CompoundTag nbt, String key) {
+		if (nbt.contains(key)) {
 			obj.addProperty(key, nbt.getBoolean(key));
 			nbt.remove(key);
 		}
 	}
 
-	private void copyFloatList(JsonObject obj, NBTTagCompound nbt, String key) {
-		if (nbt.hasKey(key)) {
-			NBTTagList list = nbt.getList(key, 5);  // 5 = float list
+	private void copyFloatList(JsonObject obj, CompoundTag nbt, String key) {
+		if (nbt.contains(key)) {
+			ListTag list = nbt.getList(key, 5);  // 5 = float list
 			JsonArray arr = new JsonArray();
 			for (int i = 0; i < list.size(); i++) {
-				arr.add(list.i(i));
+				arr.add(list.getFloat(i));
 			}
 			obj.add(key, arr);
 			nbt.remove(key);
 		}
 	}
 
-	private void copyDoubleList(JsonObject obj, NBTTagCompound nbt, String key) {
-		if (nbt.hasKey(key)) {
-			NBTTagList list = nbt.getList(key, 6);  // 6 = double list
+	private void copyDoubleList(JsonObject obj, CompoundTag nbt, String key) {
+		if (nbt.contains(key)) {
+			ListTag list = nbt.getList(key, 6);  // 6 = double list
 			JsonArray arr = new JsonArray();
 			for (int i = 0; i < list.size(); i++) {
-				arr.add(list.h(i));
+				arr.add(list.getDouble(i));
 			}
 			obj.add(key, arr);
 			nbt.remove(key);
 		}
 	}
 
-	private void copyCompoundOfDoubles(JsonObject obj, NBTTagCompound nbt, String key) {
-		if (nbt.hasKey(key)) {
-			NBTTagCompound compound = nbt.getCompound(key);
+	private void copyCompoundOfDoubles(JsonObject obj, CompoundTag nbt, String key) {
+		if (nbt.contains(key)) {
+			CompoundTag compound = nbt.getCompound(key);
 			JsonObject sobj = new JsonObject();
-			for (String comp : compound.getKeys()) {
+			for (String comp : compound.getAllKeys()) {
 				sobj.addProperty(comp, compound.getDouble(comp));
 			}
 			obj.add(key, sobj);

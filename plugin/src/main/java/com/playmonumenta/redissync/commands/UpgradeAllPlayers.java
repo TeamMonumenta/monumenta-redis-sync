@@ -35,7 +35,7 @@ public class UpgradeAllPlayers {
 	}
 
 	private static void updatePlayer(MonumentaRedisSync mrs, UUID uuid) {
-		Bukkit.broadcast(Component.text("Upgrading: " + uuid.toString()));
+		Bukkit.getServer().sendMessage(Component.text("Upgrading: " + uuid.toString()));
 		try {
 			RedisPlayerData data = MonumentaRedisSyncAPI.getOfflinePlayerData(uuid).get();
 
@@ -45,14 +45,14 @@ public class UpgradeAllPlayers {
 
 			Object newData = mrs.getVersionAdapter().upgradePlayerData(data.getNbtTagCompoundData());
 			if (newData == null) {
-				Bukkit.broadcast(Component.text("Failed to upgrade player data: " + uuid.toString()).color(NamedTextColor.RED));
+				Bukkit.getServer().sendMessage(Component.text("Failed to upgrade player data: " + uuid.toString()).color(NamedTextColor.RED));
 				return;
 			}
 			data.setNbtTagCompoundData(newData);
 
 			String newAdvancements = mrs.getVersionAdapter().upgradePlayerAdvancements(data.getAdvancements());
 			if (newAdvancements == null) {
-				Bukkit.broadcast(Component.text("Failed to upgrade player advancements: " + uuid.toString()).color(NamedTextColor.RED));
+				Bukkit.getServer().sendMessage(Component.text("Failed to upgrade player advancements: " + uuid.toString()).color(NamedTextColor.RED));
 				return;
 			}
 			data.setAdvancements(newAdvancements);
@@ -61,17 +61,17 @@ public class UpgradeAllPlayers {
 
 			/* Save and then wait for save to complete and check results */
 			if (!MonumentaRedisSyncAPI.saveOfflinePlayerData(data).get()) {
-				Bukkit.broadcast(Component.text("Failed to save upgraded player: " + uuid.toString()).color(NamedTextColor.RED));
+				Bukkit.getServer().sendMessage(Component.text("Failed to save upgraded player: " + uuid.toString()).color(NamedTextColor.RED));
 			}
 		} catch (Exception ex) {
-			Bukkit.broadcast(Component.text("Failed to upgrade player: " + uuid.toString() + " : " + ex.getMessage()).color(NamedTextColor.RED));
+			Bukkit.getServer().sendMessage(Component.text("Failed to upgrade player: " + uuid.toString() + " : " + ex.getMessage()).color(NamedTextColor.RED));
 			ex.printStackTrace();
 		}
 	}
 
 	private static void run(MonumentaRedisSync mrs) {
-		Bukkit.broadcast(Component.text("WARNING: Player data upgrade has started for offline players"));
-		Bukkit.broadcast(Component.text("The server will lag significantly until this is complete"));
+		Bukkit.getServer().sendMessage(Component.text("WARNING: Player data upgrade has started for offline players"));
+		Bukkit.getServer().sendMessage(Component.text("The server will lag significantly until this is complete"));
 
 		try {
 			Set<UUID> players = MonumentaRedisSyncAPI.getAllPlayerUUIDs().get();
@@ -82,12 +82,12 @@ public class UpgradeAllPlayers {
 				public void run() {
 					long startTime = System.currentTimeMillis();
 
-					Bukkit.broadcast(Component.text("  Players left to process: " + Integer.toString(players.size())));
+					Bukkit.getServer().sendMessage(Component.text("  Players left to process: " + Integer.toString(players.size())));
 
 					/* Only block here for up to 1 second at a time */
 					while (System.currentTimeMillis() < startTime + 1000) {
 						if (!iter.hasNext()) {
-							Bukkit.broadcast(Component.text("Upgrade complete"));
+							Bukkit.getServer().sendMessage(Component.text("Upgrade complete"));
 							this.cancel();
 							return;
 						}
@@ -100,7 +100,7 @@ public class UpgradeAllPlayers {
 				}
 			}.runTaskTimer(mrs, 0, 1);
 		} catch (Exception ex) {
-			Bukkit.broadcast(Component.text("Upgrade failed: " + ex.getMessage()).color(NamedTextColor.RED));
+			Bukkit.getServer().sendMessage(Component.text("Upgrade failed: " + ex.getMessage()).color(NamedTextColor.RED));
 			ex.printStackTrace();
 		}
 	}

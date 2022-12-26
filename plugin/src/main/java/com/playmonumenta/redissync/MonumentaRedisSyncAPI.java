@@ -218,6 +218,7 @@ public class MonumentaRedisSyncAPI {
 
 		player.sendMessage(ChatColor.GOLD + "Transferring you to " + target);
 
+		mrs.getVersionAdapter().forceDismountVehicle(player);
 		savePlayer(player);
 
 		/* Lock player during transfer and prevent data saving when they log out */

@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import java.io.IOException;
 import javax.annotation.Nullable;
 import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Scoreboard;
 
@@ -51,4 +52,6 @@ public interface VersionAdapter {
 	Object upgradePlayerData(Object nbtTagCompound);
 
 	String upgradePlayerAdvancements(String advancementsStr) throws Exception;
+
+	void forceDismountVehicle(Entity entity);
 }

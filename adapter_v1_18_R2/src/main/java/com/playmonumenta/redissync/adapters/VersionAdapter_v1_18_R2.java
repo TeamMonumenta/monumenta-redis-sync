@@ -35,8 +35,10 @@ import net.minecraft.world.scores.Score;
 import net.minecraft.world.scores.Scoreboard;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.v1_18_R2.CraftServer;
+import org.bukkit.craftbukkit.v1_18_R2.entity.CraftEntity;
 import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_18_R2.scoreboard.CraftScoreboard;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
 public class VersionAdapter_v1_18_R2 implements VersionAdapter {
@@ -362,5 +364,10 @@ public class VersionAdapter_v1_18_R2 implements VersionAdapter {
 			obj.add(key, sobj);
 			nbt.remove(key);
 		}
+	}
+
+	@Override
+	public void forceDismountVehicle(Entity entity) {
+		((CraftEntity) entity).getHandle().stopRiding(true);
 	}
 }

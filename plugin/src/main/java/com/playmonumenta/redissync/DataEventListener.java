@@ -692,12 +692,7 @@ public class DataEventListener implements Listener {
 				return;
 			}
 
-			for (Player p : Bukkit.getOnlinePlayers()) {
-				/* Abort if this player is somehow back online */
-				if (p.getUniqueId().equals(playerUUID)) {
-					return;
-				}
-
+			if (Bukkit.getPlayer(playerUUID) == null) {
 				mPluginData.remove(playerUUID);
 				mShardData.remove(playerUUID);
 			}

@@ -30,6 +30,10 @@ dependencies {
     compileOnly("dev.jorel.CommandAPI:commandapi-core:8.7.0")
     errorprone("com.google.errorprone:error_prone_core:2.10.0")
     errorprone("com.uber.nullaway:nullaway:0.9.5")
+
+    // velocity depenedencies
+    compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
+    annotationProcessor("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
 }
 
 val basicssh = remotes.create("basicssh") {

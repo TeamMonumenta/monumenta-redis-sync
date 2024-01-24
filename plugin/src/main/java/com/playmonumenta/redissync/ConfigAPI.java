@@ -74,4 +74,27 @@ public class ConfigAPI {
 		logger.info("  saving_disabled = " + Boolean.toString(mSavingDisabled));
 		logger.info("  scoreboard_cleanup_enabled = " + Boolean.toString(mScoreboardCleanupEnabled));
 	}
+
+	// Probably a better way to do this
+	protected ConfigAPI(org.slf4j.Logger logger, String redisHost, int redisPort, String serverDomain, String shardName, int historyAmount, int ticksPerPlayerAutosave, boolean savingDisabled, boolean scoreboardCleanupEnabled) {
+		mRedisHost = redisHost;
+		mRedisPort = redisPort;
+		mServerDomain = serverDomain;
+		mShardName = shardName;
+		mHistoryAmount = historyAmount;
+		mTicksPerPlayerAutosave = ticksPerPlayerAutosave;
+		mSavingDisabled = savingDisabled;
+		mScoreboardCleanupEnabled = scoreboardCleanupEnabled;
+		INSTANCE = this;
+
+		logger.info("Configuration:");
+		logger.info("  redis_host = " + (mRedisHost == null ? "null" : mRedisHost));
+		logger.info("  redis_port = " + Integer.toString(mRedisPort));
+		logger.info("  server_domain = " + (mServerDomain == null ? "null" : mServerDomain));
+		logger.info("  shard_name = " + (mShardName == null ? "null" : mShardName));
+		logger.info("  history_amount = " + Integer.toString(mHistoryAmount));
+		logger.info("  ticks_per_player_autosave = " + Integer.toString(mTicksPerPlayerAutosave));
+		logger.info("  saving_disabled = " + Boolean.toString(mSavingDisabled));
+		logger.info("  scoreboard_cleanup_enabled = " + Boolean.toString(mScoreboardCleanupEnabled));
+	}
 }

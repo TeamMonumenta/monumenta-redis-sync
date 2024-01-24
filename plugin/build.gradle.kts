@@ -200,6 +200,19 @@ tasks.create("stage-deploy") {
     }
 }
 
+tasks.create("volt-deploy") {
+    val shadowJar by tasks.named<ShadowJar>("shadowJar")
+    dependsOn(shadowJar)
+    doLast {
+        ssh.runSessions {
+            session(basicssh) {
+                put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/volt/m12/server_config/plugins")
+                execute("cd /home/epic/volt/m12/server_config/plugins && rm -f MonumentaRedisSync.jar && ln -s " + shadowJar.archiveFileName.get() + " MonumentaRedisSync.jar")
+            }
+        }
+    }
+}
+
 tasks.create("build-deploy") {
     val shadowJar by tasks.named<ShadowJar>("shadowJar")
     dependsOn(shadowJar)
@@ -221,14 +234,16 @@ tasks.create("play-deploy") {
             session(adminssh) {
                 put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/play/m8/server_config/plugins")
                 put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/play/m11/server_config/plugins")
+                put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/play/m12/server_config/plugins")
                 put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/play/m13/server_config/plugins")
-                put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/play/m14/server_config/plugins")
                 put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/play/m15/server_config/plugins")
+                put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/play/m16/server_config/plugins")
                 execute("cd /home/epic/play/m8/server_config/plugins && rm -f MonumentaRedisSync.jar && ln -s " + shadowJar.archiveFileName.get() + " MonumentaRedisSync.jar")
                 execute("cd /home/epic/play/m11/server_config/plugins && rm -f MonumentaRedisSync.jar && ln -s " + shadowJar.archiveFileName.get() + " MonumentaRedisSync.jar")
+                execute("cd /home/epic/play/m12/server_config/plugins && rm -f MonumentaRedisSync.jar && ln -s " + shadowJar.archiveFileName.get() + " MonumentaRedisSync.jar")
                 execute("cd /home/epic/play/m13/server_config/plugins && rm -f MonumentaRedisSync.jar && ln -s " + shadowJar.archiveFileName.get() + " MonumentaRedisSync.jar")
-                execute("cd /home/epic/play/m14/server_config/plugins && rm -f MonumentaRedisSync.jar && ln -s " + shadowJar.archiveFileName.get() + " MonumentaRedisSync.jar")
                 execute("cd /home/epic/play/m15/server_config/plugins && rm -f MonumentaRedisSync.jar && ln -s " + shadowJar.archiveFileName.get() + " MonumentaRedisSync.jar")
+                execute("cd /home/epic/play/m16/server_config/plugins && rm -f MonumentaRedisSync.jar && ln -s " + shadowJar.archiveFileName.get() + " MonumentaRedisSync.jar")
             }
         }
     }

@@ -26,7 +26,7 @@ public class MonumentaRedisSyncVelocity {
 
 	private final YamlConfigurationLoader mLoader; // Config reader & writer
 	private @Nullable CommentedConfigurationNode mBaseConfig;
-	public @Nullable RedisConfiguration mConfig;
+	public RedisConfiguration mConfig = new RedisConfiguration();
 
 	@Inject
 	public MonumentaRedisSyncVelocity(ProxyServer server, Logger logger, @DataDirectory Path dataDirectory) {
@@ -67,7 +67,6 @@ public class MonumentaRedisSyncVelocity {
 		} catch (ConfigurateException ex) {
 			// TODO: may want to shut down the proxy if configuration fails to load
 			mLogger.warn("Failed to load config file, using defaults: " + ex.getMessage());
-			mConfig = new RedisConfiguration();
 		}
 		// save config
 		saveConfig();

@@ -34,7 +34,7 @@ public class MonumentaRedisSyncVelocity {
 		mLogger = logger;
 
 		this.mLoader = YamlConfigurationLoader.builder()
-			.path(dataDirectory.resolve(Path.of("config.yml"))) // Set where we will load and save to
+			.path(dataDirectory.resolve(Path.of("config.yaml"))) // Set where we will load and save to
 			.nodeStyle(NodeStyle.BLOCK)
 			.build();
 
@@ -97,7 +97,7 @@ public class MonumentaRedisSyncVelocity {
 	}
 
 	@ConfigSerializable
-	public class RedisConfiguration {
+	public static class RedisConfiguration {
 		@Setting(value = "redis_host")
 		public String mRedisHost = "redis";
 

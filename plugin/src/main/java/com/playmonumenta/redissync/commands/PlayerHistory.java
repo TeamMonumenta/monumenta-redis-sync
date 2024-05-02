@@ -15,15 +15,14 @@ import org.bukkit.plugin.Plugin;
 
 public class PlayerHistory {
 	public static void register(Plugin plugin) {
+		EntitySelectorArgument.OnePlayer playerArg = new EntitySelectorArgument.OnePlayer("player");
+
 		new CommandAPICommand("playerhistory")
-			.withArguments(new EntitySelectorArgument.OnePlayer("player"))
+			.withArguments(playerArg)
 			.withPermission(CommandPermission.fromString("monumenta.command.playerhistory"))
 			.executes((sender, args) -> {
-				if (!(sender instanceof Player)) {
-					throw CommandAPI.failWithString("This command can only be run by players");
-				}
 				try {
-					playerHistory(plugin, sender, (Player)args[0]);
+					playerHistory(plugin, sender, args.getByArgument(playerArg));
 				} catch (Exception ex) {
 					throw CommandAPI.failWithString(ex.getMessage());
 				}

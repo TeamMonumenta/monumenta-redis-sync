@@ -5,6 +5,7 @@ import com.playmonumenta.redissync.RemoteDataAPI;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.TextArgument;
 import java.util.Map;
 import java.util.UUID;
@@ -12,12 +13,16 @@ import org.bukkit.plugin.Plugin;
 
 public class RemoteDataCommand {
 	public static void register(Plugin plugin) {
+		Argument<String> playerArg = new TextArgument("player").replaceSuggestions(MonumentaRedisSyncAPI.SUGGESTIONS_ALL_CACHED_PLAYER_NAMES);
+		TextArgument keyArg = new TextArgument("key");
+		TextArgument valueArg = new TextArgument("value");
+
 		new CommandAPICommand("remotedata")
 			.withPermission(CommandPermission.fromString("monumenta.command.remotedata"))
 			.withSubcommand(new CommandAPICommand("getall")
-				.withArguments(new TextArgument("player").replaceSuggestions(MonumentaRedisSyncAPI.SUGGESTIONS_ALL_CACHED_PLAYER_NAMES))
+				.withArguments(playerArg)
 				.executesPlayer((sender, args) -> {
-					String playerNameOrUUID = (String)args[0];
+					String playerNameOrUUID = args.getByArgument(playerArg);
 					UUID uuid = MonumentaRedisSyncAPI.cachedNameToUuid(playerNameOrUUID);
 					if (uuid == null) {
 						try {
@@ -49,11 +54,11 @@ public class RemoteDataCommand {
 					});
 				}))
 			.withSubcommand(new CommandAPICommand("get")
-				.withArguments(new TextArgument("player").replaceSuggestions(MonumentaRedisSyncAPI.SUGGESTIONS_ALL_CACHED_PLAYER_NAMES))
-				.withArguments(new TextArgument("key"))
+				.withArguments(playerArg)
+				.withArguments(keyArg)
 				.executesPlayer((sender, args) -> {
-					String playerNameOrUUID = (String)args[0];
-					String key = (String)args[1];
+					String playerNameOrUUID = args.getByArgument(playerArg);
+					String key = args.getByArgument(keyArg);
 					UUID uuid = MonumentaRedisSyncAPI.cachedNameToUuid(playerNameOrUUID);
 					if (uuid == null) {
 						try {
@@ -82,13 +87,13 @@ public class RemoteDataCommand {
 					});
 				}))
 			.withSubcommand(new CommandAPICommand("set")
-				.withArguments(new TextArgument("player").replaceSuggestions(MonumentaRedisSyncAPI.SUGGESTIONS_ALL_CACHED_PLAYER_NAMES))
-				.withArguments(new TextArgument("key"))
-				.withArguments(new TextArgument("value"))
+				.withArguments(playerArg)
+				.withArguments(keyArg)
+				.withArguments(valueArg)
 				.executesPlayer((sender, args) -> {
-					String playerNameOrUUID = (String)args[0];
-					String key = (String)args[1];
-					String value = (String)args[2];
+					String playerNameOrUUID = args.getByArgument(playerArg);
+					String key = args.getByArgument(keyArg);
+					String value = args.getByArgument(valueArg);
 					UUID uuid = MonumentaRedisSyncAPI.cachedNameToUuid(playerNameOrUUID);
 					if (uuid == null) {
 						try {
@@ -114,11 +119,11 @@ public class RemoteDataCommand {
 					});
 				}))
 			.withSubcommand(new CommandAPICommand("del")
-				.withArguments(new TextArgument("player").replaceSuggestions(MonumentaRedisSyncAPI.SUGGESTIONS_ALL_CACHED_PLAYER_NAMES))
-				.withArguments(new TextArgument("key"))
+				.withArguments(playerArg)
+				.withArguments(keyArg)
 				.executesPlayer((sender, args) -> {
-					String playerNameOrUUID = (String)args[0];
-					String key = (String)args[1];
+					String playerNameOrUUID = args.getByArgument(playerArg);
+					String key = args.getByArgument(keyArg);
 					UUID uuid = MonumentaRedisSyncAPI.cachedNameToUuid(playerNameOrUUID);
 					if (uuid == null) {
 						try {

@@ -5,6 +5,7 @@ import com.playmonumenta.redissync.NetworkRelayIntegration;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.EntitySelectorArgument;
 import dev.jorel.commandapi.arguments.LocationArgument;
@@ -21,50 +22,25 @@ public class TransferServer {
 		String command = "transferserver";
 		CommandPermission perms = CommandPermission.fromString("monumenta.command.transferserver");
 
-		new CommandAPICommand(command)
-			.withArguments(new EntitySelectorArgument.ManyPlayers("players"))
-			.withArguments(new StringArgument("server").replaceSuggestions(ArgumentSuggestions.strings((sender) -> NetworkRelayIntegration.getOnlineTransferTargets())))
-			.withPermission(perms)
-			.executes((sender, args) -> {
-				for (Player player : (Collection<Player>)args[0]) {
-					try {
-						MonumentaRedisSyncAPI.sendPlayer(player, (String)args[1]);
-					} catch (Exception ex) {
-						throw CommandAPI.failWithString(ex.getMessage());
-					}
-				}
-			}
-		).register();
+		EntitySelectorArgument.ManyPlayers playersArg = new EntitySelectorArgument.ManyPlayers("players");
+		Argument<String> serverArg = new StringArgument("server").replaceSuggestions(ArgumentSuggestions.strings((sender) -> NetworkRelayIntegration.getOnlineTransferTargets()));
+		LocationArgument locationArg = new LocationArgument("location");
+		RotationArgument rotationArg = new RotationArgument("rotation");
 
 		new CommandAPICommand(command)
-			.withArguments(new EntitySelectorArgument.ManyPlayers("players"))
-			.withArguments(new StringArgument("server").replaceSuggestions(ArgumentSuggestions.strings((sender) -> NetworkRelayIntegration.getOnlineTransferTargets())))
-			.withArguments(new LocationArgument("location"))
+			.withArguments(playersArg)
+			.withArguments(serverArg)
+			.withOptionalArguments(locationArg)
+			.withOptionalArguments(rotationArg)
 			.withPermission(perms)
 			.executes((sender, args) -> {
-				for (Player player : (Collection<Player>)args[0]) {
+				Collection<Player> players = args.getByArgument(playersArg);
+				String server = args.getByArgument(serverArg);
+				Location location = args.getByArgument(locationArg);
+				Rotation rotation = args.getByArgument(rotationArg);
+				for (Player player : players) {
 					try {
-						MonumentaRedisSyncAPI.sendPlayer(player, (String)args[1], (Location)args[2]);
-					} catch (Exception ex) {
-						throw CommandAPI.failWithString(ex.getMessage());
-					}
-				}
-			}
-		).register();
-
-		new CommandAPICommand(command)
-			.withArguments(new EntitySelectorArgument.ManyPlayers("players"))
-			.withArguments(new StringArgument("server").replaceSuggestions(ArgumentSuggestions.strings((sender) -> NetworkRelayIntegration.getOnlineTransferTargets())))
-			.withArguments(new LocationArgument("location"))
-			.withArguments(new RotationArgument("rotation"))
-			.withPermission(perms)
-			.executes((sender, args) -> {
-				String shard = (String)args[1];
-				Location location = (Location)args[2];
-				Rotation rotation = (Rotation)args[3];
-				for (Player player : (Collection<Player>)args[0]) {
-					try {
-						MonumentaRedisSyncAPI.sendPlayer(player, shard, location, rotation.getNormalizedYaw(), rotation.getNormalizedPitch());
+						MonumentaRedisSyncAPI.sendPlayer(player, server, location, rotation.getNormalizedYaw(), rotation.getNormalizedPitch());
 					} catch (Exception ex) {
 						throw CommandAPI.failWithString(ex.getMessage());
 					}
@@ -74,18 +50,14 @@ public class TransferServer {
 
 		/* Single player alias */
 		new CommandAPICommand(command)
-			.withArguments(new StringArgument("server").replaceSuggestions(ArgumentSuggestions.strings((sender) -> NetworkRelayIntegration.getOnlineTransferTargets())))
+			.withArguments(serverArg)
 			.withPermission(perms)
 			.withAliases("s")
-			.executes((sender, args) -> {
-				if (sender instanceof Player) {
-					try {
-						MonumentaRedisSyncAPI.sendPlayer((Player)sender, (String)args[0]);
-					} catch (Exception ex) {
-						throw CommandAPI.failWithString(ex.getMessage());
-					}
-				} else {
-					throw CommandAPI.failWithString("This command can only be run by players");
+			.executesPlayer((player, args) -> {
+				try {
+					MonumentaRedisSyncAPI.sendPlayer(player, args.getByArgument(serverArg));
+				} catch (Exception ex) {
+					throw CommandAPI.failWithString(ex.getMessage());
 				}
 			}
 		).register();

@@ -34,6 +34,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scoreboard.Objective;
@@ -109,7 +110,7 @@ public class MonumentaRedisSyncAPI {
 	}
 
 	public static final int TIMEOUT_SECONDS = 10;
-	public static final ArgumentSuggestions SUGGESTIONS_ALL_CACHED_PLAYER_NAMES = ArgumentSuggestions.strings((info) ->
+	public static final ArgumentSuggestions<CommandSender> SUGGESTIONS_ALL_CACHED_PLAYER_NAMES = ArgumentSuggestions.strings((info) ->
 		MonumentaRedisSyncAPI.getAllCachedPlayerNames().toArray(String[]::new));
 
 	private static final Trie<UUID> mNameToUuidTrie = new Trie<>();

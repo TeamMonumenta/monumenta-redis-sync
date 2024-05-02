@@ -10,16 +10,16 @@ import org.bukkit.entity.Player;
 
 public class PlayerLoadFromPlayer {
 	public static void register() {
+		EntitySelectorArgument.OnePlayer playerArg = new EntitySelectorArgument.OnePlayer("player");
+		IntegerArgument indexArg = new IntegerArgument("index", 0);
+
 		new CommandAPICommand("playerloadfromplayer")
 			.withPermission(CommandPermission.fromString("monumenta.command.playerloadfromplayer"))
-			.withArguments(new EntitySelectorArgument.OnePlayer("player"))
-			.withArguments(new IntegerArgument("index", 0))
-			.executes((sender, args) -> {
-				if (!(sender instanceof Player)) {
-					throw CommandAPI.failWithString("This command can only be run by players");
-				}
+			.withArguments(playerArg)
+			.withArguments(indexArg)
+			.executesPlayer((sender, args) -> {
 				try {
-					MonumentaRedisSyncAPI.playerLoadFromPlayer((Player)sender, (Player)args[0], (Integer)args[1]);
+					MonumentaRedisSyncAPI.playerLoadFromPlayer(sender, args.getByArgument(playerArg), args.getByArgument(indexArg));
 				} catch (Exception ex) {
 					throw CommandAPI.failWithString(ex.getMessage());
 				}

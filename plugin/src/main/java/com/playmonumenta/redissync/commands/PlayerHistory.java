@@ -20,7 +20,7 @@ public class PlayerHistory {
 		new CommandAPICommand("playerhistory")
 			.withArguments(playerArg)
 			.withPermission(CommandPermission.fromString("monumenta.command.playerhistory"))
-			.executes((sender, args) -> {
+			.executesPlayer((sender, args) -> {
 				try {
 					playerHistory(plugin, sender, args.getByArgument(playerArg));
 				} catch (Exception ex) {

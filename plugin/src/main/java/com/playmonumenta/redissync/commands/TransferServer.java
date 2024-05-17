@@ -40,7 +40,7 @@ public class TransferServer {
 				Rotation rotation = args.getByArgument(rotationArg);
 				for (Player player : players) {
 					try {
-						MonumentaRedisSyncAPI.sendPlayer(player, server, location, rotation.getNormalizedYaw(), rotation.getNormalizedPitch());
+						MonumentaRedisSyncAPI.sendPlayer(player, server, location, rotation);
 					} catch (Exception ex) {
 						throw CommandAPI.failWithString(ex.getMessage());
 					}

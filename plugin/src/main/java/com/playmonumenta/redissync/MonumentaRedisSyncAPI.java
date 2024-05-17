@@ -10,6 +10,7 @@ import com.playmonumenta.redissync.adapters.VersionAdapter.SaveData;
 import com.playmonumenta.redissync.event.PlayerServerTransferEvent;
 import com.playmonumenta.redissync.utils.Trie;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
+import dev.jorel.commandapi.wrappers.Rotation;
 import io.lettuce.core.LettuceFutures;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.TransactionResult;
@@ -186,6 +187,10 @@ public class MonumentaRedisSyncAPI {
 
 	public static void sendPlayer(Player player, String target, @Nullable Location returnLoc) throws Exception {
 		sendPlayer(player, target, returnLoc, null, null);
+	}
+
+	public static void sendPlayer(Player player, String target, @Nullable Location returnLoc, @Nullable Rotation rotation) throws Exception {
+		sendPlayer(player, target, returnLoc, rotation == null ? null : rotation.getNormalizedYaw(), rotation == null ? null : rotation.getNormalizedPitch());
 	}
 
 	public static void sendPlayer(Player player, String target, @Nullable Location returnLoc, @Nullable Float returnYaw, @Nullable Float returnPitch) throws Exception {

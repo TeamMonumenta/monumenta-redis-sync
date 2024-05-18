@@ -111,7 +111,7 @@ public class RboardCommand {
 		RboardAction action = (sender, args, rboardName, scoreboardName) -> {
 			Map<String, String> values = new LinkedHashMap<>();
 			for (int i = 1; i < args.count(); i += 2) {
-				int n = i / 2 + 1;
+				int n = i / 2;
 				values.put(args.getByArgument(getObjectiveArgument(n)).toString(), Integer.toString(args.getByArgument(getValueArgument(n))));
 			}
 			RBoardAPI.set(rboardName, values);
@@ -129,7 +129,7 @@ public class RboardCommand {
 		action = (sender, args, rboardName, scoreboardName) -> {
 			Map<String, String> values = new LinkedHashMap<>();
 			for (int i = 1; i < args.count(); i += 1) {
-				Objective objective = args.getByArgument(getObjectiveArgument(i));
+				Objective objective = args.getByArgument(getObjectiveArgument(i - 1));
 				values.put(objective.getName(), Integer.toString(ScoreboardUtils.getScoreboardValue(scoreboardName, objective)));
 			}
 			RBoardAPI.set(rboardName, values);
@@ -165,7 +165,7 @@ public class RboardCommand {
 		action = (sender, args, rboardName, scoreboardName) -> {
 			String[] values = new String[args.count()];
 			for (int i = 1; i < args.count(); i += 1) {
-				values[i - 1] = args.getByArgument(getObjectiveArgument(i)).getName();
+				values[i - 1] = args.getByArgument(getObjectiveArgument(i - 1)).getName();
 			}
 			RBoardAPI.reset(rboardName, values);
 		};
@@ -220,7 +220,7 @@ public class RboardCommand {
 		action = (sender, args, rboardName, scoreboardName) -> {
 			String[] objects = new String[args.count() - 2];
 			for (int j = 2; j < args.count(); j += 1) {
-				objects[j - 2] = args.getByArgument(getObjectiveArgument(j - 1)).getName();
+				objects[j - 2] = args.getByArgument(getObjectiveArgument(j - 2)).getName();
 			}
 			MonumentaRedisSyncAPI.runOnMainThreadWhenComplete(plugin,
 			                                                  RBoardAPI.get(rboardName, objects),
@@ -278,7 +278,7 @@ public class RboardCommand {
 		action = (sender, args, rboardName, scoreboardName) -> {
 			String[] objects = new String[args.count() - 2];
 			for (int j = 2; j < args.count(); j += 1) {
-				objects[j - 2] = args.getByArgument(getObjectiveArgument(j - 1)).getName();
+				objects[j - 2] = args.getByArgument(getObjectiveArgument(j - 2)).getName();
 			}
 			MonumentaRedisSyncAPI.runOnMainThreadWhenComplete(plugin,
 			                                                  RBoardAPI.getAndReset(rboardName, objects),

@@ -62,7 +62,11 @@ bungeecord.
 
 This plugin requires a Paper-based minecraft server, compiled with specific
 patches to enable high-performance access to player data save/load events. This
-is a significantly more cumbersome requirement than most plugins.
+is a significantly more cumbersome requirement than most plugins. The `1.20.4`
+version loads these patches at runtime with the Mixin bytecode transformation
+framework, which requires using
+[ignite](https://github.com/vectrix-space/ignite) as the server software.
+The mixin implementation is located at <insert url here, need to migrate to TeamMonumenta>.
 
 A fork of paper with these patches (and others) can be found here:
 https://github.com/TeamMonumenta/monumenta-paperfork

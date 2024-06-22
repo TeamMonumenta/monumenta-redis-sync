@@ -3,12 +3,16 @@ plugins {
     id("io.papermc.paperweight.userdev") version "1.3.8"
 }
 
-dependencies {
-    compileOnly(project(":adapter_api"))
-    paperDevBundle("1.18.2-R0.1-SNAPSHOT")
+repositories {
+	maven("https://maven.floweytf.com/releases/")
 }
 
-description = "v1_18_R2"
+dependencies {
+    compileOnly(project(":adapter_api"))
+	paperDevBundle("1.20.4-R0.1-SNAPSHOT")
+}
+
+description = "v1_20_R4"
 version = rootProject.version
 
 tasks {

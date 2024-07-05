@@ -78,22 +78,44 @@ The current version of this plugin requires Minecraft 1.18.2. Other versions
 could be easily supported, just ask.
 
 ## Maven dependency
-```xml
-    <repositories>
-        <repository>
-            <id>monumenta-redis-sync</id>
-            <url>https://raw.githubusercontent.com/TeamMonumenta/monumenta-redis-sync/master/mvn-repo/</url>
-        </repository>
-    </repositories>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.playmonumenta</groupId>
-            <artifactId>redissync</artifactId>
-            <version>4.1</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
+## Maven dependency
+```xml
+<repository>
+	<id>monumenta</id>
+	<name>Monumenta Maven Repo</name>
+	<url>https://maven.playmonumenta.com/releases</url>
+</repository>
+<dependencies>
+	<dependency>
+		<groupId>com.playmonumenta</groupId>
+		<artifactId>redissync</artifactId>
+		<version>4.1</version>
+		<scope>provided</scope>
+	</dependency>
+</dependencies>
+```
+Gradle (kotlin):
+```kts
+maven {
+    name = "monumenta"
+    url = uri("https://maven.playmonumenta.com/releases")
+}
+
+dependencies {
+	compileOnly("com.playmonumenta:redissync:4.1")
+}
+```
+Gradle (groovy):
+```groovy
+maven {
+    name "monumenta"
+    url "https://maven.playmonumenta.com/releases"
+}
+
+dependencies {
+	compileOnly "com.playmonumenta:redissync:4.1"
+}
 ```
 
 ## Download

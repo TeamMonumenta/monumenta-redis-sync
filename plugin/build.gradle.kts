@@ -98,7 +98,9 @@ java {
 publishing {
 	publications {
 		create<MavenPublication>("maven") {
-			from(components["java"])
+			artifact(tasks.shadowJar)
+			artifact(tasks["javadocJar"])
+			artifact(tasks["sourcesJar"])
 		}
 	}
 	repositories {

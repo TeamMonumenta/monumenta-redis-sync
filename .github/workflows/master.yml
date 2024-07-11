@@ -37,8 +37,8 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-build-
 
-    - name: Build and deploy to Github Package Registry
+    - name: Build
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        ./gradlew publish
+        ./gradlew build

@@ -26,7 +26,7 @@ tasks.withType<JavaCompile> {
 
 pmd {
     isConsoleOutput = true
-    toolVersion = "6.41.0"
+    toolVersion = "7.2.0"
     ruleSets = listOf("$rootDir/pmd-ruleset.xml")
     setIgnoreFailures(true)
 }

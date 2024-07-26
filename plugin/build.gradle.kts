@@ -23,7 +23,7 @@ dependencies {
 	implementation(project(":adapter_v1_18_R2", "reobf"))
 	implementation(project(":adapter_v1_19_R2", "reobf"))
 	implementation(project(":adapter_v1_19_R3", "reobf"))
-	implementation("io.lettuce:lettuce-core:5.3.5.RELEASE")
+	implementation("io.lettuce:lettuce-core:6.3.2.RELEASE")
 	compileOnly("net.md-5:bungeecord-api:1.15-SNAPSHOT")
 	compileOnly("com.playmonumenta:monumenta-network-relay:2.7")
 	compileOnly("io.papermc.paper:paper-api:1.18.2-R0.1-SNAPSHOT")

@@ -9,10 +9,10 @@ project(":redissync-example").projectDir = file("example")
 project(":redissync").projectDir = file("plugin")
 
 pluginManagement {
-	repositories {
-		gradlePluginPortal()
-		maven("https://papermc.io/repo/repository/maven-public/")
+  repositories {
+    gradlePluginPortal()
+    maven("https://papermc.io/repo/repository/maven-public/")
+    maven("https://s01.oss.sonatype.org/content/repositories/snapshots/")
 		maven("https://maven.playmonumenta.com/releases")
-	}
+  }
 }
-

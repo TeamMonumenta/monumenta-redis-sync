@@ -30,6 +30,10 @@ dependencies {
 	compileOnly("dev.jorel:commandapi-bukkit-core:9.4.1")
 	errorprone("com.google.errorprone:error_prone_core:2.29.1")
 	errorprone("com.uber.nullaway:nullaway:0.9.5")
+
+	// velocity depenedencies
+  compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
+  annotationProcessor("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
 }
 
 group = "com.playmonumenta"

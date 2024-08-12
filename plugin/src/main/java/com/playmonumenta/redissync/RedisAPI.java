@@ -6,6 +6,9 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.api.sync.RedisCommands;
 import io.lettuce.core.codec.RedisCodec;
+import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
+import io.lettuce.core.pubsub.api.async.RedisPubSubAsyncCommands;
+import io.lettuce.core.pubsub.api.sync.RedisPubSubCommands;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
@@ -52,17 +55,20 @@ public class RedisAPI {
 	private final RedisClient mRedisClient;
 	private final StatefulRedisConnection<String, String> mConnection;
 	private final StatefulRedisConnection<String, byte[]> mStringByteConnection;
+	private final StatefulRedisPubSubConnection<String, String> mPubSubConnection;
 
 	protected RedisAPI(String hostname, int port) {
 		mRedisClient = RedisClient.create(RedisURI.Builder.redis(hostname, port).build());
 		mConnection = mRedisClient.connect();
 		mStringByteConnection = mRedisClient.connect(StringByteCodec.INSTANCE);
+		mPubSubConnection = mRedisClient.connectPubSub();
 		INSTANCE = this;
 	}
 
 	protected void shutdown() {
 		mConnection.close();
 		mStringByteConnection.close();
+		mPubSubConnection.close();
 		mRedisClient.shutdown();
 	}
 
@@ -84,6 +90,18 @@ public class RedisAPI {
 
 	public RedisAsyncCommands<String, byte[]> asyncStringBytes() {
 		return mStringByteConnection.async();
+	}
+
+	public RedisPubSubCommands<String, String> syncPubSub() {
+		return mPubSubConnection.sync();
+	}
+
+	public RedisPubSubAsyncCommands<String, String> asyncPubSub() {
+		return mPubSubConnection.async();
+	}
+
+	public StatefulRedisPubSubConnection<String, String> pubSubConnection() {
+		return mPubSubConnection;
 	}
 
 	public boolean isReady() {

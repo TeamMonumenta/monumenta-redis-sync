@@ -25,16 +25,14 @@ public class RedisLock {
 	private final ScheduledExecutorService mRefreshScheduler;
 	private final ExecutorService mRefreshWorkers;
 	private final int mRefreshIntervalMS;
-	private Optional<ScheduledFuture<?>> mRefreshTask;
+	private volatile Optional<ScheduledFuture<?>> mRefreshTask;
 
-	private Lock mInternalAccessLock;
+	private final Lock mInternalAccessLock;
 
-	private Condition mIsIntraLockedCondition;
-	private boolean mIsIntraLocked;
+	private final Condition mIsIntraLockedCondition;
+	private final Condition mIsInterLockedCondition;
 
-	private Condition mIsInterLockedCondition;
-
-	private Optional<Thread> mLockOwner;
+	private volatile Optional<Thread> mLockOwner;
 
 	/**
 	 * Constructs a redis lock.
@@ -61,10 +59,7 @@ public class RedisLock {
 		mRefreshTask = Optional.empty();
 
 		mInternalAccessLock = new ReentrantLock();
-
 		mIsIntraLockedCondition = mInternalAccessLock.newCondition();
-		mIsIntraLocked = false;
-
 		mIsInterLockedCondition = mInternalAccessLock.newCondition();
 
 		mLockOwner = Optional.empty();
@@ -178,23 +173,19 @@ public class RedisLock {
 	public void lock() {
 		mInternalAccessLock.lock();
 		try {
-			// Block until intra-shard lock is free
-			while (mIsIntraLocked) {
+			while (mLockOwner.isPresent()) {
 				mIsIntraLockedCondition.awaitUninterruptibly();
 			}
-			// Acquire intra-shard lock
-			// (Internal access lock only allows one thread at a time
-			// to proceed out of the previous while loop)
-			mIsIntraLocked = true;
 			mLockOwner = Optional.of(Thread.currentThread());
 
 			// Block until inter-shard lock is free
-			RedisAPI.getInstance().syncPubSub().subscribe("__keyspace@0__:" + mKeyName);
+			RedisAPI.getInstance().asyncPubSub().subscribe("__keyspace@0__:" + mKeyName);
 			while (!tryAcquireRedis()) {
 				mIsInterLockedCondition.awaitUninterruptibly();
 			}
-			RedisAPI.getInstance().syncPubSub().unsubscribe("__keyspace@0__:" + mKeyName);
+			RedisAPI.getInstance().asyncPubSub().unsubscribe("__keyspace@0__:" + mKeyName);
 
+			// TODO: try catch RejectedExecutionException; gracefully unwind
 			mRefreshTask = Optional.of(
 				mRefreshScheduler.scheduleAtFixedRate(
 					() -> {
@@ -295,8 +286,6 @@ public class RedisLock {
 				}
 			} finally {
 				mRefreshTask.ifPresent(future -> future.cancel(false));
-			
-				mIsIntraLocked = false;
 				mLockOwner = Optional.empty();
 				mIsIntraLockedCondition.signal();
 			}

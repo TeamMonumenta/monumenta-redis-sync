@@ -151,7 +151,7 @@ public class RedisLock {
 		);
 	}
 
-	public class RedisLockException extends Exception {
+	public class RedisLockException extends RuntimeException {
 		public RedisLockException() {
 			super();
 		}

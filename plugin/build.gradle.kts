@@ -29,7 +29,7 @@ dependencies {
 	compileOnly("io.papermc.paper:paper-api:1.18.2-R0.1-SNAPSHOT")
 	compileOnly("dev.jorel:commandapi-bukkit-core:9.4.1")
 	errorprone("com.google.errorprone:error_prone_core:2.29.1")
-	errorprone("com.uber.nullaway:nullaway:0.9.5")
+	errorprone("com.uber.nullaway:nullaway:0.10.18")
 
 	// velocity depenedencies
   compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")

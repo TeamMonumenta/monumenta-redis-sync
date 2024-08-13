@@ -23,6 +23,7 @@ public class RedisLock {
 	private final ExecutorService mSubscribeSignaler;
 
 	private final ScheduledExecutorService mRefreshScheduler;
+	private final ExecutorService mRefreshWorkers;
 	private final int mRefreshIntervalMS;
 	private Optional<ScheduledFuture<?>> mRefreshTask;
 
@@ -55,6 +56,7 @@ public class RedisLock {
 		mSubscribeSignaler = Executors.newSingleThreadExecutor();
 
 		mRefreshScheduler = Executors.newSingleThreadScheduledExecutor();
+		mRefreshWorkers = Executors.newCachedThreadPool();
 		mRefreshIntervalMS = refreshIntervalMS;
 		mRefreshTask = Optional.empty();
 
@@ -139,11 +141,16 @@ public class RedisLock {
 
 	/**
 	 * Gets the shard holding the inter-shard lock.
+	 * Runs watch before getting the shard.
+	 *
 	 * @return The entry in redis at the key
 	 * corresponding to this lock, or None if it
 	 * does not exist.
 	 */
-	private Optional<String> getLockingShard() {
+	private Optional<String> watchThenGetLockingShard() {
+		RedisAPI.getInstance()
+			.async()
+			.watch(mKeyName);
 		return Optional.ofNullable(
 			RedisAPI.getInstance()
 				.sync()
@@ -191,17 +198,52 @@ public class RedisLock {
 			mRefreshTask = Optional.of(
 				mRefreshScheduler.scheduleAtFixedRate(
 					() -> {
-						// Mind the case: key is deleted before this task is shut down,
-						// this task's last run would refresh a different shard's lock.
+						// Create a new thread so separate refresh tasks
+						// don't get stuck behind each other.
+						mRefreshWorkers.submit(() -> {
+							// Mind the case: key is deleted before this task is shut down,
+							// this task's last run would refresh a different shard's lock.
 
-						// The lifetime of this refresh task could outlive a critical section
-						Optional<String> lockingShard = getLockingShard();
-						if (lockingShard.isEmpty() || !lockingShard.get().equals(ConfigAPI.getShardName())) {
-							return;
-						}
-						RedisAPI.getInstance()
-							.async()
-							.pexpire(mKeyName, mTimeoutMS);
+							// The lifetime of this refresh task could outlive a critical section
+
+							/**
+							 * Two outcomes:
+							 * 
+							 * Found self:
+							 * WATCH
+							 * self_shard = GET mKeyName
+							 * MULTI
+							 * PEXPIRE
+							 * EXEC
+							 * - You know that if the key is self
+							 * - then changes, it must be non-self;
+							 * - do not refresh nonself.
+							 *
+							 * Found else:
+							 * WATCH
+							 * other_shard = GET mKeyName
+							 * UNWATCH
+							 * - If the other shard changes to you,
+							 * - That means you have acquired the lock
+							 * - A separate refresh task has started.
+							 */
+							Optional<String> lockingShard = watchThenGetLockingShard();
+							if (lockingShard.isEmpty() || !lockingShard.get().equals(ConfigAPI.getShardName())) {
+								RedisAPI.getInstance()
+									.async()
+									.unwatch();
+								return;
+							}
+							RedisAPI.getInstance()
+								.async()
+								.multi();
+							RedisAPI.getInstance()
+								.async()
+								.pexpire(mKeyName, mTimeoutMS);
+							RedisAPI.getInstance()
+								.async()
+								.exec();
+						});
 					},
 					mRefreshIntervalMS,
 					mRefreshIntervalMS,
@@ -227,17 +269,37 @@ public class RedisLock {
 			if (mLockOwner.isEmpty() || !mLockOwner.get().equals(Thread.currentThread())) {
 				throw new RedisLockException("Attempted to unlock a redis lock not owned by this thread.");
 			}
-			Optional<String> lockingShard = getLockingShard();
-			if (lockingShard.isEmpty() || !lockingShard.get().equals(ConfigAPI.getShardName())) {
-				throw new RedisLockException("Attempted to unlock a redis lock not owned by this shard.");
+
+			try {
+				Optional<String> lockingShard = watchThenGetLockingShard();
+				if (lockingShard.isEmpty() || !lockingShard.get().equals(ConfigAPI.getShardName())) {
+					RedisAPI.getInstance()
+						.async()
+						.unwatch();
+					throw new RedisLockException("Attempted to unlock a redis lock not owned by this shard; nearly certainly due to expiration during the critical section.");
+				}
+				
+				RedisAPI.getInstance()
+					.async()
+					.multi();
+				RedisAPI.getInstance()
+					.async()
+					.del(mKeyName);
+				if (
+					RedisAPI.getInstance()
+						.sync()
+						.exec()
+						.wasDiscarded()
+				) {
+					throw new RedisLockException("Attempted to unlock a redis lock not owned by this shard; nearly certainly due to expiration mid-unlock.");
+				}
+			} finally {
+				mRefreshTask.ifPresent(future -> future.cancel(false));
+			
+				mIsIntraLocked = false;
+				mLockOwner = Optional.empty();
+				mIsIntraLockedCondition.signal();
 			}
-			mRefreshTask.ifPresent(future -> future.cancel(false));
-			RedisAPI.getInstance()
-				.async()
-				.del(mKeyName);
-			mIsIntraLocked = false;
-			mLockOwner = Optional.empty();
-			mIsIntraLockedCondition.signal();
 		} finally {
 			mInternalAccessLock.unlock();
 		}

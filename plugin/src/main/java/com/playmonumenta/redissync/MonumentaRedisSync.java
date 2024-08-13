@@ -94,6 +94,8 @@ public class MonumentaRedisSync extends JavaPlugin {
 		}
 
 		this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
+
+		mRedisAPI.sync().configSet("notify-keyspace-events", "Kgx");
 	}
 
 	@Override

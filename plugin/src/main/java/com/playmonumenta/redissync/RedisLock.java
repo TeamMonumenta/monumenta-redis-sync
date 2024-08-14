@@ -3,7 +3,9 @@ package com.playmonumenta.redissync;
 import io.lettuce.core.SetArgs;
 import io.lettuce.core.TransactionResult;
 import io.lettuce.core.pubsub.RedisPubSubListener;
+import java.util.HashMap;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -14,26 +16,87 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * An advisory locking mechanism for redis.
+ * An lock is a tool for controlling access to a shared resource
+ * by multiple accessors. In this RedisLock's case, these accessors
+ * are threads on separate monumenta-redis-sync shards.
+ *
+ * <p>Only one thread among all shards can acquire the lock at a time.
+ * Therefore, if all shared resource accesses require having acquired
+ * the lock, then these accesses are guaranteed to be exclusive
+ * to the thread holding the lock. In particular, this is useful for
+ * ensuring the shared resource stays invariant, thereby preventing
+ * some classes of race conditions.</p>
+ *
+ * <p>The code executed between acquiring and releasing the lock is called
+ * the <bold>critical section</bold>.</p>
+ *
+ * <pre>
+ * {@code
+ * RedisLock lock = new Lock(...);
+ * lock.lock();
+ * // Critical section code
+ * lock.unlock();
+ * }
+ * </pre>
+ *
+ * <p>This lock uses redis for backing. A provided lock name is used
+ * to find a corresponding entry in redis on which to block against
+ * if present.</p>
+ *
+ * <p>Credit: Some parts copied from {@link java.util.concurrent.locks.Lock} javadoc.</p>
  */
-public class RedisLock {
+
+// TODO: Double lock behavior
+public final class RedisLock {
+
+	private static final int DEFAULT_TIMEOUT_MS = 10000;
+	private static final int DEFAULT_REFRESH_INTERVAL_MS = 100;
+
+	private static final ExecutorService subscribeSignallers = Executors.newCachedThreadPool();
+	private static final ScheduledExecutorService refreshScheduler = Executors.newSingleThreadScheduledExecutor();
+	private static final ExecutorService refreshWorkers = Executors.newCachedThreadPool();
+
+	// Invariant: once an entry is set in this map, it is immutable.
+	private static final ConcurrentHashMap<String, Synchronizers> namesToSynchronizationConstructs = new ConcurrentHashMap<>();
+	private static final ConcurrentHashMap<String, ImmutableLockData> namesToImmutableLockData = new ConcurrentHashMap<>();
+
+	// This map does not have any such invariant, and access should
+	// be guarded by the above.
+	private static final ConcurrentHashMap<String, MutableLockData> namesToMutableLockData = new ConcurrentHashMap<>();
 
 	private final String mKeyName;
-	private final int mTimeoutMS;
+	private final Synchronizers mSynchronizers;
+	private final ImmutableLockData mImmutableLockData;
 
-	private static final ExecutorService SUBSCRIBE_SIGNALLERS = Executors.newCachedThreadPool();
+	private record Synchronizers(
+		ReentrantLock internalAccessLock,
+		Condition isIntraLockedCondition,
+		Condition isInterLockedCondition
+	) {}
 
-	private static final ScheduledExecutorService REFRESH_SCHEDULER = Executors.newSingleThreadScheduledExecutor();
-	private static final ExecutorService REFRESH_WORKERS = Executors.newCachedThreadPool();
-	private final int mRefreshIntervalMS;
-	private volatile Optional<ScheduledFuture<?>> mRefreshTask;
+	private record ImmutableLockData(
+		int timeoutMS,
+		int refreshIntervalMS
+	) {}
 
-	private final ReentrantLock mInternalAccessLock;
+	private record MutableLockData(
+		Optional<Thread> lockOwner,
+		Optional<ScheduledFuture<?>> refreshTask
+	) {
+		public MutableLockData withLockOwner(Optional<Thread> newLockOwner) {
+			return new MutableLockData(
+				newLockOwner,
+				refreshTask
+			);
+		}
 
-	private final Condition mIsIntraLockedCondition;
-	private final Condition mIsInterLockedCondition;
-
-	private volatile Optional<Thread> mLockOwner;
+		public MutableLockData withRefreshTask(Optional<ScheduledFuture<?>> newRefreshTask) {
+			return new MutableLockData(
+				lockOwner,
+				newRefreshTask
+			);
+		}
+	}
 
 	/**
 	 * Constructs a redis lock.
@@ -50,43 +113,66 @@ public class RedisLock {
 	 */
 	public RedisLock(String lockName, int timeoutMS, int refreshIntervalMS) {
 		mKeyName = ConfigAPI.getServerDomain() + ":locks:" + lockName;
-		mTimeoutMS = timeoutMS;
 
-		mRefreshIntervalMS = refreshIntervalMS;
-		mRefreshTask = Optional.empty();
-
-		mInternalAccessLock = new ReentrantLock();
-		mIsIntraLockedCondition = mInternalAccessLock.newCondition();
-		mIsInterLockedCondition = mInternalAccessLock.newCondition();
-
-		mLockOwner = Optional.empty();
-
-		RedisAPI.getInstance()
+		mSynchronizers = namesToSynchronizationConstructs.computeIfAbsent(mKeyName, key -> {
+			ReentrantLock internalAccessLock = new ReentrantLock();
+			Synchronizers result = new Synchronizers(
+				internalAccessLock,
+				internalAccessLock.newCondition(),
+				internalAccessLock.newCondition()
+			);
+			// Side effect feels nasty, but I need atomicity with absence check
+			RedisAPI.getInstance()
 				.pubSubConnection()
-				.addListener(new LockSubscriber());
+				.addListener(new LockSubscriber(mKeyName, result));
+			return result;
+		});
+
+		mImmutableLockData = namesToImmutableLockData.computeIfAbsent(mKeyName, key -> new ImmutableLockData(
+			timeoutMS,
+			refreshIntervalMS
+		));
+
+		// Note; if absent, it is guaranteed that nobody is holding the internal access lock
+		// to the mutable data; that is because the internal access lock can only be held
+		// by any thread that has constructed a redis lock with this key name, which must
+		// have already computed this.
+		namesToMutableLockData.computeIfAbsent(mKeyName, key -> new MutableLockData(
+			Optional.empty(),
+			Optional.empty()
+		));
+
 	}
 
-	private class LockSubscriber implements RedisPubSubListener<String, String> {
+	private static final class LockSubscriber implements RedisPubSubListener<String, String> {
+
+		private final String mKeyName;
+		private final Synchronizers mSynchronizers;
+
+		public LockSubscriber(String keyName, Synchronizers synchronizers) {
+			mKeyName = keyName;
+			mSynchronizers = synchronizers;
+		}
 
 		@Override
 		public void message(String channel, String message) {
 			if (!channel.equals("__keyspace@0__:" + mKeyName)) {
 				return;
 			}
-			SUBSCRIBE_SIGNALLERS.execute(() -> {
+			subscribeSignallers.execute(() -> {
 				/**
 				 * Acquiring the lock here prevents signalling after
 				 * tryAcquireRedis fails but before condition await;
 				 * this prevents the thread from being dead until the next
 				 * expiry/deletion
 				 */
-				mInternalAccessLock.lock();
+				mSynchronizers.internalAccessLock().lock();
 				switch (message) {
-					case "del" -> mIsInterLockedCondition.signal();
-					case "expired" -> mIsInterLockedCondition.signal();
+					case "del" -> mSynchronizers.isInterLockedCondition().signal();
+					case "expired" -> mSynchronizers.isInterLockedCondition().signal();
 					default -> { }
 				}
-				mInternalAccessLock.unlock();
+				mSynchronizers.internalAccessLock().unlock();
 			});
 		}
 
@@ -129,7 +215,11 @@ public class RedisLock {
 		return Optional.ofNullable(
 			RedisAPI.getInstance()
 				.sync()
-				.set(mKeyName, ConfigAPI.getShardName(), SetArgs.Builder.nx().px(mTimeoutMS))
+				.set(
+					mKeyName,
+					ConfigAPI.getShardName(),
+					SetArgs.Builder.nx().px(mImmutableLockData.timeoutMS())
+				)
 		)
 		.map(response -> "OK".equals(response))
 		.orElse(false);
@@ -151,34 +241,36 @@ public class RedisLock {
 	 *
 	 * Upon return, this thread will own both the intra-shard lock
 	 * and the inter-shard lock.
-	 * 
+	 *
 	 * @throws RejectedExecutionException If the inter-shard lock
 	 * refresh task fails to be scheduled; upon throw, neither lock
 	 * will be held.
 	 */
 	public void lock() {
-		// Acquire the intra-shard lock
-		mInternalAccessLock.lock();
+		mSynchronizers.internalAccessLock().lock();
 		try {
-			while (mLockOwner.isPresent()) {
-				mIsIntraLockedCondition.awaitUninterruptibly();
+			// Acquire the intra-shard lock
+			MutableLockData data = namesToMutableLockData.get(mKeyName);
+			while (data.lockOwner().isPresent()) {
+				mSynchronizers.isIntraLockedCondition().awaitUninterruptibly();
 			}
-			mLockOwner = Optional.of(Thread.currentThread());
+			data = data.withLockOwner(Optional.of(Thread.currentThread()));
+			namesToMutableLockData.put(mKeyName, data);
 
-			// Block until inter-shard lock is free
+			// Acquire the inter-shard lock
 			RedisAPI.getInstance().asyncPubSub().subscribe("__keyspace@0__:" + mKeyName);
 			while (!tryAcquireRedis()) {
-				mIsInterLockedCondition.awaitUninterruptibly();
+				mSynchronizers.isInterLockedCondition().awaitUninterruptibly();
 			}
 			RedisAPI.getInstance().asyncPubSub().unsubscribe("__keyspace@0__:" + mKeyName);
 
-			mRefreshTask = Optional.of(
-				REFRESH_SCHEDULER.scheduleAtFixedRate(
+			Optional<ScheduledFuture<?>> refreshTask = Optional.of(
+				refreshScheduler.scheduleAtFixedRate(
 					() -> {
 						/* WARNING: Thrown RejectedExecution REFRESH_WORKERS executions are not logged. */
 						// Create a new thread so separate refresh tasks
 						// don't get stuck behind each other.
-						REFRESH_WORKERS.submit(() -> {
+						refreshWorkers.submit(() -> {
 							// Mind the case: key is deleted before this task is shut down,
 							// this task's last run would refresh a different shard's lock.
 
@@ -214,17 +306,19 @@ public class RedisLock {
 								return;
 							}
 							RedisAPI.getInstance().async().multi();
-							RedisAPI.getInstance().async().pexpire(mKeyName, mTimeoutMS);
+							RedisAPI.getInstance().async().pexpire(mKeyName, mImmutableLockData.timeoutMS());
 							RedisAPI.getInstance().async().exec();
 						});
 					},
-					mRefreshIntervalMS,
-					mRefreshIntervalMS,
+					mImmutableLockData.refreshIntervalMS(),
+					mImmutableLockData.refreshIntervalMS(),
 					TimeUnit.MILLISECONDS
 				)
 			);
+			data = data.withRefreshTask(refreshTask);
+			namesToMutableLockData.put(mKeyName, data);
 		} catch (RejectedExecutionException e) {
-			mInternalAccessLock.unlock();
+			mSynchronizers.internalAccessLock().unlock();
 
 			// Attempt to release the inter-shard lock
 			RedisAPI.getInstance().async().watch(mKeyName);
@@ -240,15 +334,16 @@ public class RedisLock {
 				RedisAPI.getInstance().async().exec();
 			}
 
-			// Release intra-shard lock
-			mInternalAccessLock.lock();
-			mRefreshTask.ifPresent(future -> future.cancel(false));
-			mRefreshTask = Optional.empty();
-			mLockOwner = Optional.empty();
-			mIsIntraLockedCondition.signal();
+			mSynchronizers.internalAccessLock().lock();
+			MutableLockData data = namesToMutableLockData.get(mKeyName);
+			data.refreshTask().ifPresent(future -> future.cancel(false));
+			data = data.withRefreshTask(Optional.empty());
+			data = data.withLockOwner(Optional.empty());
+			namesToMutableLockData.put(mKeyName, data);
+			mSynchronizers.isIntraLockedCondition().signal();
 			throw e;
 		} finally {
-			mInternalAccessLock.unlock();
+			mSynchronizers.internalAccessLock().unlock();
 		}
 	}
 
@@ -262,13 +357,14 @@ public class RedisLock {
 	 */
 	public void unlock() {
 		// Test for correct thread
-		mInternalAccessLock.lock();
+		mSynchronizers.internalAccessLock().lock();
 		try {
-			if (mLockOwner.isEmpty() || !mLockOwner.get().equals(Thread.currentThread())) {
+			MutableLockData data = namesToMutableLockData.get(mKeyName);
+			if (data.lockOwner().isEmpty() || !data.lockOwner().get().equals(Thread.currentThread())) {
 				throw new RedisLockException("Attempted to unlock a redis lock not owned by this thread.");
 			}
 		} finally {
-			mInternalAccessLock.unlock();
+			mSynchronizers.internalAccessLock().unlock();
 		}
 
 		// Attempt to release the inter-shard lock
@@ -290,21 +386,27 @@ public class RedisLock {
 				throw new RedisLockException("Attempted to unlock a redis lock not owned by this shard; nearly certainly due to expiration mid-unlock.");
 			}
 		} finally {
-			// Release the intra-shard lock; every exception only occurs as a
+			// Every exception only occurs as a
 			// result of this shard not owning the redis key, so we can't
 			// do anything about that.
-			mInternalAccessLock.lock();
-			mRefreshTask.ifPresent(future -> future.cancel(false));
-			mRefreshTask = Optional.empty();
-			mLockOwner = Optional.empty();
-			mIsIntraLockedCondition.signal();
-			mInternalAccessLock.unlock();
+			mSynchronizers.internalAccessLock().lock();
+			try {
+				// Release intra-shard lock
+				MutableLockData data = namesToMutableLockData.get(mKeyName);
+				data.refreshTask().ifPresent(future -> future.cancel(false));
+				data = data.withRefreshTask(Optional.empty());
+				data = data.withLockOwner(Optional.empty());
+				namesToMutableLockData.put(mKeyName, data);
+				mSynchronizers.isIntraLockedCondition().signal();
+			} finally {
+				mSynchronizers.internalAccessLock().unlock();
+			}
 		}
 	}
 
 	public static void shutdownExecutors() {
-		SUBSCRIBE_SIGNALLERS.shutdown();
-		REFRESH_SCHEDULER.shutdown();
-		REFRESH_WORKERS.shutdown();
+		subscribeSignallers.shutdown();
+		refreshScheduler.shutdown();
+		refreshWorkers.shutdown();
 	}
 }

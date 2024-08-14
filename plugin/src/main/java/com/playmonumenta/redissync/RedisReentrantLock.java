@@ -38,6 +38,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * }
  * </pre>
  *
+ * <p>It is recommended to always place the critical section in a try...finally
+ * block, to ensure that the lock is always released.</p>
+ *
  * <p>This lock uses redis for backing. A provided lock name is used
  * to find a corresponding entry in redis on which to block against
  * if present. To provide crash resilience, this entry has an expiry time,
@@ -81,11 +84,13 @@ public final class RedisReentrantLock {
 
 	private record MutableLockData(
 		Optional<Thread> lockOwner,
+		int counter,
 		Optional<ScheduledFuture<?>> refreshTask
 	) {
 		public MutableLockData withLockOwner(Optional<Thread> newLockOwner) {
 			return new MutableLockData(
 				newLockOwner,
+				counter,
 				refreshTask
 			);
 		}
@@ -93,7 +98,32 @@ public final class RedisReentrantLock {
 		public MutableLockData withRefreshTask(Optional<ScheduledFuture<?>> newRefreshTask) {
 			return new MutableLockData(
 				lockOwner,
+				counter,
 				newRefreshTask
+			);
+		}
+
+		public MutableLockData increment() {
+			return new MutableLockData(
+				lockOwner,
+				counter + 1,
+				refreshTask
+			);
+		}
+
+		public MutableLockData decrement() {
+			return new MutableLockData(
+				lockOwner,
+				Math.max(0, counter - 1),
+				refreshTask
+			);
+		}
+
+		public MutableLockData resetCounter() {
+			return new MutableLockData(
+				lockOwner,
+				0,
+				refreshTask
 			);
 		}
 	}
@@ -143,6 +173,7 @@ public final class RedisReentrantLock {
 		// have already computed this.
 		namesToMutableLockData.computeIfAbsent(mKeyName, key -> new MutableLockData(
 			Optional.empty(),
+			0,
 			Optional.empty()
 		));
 
@@ -253,12 +284,20 @@ public final class RedisReentrantLock {
 	public void lock() {
 		mSynchronizers.internalAccessLock().lock();
 		try {
-			// Acquire the intra-shard lock
 			MutableLockData data = namesToMutableLockData.get(mKeyName);
+
+			// Increment if is owner
+			if (data.lockOwner().isPresent() && data.lockOwner().get().equals(Thread.currentThread())) {
+				namesToMutableLockData.put(mKeyName, data.increment());
+				return;
+			}
+
+			// Acquire the intra-shard lock
 			while (data.lockOwner().isPresent()) {
 				mSynchronizers.isIntraLockedCondition().awaitUninterruptibly();
 			}
 			data = data.withLockOwner(Optional.of(Thread.currentThread()));
+			data = data.increment();
 			namesToMutableLockData.put(mKeyName, data);
 
 			// Acquire the inter-shard lock
@@ -343,6 +382,7 @@ public final class RedisReentrantLock {
 			data.refreshTask().ifPresent(future -> future.cancel(false));
 			data = data.withRefreshTask(Optional.empty());
 			data = data.withLockOwner(Optional.empty());
+			data = data.resetCounter();
 			namesToMutableLockData.put(mKeyName, data);
 			mSynchronizers.isIntraLockedCondition().signal();
 			throw e;
@@ -360,12 +400,19 @@ public final class RedisReentrantLock {
 	 * a shard that does not own the inter-shard lock.
 	 */
 	public void unlock() {
-		// Test for correct thread
 		mSynchronizers.internalAccessLock().lock();
 		try {
+			// Test for correct thread
 			MutableLockData data = namesToMutableLockData.get(mKeyName);
 			if (data.lockOwner().isEmpty() || !data.lockOwner().get().equals(Thread.currentThread())) {
 				throw new RedisLockException("Attempted to unlock a redis lock not owned by this thread.");
+			}
+
+			// Decrement if counter greater than 1
+			if (data.counter() > 1) {
+				data = data.decrement();
+				namesToMutableLockData.put(mKeyName, data);
+				return;
 			}
 		} finally {
 			mSynchronizers.internalAccessLock().unlock();
@@ -400,6 +447,7 @@ public final class RedisReentrantLock {
 				data.refreshTask().ifPresent(future -> future.cancel(false));
 				data = data.withRefreshTask(Optional.empty());
 				data = data.withLockOwner(Optional.empty());
+				data = data.resetCounter();
 				namesToMutableLockData.put(mKeyName, data);
 				mSynchronizers.isIntraLockedCondition().signal();
 			} finally {

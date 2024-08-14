@@ -1,15 +1,16 @@
 package com.playmonumenta.redissync;
 
 import io.lettuce.core.SetArgs;
+import io.lettuce.core.TransactionResult;
 import io.lettuce.core.pubsub.RedisPubSubListener;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -27,7 +28,7 @@ public class RedisLock {
 	private final int mRefreshIntervalMS;
 	private volatile Optional<ScheduledFuture<?>> mRefreshTask;
 
-	private final Lock mInternalAccessLock;
+	private final ReentrantLock mInternalAccessLock;
 
 	private final Condition mIsIntraLockedCondition;
 	private final Condition mIsInterLockedCondition;
@@ -118,10 +119,13 @@ public class RedisLock {
 
 	/**
 	 * Tries to acquire the lock on redis.
+	 *
+	 * Although painful, the internal lock should be held
+	 * before calling this method, so that a subscriber
+	 * trigger can't happen after this check but before await.
 	 * @return if acquiring the lock on redis was successful.
 	 */
 	private boolean tryAcquireRedis() {
-		// TODO: Investigate unlocking then relocking on future completion
 		return Optional.ofNullable(
 			RedisAPI.getInstance()
 				.sync()
@@ -129,25 +133,6 @@ public class RedisLock {
 		)
 		.map(response -> "OK".equals(response))
 		.orElse(false);
-	}
-
-	/**
-	 * Gets the shard holding the inter-shard lock.
-	 * Runs watch before getting the shard.
-	 *
-	 * @return The entry in redis at the key
-	 * corresponding to this lock, or None if it
-	 * does not exist.
-	 */
-	private Optional<String> watchThenGetLockingShard() {
-		RedisAPI.getInstance()
-			.async()
-			.watch(mKeyName);
-		return Optional.ofNullable(
-			RedisAPI.getInstance()
-				.sync()
-				.get(mKeyName)
-		);
 	}
 
 	public class RedisLockException extends RuntimeException {
@@ -166,8 +151,13 @@ public class RedisLock {
 	 *
 	 * Upon return, this thread will own both the intra-shard lock
 	 * and the inter-shard lock.
+	 * 
+	 * @throws RejectedExecutionException If the inter-shard lock
+	 * refresh task fails to be scheduled; upon throw, neither lock
+	 * will be held.
 	 */
 	public void lock() {
+		// Acquire the intra-shard lock
 		mInternalAccessLock.lock();
 		try {
 			while (mLockOwner.isPresent()) {
@@ -182,10 +172,10 @@ public class RedisLock {
 			}
 			RedisAPI.getInstance().asyncPubSub().unsubscribe("__keyspace@0__:" + mKeyName);
 
-			// TODO: try catch RejectedExecutionException; gracefully unwind
 			mRefreshTask = Optional.of(
 				REFRESH_SCHEDULER.scheduleAtFixedRate(
 					() -> {
+						/* WARNING: Thrown RejectedExecution REFRESH_WORKERS executions are not logged. */
 						// Create a new thread so separate refresh tasks
 						// don't get stuck behind each other.
 						REFRESH_WORKERS.submit(() -> {
@@ -215,22 +205,17 @@ public class RedisLock {
 							 * - That means you have acquired the lock
 							 * - A separate refresh task has started.
 							 */
-							Optional<String> lockingShard = watchThenGetLockingShard();
+							RedisAPI.getInstance().async().watch(mKeyName);
+							Optional<String> lockingShard = Optional.ofNullable(
+								RedisAPI.getInstance().sync().get(mKeyName)
+							);
 							if (lockingShard.isEmpty() || !lockingShard.get().equals(ConfigAPI.getShardName())) {
-								RedisAPI.getInstance()
-									.async()
-									.unwatch();
+								RedisAPI.getInstance().async().unwatch();
 								return;
 							}
-							RedisAPI.getInstance()
-								.async()
-								.multi();
-							RedisAPI.getInstance()
-								.async()
-								.pexpire(mKeyName, mTimeoutMS);
-							RedisAPI.getInstance()
-								.async()
-								.exec();
+							RedisAPI.getInstance().async().multi();
+							RedisAPI.getInstance().async().pexpire(mKeyName, mTimeoutMS);
+							RedisAPI.getInstance().async().exec();
 						});
 					},
 					mRefreshIntervalMS,
@@ -238,6 +223,30 @@ public class RedisLock {
 					TimeUnit.MILLISECONDS
 				)
 			);
+		} catch (RejectedExecutionException e) {
+			mInternalAccessLock.unlock();
+
+			// Attempt to release the inter-shard lock
+			RedisAPI.getInstance().async().watch(mKeyName);
+			Optional<String> lockingShard = Optional.ofNullable(
+				RedisAPI.getInstance().sync().get(mKeyName)
+			);
+
+			if (lockingShard.isEmpty() || !lockingShard.get().equals(ConfigAPI.getShardName())) {
+				RedisAPI.getInstance().async().unwatch();
+			} else {
+				RedisAPI.getInstance().async().multi();
+				RedisAPI.getInstance().async().del(mKeyName);
+				RedisAPI.getInstance().async().exec();
+			}
+
+			// Release intra-shard lock
+			mInternalAccessLock.lock();
+			mRefreshTask.ifPresent(future -> future.cancel(false));
+			mRefreshTask = Optional.empty();
+			mLockOwner = Optional.empty();
+			mIsIntraLockedCondition.signal();
+			throw e;
 		} finally {
 			mInternalAccessLock.unlock();
 		}
@@ -251,43 +260,44 @@ public class RedisLock {
 	 * by a thread that does not own the intra-shard lock or
 	 * a shard that does not own the inter-shard lock.
 	 */
-	public void unlock() throws RedisLockException {
+	public void unlock() {
+		// Test for correct thread
 		mInternalAccessLock.lock();
 		try {
 			if (mLockOwner.isEmpty() || !mLockOwner.get().equals(Thread.currentThread())) {
 				throw new RedisLockException("Attempted to unlock a redis lock not owned by this thread.");
 			}
+		} finally {
+			mInternalAccessLock.unlock();
+		}
 
-			try {
-				Optional<String> lockingShard = watchThenGetLockingShard();
-				if (lockingShard.isEmpty() || !lockingShard.get().equals(ConfigAPI.getShardName())) {
-					RedisAPI.getInstance()
-						.async()
-						.unwatch();
-					throw new RedisLockException("Attempted to unlock a redis lock not owned by this shard; nearly certainly due to expiration during the critical section.");
-				}
+		// Attempt to release the inter-shard lock
+		try {
+			RedisAPI.getInstance().async().watch(mKeyName);
+			Optional<String> lockingShard = Optional.ofNullable(
+				RedisAPI.getInstance().sync().get(mKeyName)
+			);
 
-				RedisAPI.getInstance()
-					.async()
-					.multi();
-				RedisAPI.getInstance()
-					.async()
-					.del(mKeyName);
-				if (
-					RedisAPI.getInstance()
-						.sync()
-						.exec()
-						.wasDiscarded()
-				) {
-					throw new RedisLockException("Attempted to unlock a redis lock not owned by this shard; nearly certainly due to expiration mid-unlock.");
-				}
-			} finally {
-				mRefreshTask.ifPresent(future -> future.cancel(false));
-				mRefreshTask = Optional.empty();
-				mLockOwner = Optional.empty();
-				mIsIntraLockedCondition.signal();
+			if (lockingShard.isEmpty() || !lockingShard.get().equals(ConfigAPI.getShardName())) {
+				RedisAPI.getInstance().async().unwatch();
+				throw new RedisLockException("Attempted to unlock a redis lock not owned by this shard; nearly certainly due to expiration during the critical section.");
+			}
+
+			RedisAPI.getInstance().async().multi();
+			RedisAPI.getInstance().async().del(mKeyName);
+			TransactionResult result = RedisAPI.getInstance().sync().exec();
+			if (result.wasDiscarded()) {
+				throw new RedisLockException("Attempted to unlock a redis lock not owned by this shard; nearly certainly due to expiration mid-unlock.");
 			}
 		} finally {
+			// Release the intra-shard lock; every exception only occurs as a
+			// result of this shard not owning the redis key, so we can't
+			// do anything about that.
+			mInternalAccessLock.lock();
+			mRefreshTask.ifPresent(future -> future.cancel(false));
+			mRefreshTask = Optional.empty();
+			mLockOwner = Optional.empty();
+			mIsIntraLockedCondition.signal();
 			mInternalAccessLock.unlock();
 		}
 	}

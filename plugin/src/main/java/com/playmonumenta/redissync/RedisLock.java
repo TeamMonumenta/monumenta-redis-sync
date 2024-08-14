@@ -20,10 +20,10 @@ public class RedisLock {
 	private final String mKeyName;
 	private final int mTimeoutMS;
 
-	private final ExecutorService mSubscribeSignaler;
+	private static final ExecutorService SUBSCRIBE_SIGNALLERS = Executors.newCachedThreadPool();
 
-	private final ScheduledExecutorService mRefreshScheduler;
-	private final ExecutorService mRefreshWorkers;
+	private static final ScheduledExecutorService REFRESH_SCHEDULER = Executors.newSingleThreadScheduledExecutor();
+	private static final ExecutorService REFRESH_WORKERS = Executors.newCachedThreadPool();
 	private final int mRefreshIntervalMS;
 	private volatile Optional<ScheduledFuture<?>> mRefreshTask;
 
@@ -51,10 +51,6 @@ public class RedisLock {
 		mKeyName = ConfigAPI.getServerDomain() + ":locks:" + lockName;
 		mTimeoutMS = timeoutMS;
 
-		mSubscribeSignaler = Executors.newSingleThreadExecutor();
-
-		mRefreshScheduler = Executors.newSingleThreadScheduledExecutor();
-		mRefreshWorkers = Executors.newCachedThreadPool();
 		mRefreshIntervalMS = refreshIntervalMS;
 		mRefreshTask = Optional.empty();
 
@@ -76,7 +72,7 @@ public class RedisLock {
 			if (!channel.equals("__keyspace@0__:" + mKeyName)) {
 				return;
 			}
-			mSubscribeSignaler.execute(() -> {
+			SUBSCRIBE_SIGNALLERS.execute(() -> {
 				/**
 				 * Acquiring the lock here prevents signalling after
 				 * tryAcquireRedis fails but before condition await;
@@ -125,6 +121,7 @@ public class RedisLock {
 	 * @return if acquiring the lock on redis was successful.
 	 */
 	private boolean tryAcquireRedis() {
+		// TODO: Investigate unlocking then relocking on future completion
 		return Optional.ofNullable(
 			RedisAPI.getInstance()
 				.sync()
@@ -187,11 +184,11 @@ public class RedisLock {
 
 			// TODO: try catch RejectedExecutionException; gracefully unwind
 			mRefreshTask = Optional.of(
-				mRefreshScheduler.scheduleAtFixedRate(
+				REFRESH_SCHEDULER.scheduleAtFixedRate(
 					() -> {
 						// Create a new thread so separate refresh tasks
 						// don't get stuck behind each other.
-						mRefreshWorkers.submit(() -> {
+						REFRESH_WORKERS.submit(() -> {
 							// Mind the case: key is deleted before this task is shut down,
 							// this task's last run would refresh a different shard's lock.
 
@@ -199,7 +196,7 @@ public class RedisLock {
 
 							/**
 							 * Two outcomes:
-							 * 
+							 *
 							 * Found self:
 							 * WATCH
 							 * self_shard = GET mKeyName
@@ -269,7 +266,7 @@ public class RedisLock {
 						.unwatch();
 					throw new RedisLockException("Attempted to unlock a redis lock not owned by this shard; nearly certainly due to expiration during the critical section.");
 				}
-				
+
 				RedisAPI.getInstance()
 					.async()
 					.multi();
@@ -286,11 +283,18 @@ public class RedisLock {
 				}
 			} finally {
 				mRefreshTask.ifPresent(future -> future.cancel(false));
+				mRefreshTask = Optional.empty();
 				mLockOwner = Optional.empty();
 				mIsIntraLockedCondition.signal();
 			}
 		} finally {
 			mInternalAccessLock.unlock();
 		}
+	}
+
+	public static void shutdownExecutors() {
+		SUBSCRIBE_SIGNALLERS.shutdown();
+		REFRESH_SCHEDULER.shutdown();
+		REFRESH_WORKERS.shutdown();
 	}
 }

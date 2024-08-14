@@ -32,7 +32,7 @@ public class MonumentaRedisSyncBungee extends Plugin {
 			mRedisAPI.shutdown();
 		}
 		mRedisAPI = null;
-		RedisLock.shutdownExecutors();
+		RedisReentrantLock.shutdownExecutors();
 	}
 
 	private void loadConfig() {

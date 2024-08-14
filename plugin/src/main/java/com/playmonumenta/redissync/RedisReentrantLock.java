@@ -3,7 +3,6 @@ package com.playmonumenta.redissync;
 import io.lettuce.core.SetArgs;
 import io.lettuce.core.TransactionResult;
 import io.lettuce.core.pubsub.RedisPubSubListener;
-import java.util.HashMap;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -41,13 +40,14 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * <p>This lock uses redis for backing. A provided lock name is used
  * to find a corresponding entry in redis on which to block against
- * if present.</p>
+ * if present. To provide crash resilience, this entry has an expiry time,
+ * which is refreshed while this shard is alive.</p>
  *
  * <p>Credit: Some parts copied from {@link java.util.concurrent.locks.Lock} javadoc.</p>
  */
 
 // TODO: Double lock behavior
-public final class RedisLock {
+public final class RedisReentrantLock {
 
 	private static final int DEFAULT_TIMEOUT_MS = 10000;
 	private static final int DEFAULT_REFRESH_INTERVAL_MS = 100;
@@ -98,6 +98,10 @@ public final class RedisLock {
 		}
 	}
 
+	public RedisReentrantLock(String lockName) {
+		this(lockName, DEFAULT_TIMEOUT_MS, DEFAULT_REFRESH_INTERVAL_MS);
+	}
+
 	/**
 	 * Constructs a redis lock.
 	 *
@@ -111,7 +115,7 @@ public final class RedisLock {
 	 * will refresh the expiry time on the key in redis every refreshIntervalMS
 	 * milliseconds.
 	 */
-	public RedisLock(String lockName, int timeoutMS, int refreshIntervalMS) {
+	public RedisReentrantLock(String lockName, int timeoutMS, int refreshIntervalMS) {
 		mKeyName = ConfigAPI.getServerDomain() + ":locks:" + lockName;
 
 		mSynchronizers = namesToSynchronizationConstructs.computeIfAbsent(mKeyName, key -> {

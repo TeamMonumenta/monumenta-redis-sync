@@ -29,31 +29,46 @@ import java.util.concurrent.locks.ReentrantLock;
  * <p>The code executed between acquiring and releasing the lock is called
  * the <bold>critical section</bold>.</p>
  *
- * <pre>
- * {@code
+ * <pre>{@code
  * RedisLock lock = new Lock(...);
  * lock.lock();
  * // Critical section code
- * lock.unlock();
- * }
- * </pre>
+ * lock.unlock();}</pre>
  *
  * <p>It is recommended to always place the critical section in a try...finally
- * block, to ensure that the lock is always released.</p>
+ * block, to ensure that the lock is always released:</p>
+ *
+ * <pre>{@code
+ * RedisLock lock = new Lock(...);
+ * lock.lock();
+ * try {
+ *     // Critical section code
+ * } finally {
+ *     lock.unlock();
+ * }}</pre>
+ * 
+ * <p>This lock is a reentrant lock, so the same thread may acquire the lock
+ * multiple times. Each lock increments an internal counter, and
+ * each unlock decrements that counter; when the counter hits 0,
+ * the lock will release.</p>
  *
  * <p>This lock uses redis for backing. A provided lock name is used
  * to find a corresponding entry in redis on which to block against
- * if present. To provide crash resilience, this entry has an expiry time,
- * which is refreshed while this shard is alive.</p>
+ * if present. To provide crash resilience, this redis entry has an expiry time,
+ * which is refreshed on a separate thread during the period of the critical section.
+ * Beware that sufficiently short expiry times or expiry times less than refresh
+ * interval times may cause expiry mid-critical section, and can cause
+ * loss of exclusive access; in this case, if an unlock sees another, it will throw a {@code RedisLockException}</p>
+ * 
+ * <p>Implementation detail: Note also that intra-shard synchronization is on a per-name basis,
+ * rather than blocking on an instance of a {@code RedisReentrantLock} object.</p>
  *
  * <p>Credit: Some parts copied from {@link java.util.concurrent.locks.Lock} javadoc.</p>
  */
-
-// TODO: Double lock behavior
 public final class RedisReentrantLock {
 
-	private static final int DEFAULT_TIMEOUT_MS = 10000;
-	private static final int DEFAULT_REFRESH_INTERVAL_MS = 100;
+	public static final int DEFAULT_TIMEOUT_MS = 10000;
+	public static final int DEFAULT_REFRESH_INTERVAL_MS = 100;
 
 	private static final ExecutorService subscribeSignallers = Executors.newCachedThreadPool();
 	private static final ScheduledExecutorService refreshScheduler = Executors.newSingleThreadScheduledExecutor();
@@ -128,22 +143,40 @@ public final class RedisReentrantLock {
 		}
 	}
 
+	/**
+	 * Constructs a RedisReentrantLock with the given name.
+	 *
+	 * <p>Also sets the global redis expiry time and global
+	 * refresh task interval corresponding to this lock name
+	 * to their defaults, provided they haven't already been
+	 * set. These defaults are exposed as public constants
+	 * under {@code DEFAULT_TIMEOUT_MS} and
+	 * {@code DEFAULT_REFRESH_INTERVAL_MS}.</p>
+	 *
+	 * @param lockName the name used to construct the backing redis
+	 * key name for this lock. The full key name will be formatted
+	 * {@code ConfigAPI.getServerDomain() + ":locks:" + lockName}
+	 * and appears in redis as a string key.
+	 */
 	public RedisReentrantLock(String lockName) {
 		this(lockName, DEFAULT_TIMEOUT_MS, DEFAULT_REFRESH_INTERVAL_MS);
 	}
 
 	/**
-	 * Constructs a redis lock.
+	 * Constructs a RedisReentrantLock with the given name.
+	 * 
+	 * <p>Also sets the global redis expiry time and global
+	 * refresh task interval corresponding to this lock name
+	 * to those given, provided they haven't already been
+	 * set.</p>
 	 *
-	 * @param lockName The key name postfix; acquiring
-	 * the inter-shard lock will set the key
-	 * {@code ConfigAPI.getServerDomain()}:locks:{@code lockName} in redis
-	 * to the name of this shard.
+	 * @param lockName the name used to construct the backing redis
+	 * key name for this lock. The full key name will be formatted
+	 * {@code ConfigAPI.getServerDomain() + ":locks:" + lockName}
+	 * and appears in redis as a string key.
 	 * @param timeoutMS The expiry time for the key in redis, in milliseconds.
-	 * The expiry time of the key in redis is set to this with PX argument.
-	 * @param refreshIntervalMS While the lock is acquired, a separate thread
-	 * will refresh the expiry time on the key in redis every refreshIntervalMS
-	 * milliseconds.
+	 * @param refreshIntervalMS The time interval at which a separate thread will
+	 * refresh the expiry time for the key in redis, in milliseconds.
 	 */
 	public RedisReentrantLock(String lockName, int timeoutMS, int refreshIntervalMS) {
 		mKeyName = ConfigAPI.getServerDomain() + ":locks:" + lockName;
@@ -241,9 +274,9 @@ public final class RedisReentrantLock {
 	/**
 	 * Tries to acquire the lock on redis.
 	 *
-	 * Although painful, the internal lock should be held
+	 * <p>Although painful, the internal lock should be held
 	 * before calling this method, so that a subscriber
-	 * trigger can't happen after this check but before await.
+	 * trigger can't happen after this check but before await.</p>
 	 * @return if acquiring the lock on redis was successful.
 	 */
 	private boolean tryAcquireRedis() {
@@ -260,6 +293,10 @@ public final class RedisReentrantLock {
 		.orElse(false);
 	}
 
+	/**
+	 * Thrown by a failing unlock, where this thread or shard
+	 * does not own the lock.
+	 */
 	public class RedisLockException extends RuntimeException {
 		public RedisLockException() {
 			super();
@@ -271,21 +308,25 @@ public final class RedisReentrantLock {
 	}
 
 	/**
-	 * Attempts to acquire the lock, and blocks this thread
-	 * until it is able to do so.
+	 * Attempts to acquire the lock.
 	 *
-	 * Upon return, this thread will own both the intra-shard lock
-	 * and the inter-shard lock.
+	 * If the lock is held by another thread or another shard,
+	 * this thread will block until it can acquire the lock.
 	 *
-	 * @throws RejectedExecutionException If the inter-shard lock
-	 * refresh task fails to be scheduled; upon throw, neither lock
-	 * will be held.
+	 * If the lock is not held by another thread or shard,
+	 * this thread will acquire the lock immediately.
+	 *
+	 * If the lock is held by this thread, the internal counter
+	 * will be incremented and this method will return immediately.
+	 *
+	 * @throws RejectedExecutionException If the redis key 
+	 * refresh task fails to be scheduled; upon throw, no
+	 * locks will be held.
 	 */
 	public void lock() {
 		mSynchronizers.internalAccessLock().lock();
 		try {
 			MutableLockData data = namesToMutableLockData.get(mKeyName);
-
 			// Increment if is owner
 			if (data.lockOwner().isPresent() && data.lockOwner().get().equals(Thread.currentThread())) {
 				namesToMutableLockData.put(mKeyName, data.increment());
@@ -293,7 +334,7 @@ public final class RedisReentrantLock {
 			}
 
 			// Acquire the intra-shard lock
-			while (data.lockOwner().isPresent()) {
+			while ((data = namesToMutableLockData.get(mKeyName)).lockOwner().isPresent()) {
 				mSynchronizers.isIntraLockedCondition().awaitUninterruptibly();
 			}
 			data = data.withLockOwner(Optional.of(Thread.currentThread()));
@@ -311,8 +352,7 @@ public final class RedisReentrantLock {
 				refreshScheduler.scheduleAtFixedRate(
 					() -> {
 						/* WARNING: Thrown RejectedExecution REFRESH_WORKERS executions are not logged. */
-						// Create a new thread so separate refresh tasks
-						// don't get stuck behind each other.
+						// Create a new thread so separate refresh tasks don't get stuck behind each other.
 						refreshWorkers.submit(() -> {
 							// Mind the case: key is deleted before this task is shut down,
 							// this task's last run would refresh a different shard's lock.
@@ -358,6 +398,7 @@ public final class RedisReentrantLock {
 					TimeUnit.MILLISECONDS
 				)
 			);
+			data = namesToMutableLockData.get(mKeyName);
 			data = data.withRefreshTask(refreshTask);
 			namesToMutableLockData.put(mKeyName, data);
 		} catch (RejectedExecutionException e) {
@@ -378,6 +419,7 @@ public final class RedisReentrantLock {
 			}
 
 			mSynchronizers.internalAccessLock().lock();
+			// Release the intra-shard lock
 			MutableLockData data = namesToMutableLockData.get(mKeyName);
 			data.refreshTask().ifPresent(future -> future.cancel(false));
 			data = data.withRefreshTask(Optional.empty());
@@ -392,8 +434,8 @@ public final class RedisReentrantLock {
 	}
 
 	/**
-	 * Releases the lock, deleting the key entry
-	 * in redis.
+	 * Decrements the internal counter; if it reaches 0, it
+	 * releases the lock, deleting the key entry in redis.
 	 *
 	 * @throws RedisLockException If this method is called
 	 * by a thread that does not own the intra-shard lock or
@@ -456,6 +498,9 @@ public final class RedisReentrantLock {
 		}
 	}
 
+	/**
+	 * Shuts down refresh tasks and other internal executors.
+	 */
 	public static void shutdownExecutors() {
 		subscribeSignallers.shutdown();
 		refreshScheduler.shutdown();

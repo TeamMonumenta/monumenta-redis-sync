@@ -63,7 +63,10 @@ public class MonumentaRedisSyncVelocity {
 		try {
 			// load config
 			mBaseConfig = mLoader.load();
-			mConfig = mBaseConfig.get(RedisConfiguration.class);
+			RedisConfiguration temp = mBaseConfig.get(RedisConfiguration.class);
+			if (temp != null) {
+				mConfig = temp;
+			}
 		} catch (ConfigurateException ex) {
 			// TODO: may want to shut down the proxy if configuration fails to load
 			mLogger.warn("Failed to load config file, using defaults: " + ex.getMessage());

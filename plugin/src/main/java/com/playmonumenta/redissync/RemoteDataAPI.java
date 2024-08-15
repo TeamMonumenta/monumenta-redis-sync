@@ -41,7 +41,7 @@ public class RemoteDataAPI {
 			return future;
 		}
 
-		return api.async().hmget(getRedisPath(uuid), keys).toCompletableFuture().thenApply((listResult) -> listResult.stream().collect(Collectors.toMap((entry) -> entry.getKey(), (entry) -> entry.getValue())));
+		return api.async().hmget(getRedisPath(uuid), keys).toCompletableFuture().thenApply((listResult) -> listResult.stream().filter(x -> x.hasValue()).collect(Collectors.toMap((entry) -> entry.getKey(), (entry) -> entry.getValue())));
 	}
 
 	/**

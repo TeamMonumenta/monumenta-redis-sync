@@ -105,8 +105,8 @@ public class MonumentaRedisSync extends JavaPlugin {
 			mRedisAPI.shutdown();
 		}
 		mRedisAPI = null;
-		RedisReentrantLock.shutdownExecutors();
 		getServer().getScheduler().cancelTasks(this);
+		RedisReentrantLock.shutdownExecutors();
 	}
 
 	@SuppressWarnings("NullAway") // Intentionally don't mark this as nullable - if this plugin is working, this will not be null

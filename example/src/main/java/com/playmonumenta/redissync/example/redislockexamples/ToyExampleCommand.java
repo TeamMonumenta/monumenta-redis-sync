@@ -5,6 +5,8 @@ import com.playmonumenta.redissync.RedisAPI;
 import com.playmonumenta.redissync.RedisReentrantLock;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.StringArgument;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,19 +31,19 @@ public class ToyExampleCommand {
 					public void run() {
 						lock.lock();
 						try {
-							plugin.getLogger().info("Lock acquired");
-							plugin.getLogger().info("Reading shard holding lock: " + Optional.ofNullable(RedisAPI.getInstance().sync().get(ConfigAPI.getServerDomain() + ":locks:toyLock")).orElse("None"));
-							plugin.getLogger().info("Reading common entry: " + Optional.ofNullable(RedisAPI.getInstance().sync().get(KEY)).orElse("None"));
-							plugin.getLogger().info("Setting common entry...");
+							logExact(plugin, "Lock acquired");
+							logExact(plugin, "Reading shard holding lock: " + Optional.ofNullable(RedisAPI.getInstance().sync().get(ConfigAPI.getServerDomain() + ":locks:toyLock")).orElse("None"));
+							logExact(plugin, "Reading common entry: " + Optional.ofNullable(RedisAPI.getInstance().sync().get(KEY)).orElse("None"));
+							logExact(plugin, "Setting common entry...");
 							RedisAPI.getInstance().sync().set(KEY, ConfigAPI.getShardName());
 							try {
 								Thread.sleep(3000);
 							} catch (InterruptedException e) {
 								e.printStackTrace();
 							}
-							plugin.getLogger().info("Reading common entry: " + Optional.ofNullable(RedisAPI.getInstance().sync().get(KEY)).orElse("None"));
+							logExact(plugin, "Reading common entry: " + Optional.ofNullable(RedisAPI.getInstance().sync().get(KEY)).orElse("None"));
 						} finally {
-							plugin.getLogger().info("Releasing lock");
+							logExact(plugin, "Releasing lock");
 							lock.unlock();
 						}
 					}
@@ -55,19 +57,19 @@ public class ToyExampleCommand {
 						RedisReentrantLock lock = new RedisReentrantLock("toyLock");
 						lock.lock();
 						try {
-							plugin.getLogger().info("Lock acquired");
-							plugin.getLogger().info("Reading shard holding lock: " + Optional.ofNullable(RedisAPI.getInstance().sync().get(ConfigAPI.getServerDomain() + ":locks:toyLock")).orElse("None"));
-							plugin.getLogger().info("Reading common entry: " + Optional.ofNullable(RedisAPI.getInstance().sync().get(KEY)).orElse("None"));
-							plugin.getLogger().info("Setting common entry...");
+							logExact(plugin, "Lock acquired");
+							logExact(plugin, "Reading shard holding lock: " + Optional.ofNullable(RedisAPI.getInstance().sync().get(ConfigAPI.getServerDomain() + ":locks:toyLock")).orElse("None"));
+							logExact(plugin, "Reading common entry: " + Optional.ofNullable(RedisAPI.getInstance().sync().get(KEY)).orElse("None"));
+							logExact(plugin, "Setting common entry...");
 							RedisAPI.getInstance().sync().set(KEY, ConfigAPI.getShardName());
 							try {
 								Thread.sleep(1000);
 							} catch (InterruptedException e) {
 								e.printStackTrace();
 							}
-							plugin.getLogger().info("Reading common entry: " + Optional.ofNullable(RedisAPI.getInstance().sync().get(KEY)).orElse("None"));
+							logExact(plugin, "Reading common entry: " + Optional.ofNullable(RedisAPI.getInstance().sync().get(KEY)).orElse("None"));
 						} finally {
-							plugin.getLogger().info("Releasing lock");
+							logExact(plugin, "Releasing lock");
 							lock.unlock();
 						}
 					}
@@ -81,24 +83,30 @@ public class ToyExampleCommand {
 						List<String> logs = Collections.synchronizedList(new ArrayList<>());
 						lock.lock();
 						try {
-							plugin.getLogger().info("Lock acquired");
-							plugin.getLogger().info("Reading shard holding lock: " + Optional.ofNullable(RedisAPI.getInstance().sync().get(ConfigAPI.getServerDomain() + ":locks:toyLock")).orElse("None"));
-							plugin.getLogger().info("Reading common entry: " + Optional.ofNullable(RedisAPI.getInstance().sync().get(KEY)).orElse("None"));
-							plugin.getLogger().info("Setting common entry...");
+							logExact(plugin, "Lock acquired");
+							logExact(plugin, "Reading shard holding lock: " + Optional.ofNullable(RedisAPI.getInstance().sync().get(ConfigAPI.getServerDomain() + ":locks:toyLock")).orElse("None"));
+							logExact(plugin, "Reading common entry: " + Optional.ofNullable(RedisAPI.getInstance().sync().get(KEY)).orElse("None"));
+							logExact(plugin, "Setting common entry...");
 							RedisAPI.getInstance().sync().set(KEY, ConfigAPI.getShardName());
 							try {
 								Thread.sleep(15000);
 							} catch (InterruptedException e) {
 								e.printStackTrace();
 							}
-							plugin.getLogger().info("Reading common entry: " + Optional.ofNullable(RedisAPI.getInstance().sync().get(KEY)).orElse("None"));
+							logExact(plugin, "Reading common entry: " + Optional.ofNullable(RedisAPI.getInstance().sync().get(KEY)).orElse("None"));
 						} finally {
-							plugin.getLogger().info("Releasing lock");
+							logExact(plugin, "Releasing lock");
 							lock.unlock();
 						}
 					}
 
 				}.runTaskLaterAsynchronously(plugin, 40);
 			});
+	}
+
+	private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.nnnnnnnnn");
+
+	private static void logExact(Plugin plugin, String message) {
+		plugin.getLogger().info("[" + LocalDateTime.now().format(formatter) + "] <" + ConfigAPI.getShardName() + "> " + message);
 	}
 }

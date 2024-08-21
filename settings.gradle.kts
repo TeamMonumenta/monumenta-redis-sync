@@ -11,6 +11,7 @@ project(":redissync").projectDir = file("plugin")
 pluginManagement {
 	repositories {
 		gradlePluginPortal()
+		mavenCentral()
 		maven("https://papermc.io/repo/repository/maven-public/")
 		maven("https://maven.playmonumenta.com/releases")
 	}

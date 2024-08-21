@@ -98,13 +98,13 @@ public final class RedisReentrantLock {
 	) {}
 
 	private record MutableLockData(
-		Optional<Thread> lockOwner,
+		Optional<Thread> lockingThread,
 		int counter,
 		Optional<ScheduledFuture<?>> refreshTask
 	) {
-		public MutableLockData withLockOwner(Optional<Thread> newLockOwner) {
+		public MutableLockData withLockingThread(Optional<Thread> newLockingThread) {
 			return new MutableLockData(
-				newLockOwner,
+				newLockingThread,
 				counter,
 				refreshTask
 			);
@@ -112,7 +112,7 @@ public final class RedisReentrantLock {
 
 		public MutableLockData withRefreshTask(Optional<ScheduledFuture<?>> newRefreshTask) {
 			return new MutableLockData(
-				lockOwner,
+				lockingThread,
 				counter,
 				newRefreshTask
 			);
@@ -120,7 +120,7 @@ public final class RedisReentrantLock {
 
 		public MutableLockData increment() {
 			return new MutableLockData(
-				lockOwner,
+				lockingThread,
 				counter + 1,
 				refreshTask
 			);
@@ -128,7 +128,7 @@ public final class RedisReentrantLock {
 
 		public MutableLockData decrement() {
 			return new MutableLockData(
-				lockOwner,
+				lockingThread,
 				Math.max(0, counter - 1),
 				refreshTask
 			);
@@ -136,7 +136,7 @@ public final class RedisReentrantLock {
 
 		public MutableLockData resetCounter() {
 			return new MutableLockData(
-				lockOwner,
+				lockingThread,
 				0,
 				refreshTask
 			);
@@ -164,7 +164,7 @@ public final class RedisReentrantLock {
 
 	/**
 	 * Constructs a RedisReentrantLock with the given name.
-	 * 
+	 *
 	 * <p>Also sets the global redis expiry time and global
 	 * refresh task interval corresponding to this lock name
 	 * to those given, provided they haven't already been
@@ -319,7 +319,7 @@ public final class RedisReentrantLock {
 	 * If the lock is held by this thread, the internal counter
 	 * will be incremented and this method will return immediately.
 	 *
-	 * @throws RejectedExecutionException If the redis key 
+	 * @throws RejectedExecutionException If the redis key
 	 * refresh task fails to be scheduled; upon throw, no
 	 * locks will be held.
 	 */
@@ -328,16 +328,20 @@ public final class RedisReentrantLock {
 		try {
 			MutableLockData data = namesToMutableLockData.get(mKeyName);
 			// Increment if is owner
-			if (data.lockOwner().isPresent() && data.lockOwner().get().equals(Thread.currentThread())) {
+			boolean currentThreadOwnsLock =
+				data.lockingThread()
+					.filter(lockingThread -> lockingThread.equals(Thread.currentThread()))
+					.isPresent();
+			if (currentThreadOwnsLock) {
 				namesToMutableLockData.put(mKeyName, data.increment());
 				return;
 			}
 
 			// Acquire the intra-shard lock
-			while ((data = namesToMutableLockData.get(mKeyName)).lockOwner().isPresent()) {
+			while ((data = namesToMutableLockData.get(mKeyName)).lockingThread().isPresent()) {
 				mSynchronizers.isIntraLockedCondition().awaitUninterruptibly();
 			}
-			data = data.withLockOwner(Optional.of(Thread.currentThread()));
+			data = data.withLockingThread(Optional.of(Thread.currentThread()));
 			data = data.increment();
 			namesToMutableLockData.put(mKeyName, data);
 
@@ -381,16 +385,18 @@ public final class RedisReentrantLock {
 							 * - A separate refresh task has started.
 							 */
 							RedisAPI.getInstance().async().watch(mKeyName);
-							Optional<String> lockingShard = Optional.ofNullable(
+							Optional.ofNullable(
 								RedisAPI.getInstance().sync().get(mKeyName)
+							)
+							.filter(lockingShard -> lockingShard.equals(ConfigAPI.getShardName()))
+							.ifPresentOrElse(
+								lockingShard -> {
+									RedisAPI.getInstance().async().multi();
+									RedisAPI.getInstance().async().pexpire(mKeyName, mImmutableLockData.timeoutMS());
+									RedisAPI.getInstance().async().exec();
+								},
+								() -> RedisAPI.getInstance().async().unwatch()
 							);
-							if (lockingShard.isEmpty() || !lockingShard.get().equals(ConfigAPI.getShardName())) {
-								RedisAPI.getInstance().async().unwatch();
-								return;
-							}
-							RedisAPI.getInstance().async().multi();
-							RedisAPI.getInstance().async().pexpire(mKeyName, mImmutableLockData.timeoutMS());
-							RedisAPI.getInstance().async().exec();
 						});
 					},
 					mImmutableLockData.refreshIntervalMS(),
@@ -406,24 +412,25 @@ public final class RedisReentrantLock {
 
 			// Attempt to release the inter-shard lock
 			RedisAPI.getInstance().async().watch(mKeyName);
-			Optional<String> lockingShard = Optional.ofNullable(
+			Optional.ofNullable(
 				RedisAPI.getInstance().sync().get(mKeyName)
+			)
+			.filter(lockingShard -> lockingShard.equals(ConfigAPI.getShardName()))
+			.ifPresentOrElse(
+				lockingShard -> {
+					RedisAPI.getInstance().async().multi();
+					RedisAPI.getInstance().async().del(mKeyName);
+					RedisAPI.getInstance().async().exec();
+				},
+				() -> RedisAPI.getInstance().async().unwatch()
 			);
-
-			if (lockingShard.isEmpty() || !lockingShard.get().equals(ConfigAPI.getShardName())) {
-				RedisAPI.getInstance().async().unwatch();
-			} else {
-				RedisAPI.getInstance().async().multi();
-				RedisAPI.getInstance().async().del(mKeyName);
-				RedisAPI.getInstance().async().exec();
-			}
 
 			mSynchronizers.internalAccessLock().lock();
 			// Release the intra-shard lock
 			MutableLockData data = namesToMutableLockData.get(mKeyName);
 			data.refreshTask().ifPresent(future -> future.cancel(false));
 			data = data.withRefreshTask(Optional.empty());
-			data = data.withLockOwner(Optional.empty());
+			data = data.withLockingThread(Optional.empty());
 			data = data.resetCounter();
 			namesToMutableLockData.put(mKeyName, data);
 			mSynchronizers.isIntraLockedCondition().signal();
@@ -446,9 +453,9 @@ public final class RedisReentrantLock {
 		try {
 			// Test for correct thread
 			MutableLockData data = namesToMutableLockData.get(mKeyName);
-			if (data.lockOwner().isEmpty() || !data.lockOwner().get().equals(Thread.currentThread())) {
-				throw new RedisLockException("Attempted to unlock a redis lock not owned by this thread.");
-			}
+			data.lockingThread()
+				.filter(lockingThread -> lockingThread.equals(Thread.currentThread()))
+				.orElseThrow(() -> new RedisLockException("Attempted to unlock a redis lock not owned by this thread."));
 
 			// Decrement if counter greater than 1
 			if (data.counter() > 1) {
@@ -463,14 +470,14 @@ public final class RedisReentrantLock {
 		// Attempt to release the inter-shard lock
 		try {
 			RedisAPI.getInstance().async().watch(mKeyName);
-			Optional<String> lockingShard = Optional.ofNullable(
+			Optional.ofNullable(
 				RedisAPI.getInstance().sync().get(mKeyName)
-			);
-
-			if (lockingShard.isEmpty() || !lockingShard.get().equals(ConfigAPI.getShardName())) {
+			)
+			.filter(lockingShard -> lockingShard.equals(ConfigAPI.getShardName()))
+			.orElseThrow(() -> {
 				RedisAPI.getInstance().async().unwatch();
-				throw new RedisLockException("Attempted to unlock a redis lock not owned by this shard; nearly certainly due to expiration during the critical section.");
-			}
+				return new RedisLockException("Attempted to unlock a redis lock not owned by this shard; nearly certainly due to expiration during the critical section.");
+			});
 
 			RedisAPI.getInstance().async().multi();
 			RedisAPI.getInstance().async().del(mKeyName);
@@ -488,7 +495,7 @@ public final class RedisReentrantLock {
 				MutableLockData data = namesToMutableLockData.get(mKeyName);
 				data.refreshTask().ifPresent(future -> future.cancel(false));
 				data = data.withRefreshTask(Optional.empty());
-				data = data.withLockOwner(Optional.empty());
+				data = data.withLockingThread(Optional.empty());
 				data = data.resetCounter();
 				namesToMutableLockData.put(mKeyName, data);
 				mSynchronizers.isIntraLockedCondition().signal();

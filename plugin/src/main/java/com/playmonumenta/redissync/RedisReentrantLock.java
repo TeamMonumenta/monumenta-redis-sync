@@ -46,7 +46,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * } finally {
  *     lock.unlock();
  * }}</pre>
- * 
+ *
  * <p>This lock is a reentrant lock, so the same thread may acquire the lock
  * multiple times. Each lock increments an internal counter, and
  * each unlock decrements that counter; when the counter hits 0,
@@ -59,7 +59,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Beware that sufficiently short expiry times or expiry times less than refresh
  * interval times may cause expiry mid-critical section, and can cause
  * loss of exclusive access; in this case, if an unlock sees another, it will throw a {@code RedisLockException}</p>
- * 
+ *
  * <p>Implementation detail: Note also that intra-shard synchronization is on a per-name basis,
  * rather than blocking on an instance of a {@code RedisReentrantLock} object.</p>
  *

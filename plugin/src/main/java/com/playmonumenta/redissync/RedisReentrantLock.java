@@ -2,6 +2,7 @@ package com.playmonumenta.redissync;
 
 import io.lettuce.core.SetArgs;
 import io.lettuce.core.TransactionResult;
+import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.pubsub.RedisPubSubListener;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -384,19 +385,21 @@ public final class RedisReentrantLock {
 							 * - That means you have acquired the lock
 							 * - A separate refresh task has started.
 							 */
-							RedisAPI.getInstance().async().watch(mKeyName);
-							Optional.ofNullable(
-								RedisAPI.getInstance().sync().get(mKeyName)
-							)
-							.filter(lockingShard -> lockingShard.equals(ConfigAPI.getShardName()))
-							.ifPresentOrElse(
-								lockingShard -> {
-									RedisAPI.getInstance().async().multi();
-									RedisAPI.getInstance().async().pexpire(mKeyName, mImmutableLockData.timeoutMS());
-									RedisAPI.getInstance().async().exec();
-								},
-								() -> RedisAPI.getInstance().async().unwatch()
-							);
+							try (StatefulRedisConnection<String, String> connection = RedisAPI.getInstance().getConnectionFromPool()) {
+								connection.async().watch(mKeyName);
+								Optional.ofNullable(
+									connection.sync().get(mKeyName)
+								)
+								.filter(lockingShard -> lockingShard.equals(ConfigAPI.getShardName()))
+								.ifPresentOrElse(
+									lockingShard -> {
+										connection.async().multi();
+										connection.async().pexpire(mKeyName, mImmutableLockData.timeoutMS());
+										connection.async().exec();
+									},
+									() -> connection.async().unwatch()
+								);
+							}
 						});
 					},
 					mImmutableLockData.refreshIntervalMS(),
@@ -411,19 +414,21 @@ public final class RedisReentrantLock {
 			mSynchronizers.internalAccessLock().unlock();
 
 			// Attempt to release the inter-shard lock
-			RedisAPI.getInstance().async().watch(mKeyName);
-			Optional.ofNullable(
-				RedisAPI.getInstance().sync().get(mKeyName)
-			)
-			.filter(lockingShard -> lockingShard.equals(ConfigAPI.getShardName()))
-			.ifPresentOrElse(
-				lockingShard -> {
-					RedisAPI.getInstance().async().multi();
-					RedisAPI.getInstance().async().del(mKeyName);
-					RedisAPI.getInstance().async().exec();
-				},
-				() -> RedisAPI.getInstance().async().unwatch()
-			);
+			try (StatefulRedisConnection<String, String> connection = RedisAPI.getInstance().getConnectionFromPool()) {
+				connection.async().watch(mKeyName);
+				Optional.ofNullable(
+					connection.sync().get(mKeyName)
+				)
+				.filter(lockingShard -> lockingShard.equals(ConfigAPI.getShardName()))
+				.ifPresentOrElse(
+					lockingShard -> {
+						connection.async().multi();
+						connection.async().del(mKeyName);
+						connection.async().exec();
+					},
+					() -> connection.async().unwatch()
+				);
+			}
 
 			mSynchronizers.internalAccessLock().lock();
 			// Release the intra-shard lock
@@ -468,20 +473,20 @@ public final class RedisReentrantLock {
 		}
 
 		// Attempt to release the inter-shard lock
-		try {
-			RedisAPI.getInstance().async().watch(mKeyName);
+		try (StatefulRedisConnection<String, String> connection = RedisAPI.getInstance().getConnectionFromPool()) {
+			connection.async().watch(mKeyName);
 			Optional.ofNullable(
-				RedisAPI.getInstance().sync().get(mKeyName)
+				connection.sync().get(mKeyName)
 			)
 			.filter(lockingShard -> lockingShard.equals(ConfigAPI.getShardName()))
 			.orElseThrow(() -> {
-				RedisAPI.getInstance().async().unwatch();
+				connection.async().unwatch();
 				return new RedisLockException("Attempted to unlock a redis lock not owned by this shard; nearly certainly due to expiration during the critical section.");
 			});
 
-			RedisAPI.getInstance().async().multi();
-			RedisAPI.getInstance().async().del(mKeyName);
-			TransactionResult result = RedisAPI.getInstance().sync().exec();
+			connection.async().multi();
+			connection.async().del(mKeyName);
+			TransactionResult result = connection.sync().exec();
 			if (result.wasDiscarded()) {
 				throw new RedisLockException("Attempted to unlock a redis lock not owned by this shard; nearly certainly due to expiration mid-unlock.");
 			}

@@ -8,6 +8,7 @@ public class RedisLockExampleCommands {
 		new CommandAPICommand("redislockexamples")
 			.withPermission("monumenta.redislockexamples")
 			.withSubcommand(ToyExampleCommand.command(plugin))
+			.withSubcommand(ExceptionsExampleCommand.command(plugin))
 			.register();
 	}
 }

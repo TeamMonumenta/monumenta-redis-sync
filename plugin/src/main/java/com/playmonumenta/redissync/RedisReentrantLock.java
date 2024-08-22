@@ -94,7 +94,7 @@ public final class RedisReentrantLock {
 	) {}
 
 	private record ImmutableLockData(
-		int timeoutMS,
+		int redisExpiryMS,
 		int refreshIntervalMS
 	) {}
 
@@ -175,11 +175,11 @@ public final class RedisReentrantLock {
 	 * key name for this lock. The full key name will be formatted
 	 * {@code ConfigAPI.getServerDomain() + ":locks:" + lockName}
 	 * and appears in redis as a string key.
-	 * @param timeoutMS The expiry time for the key in redis, in milliseconds.
+	 * @param redisExpiryMS The expiry time for the key in redis, in milliseconds.
 	 * @param refreshIntervalMS The time interval at which a separate thread will
 	 * refresh the expiry time for the key in redis, in milliseconds.
 	 */
-	public RedisReentrantLock(String lockName, int timeoutMS, int refreshIntervalMS) {
+	public RedisReentrantLock(String lockName, int redisExpiryMS, int refreshIntervalMS) {
 		mKeyName = ConfigAPI.getServerDomain() + ":locks:" + lockName;
 
 		mSynchronizers = namesToSynchronizationConstructs.computeIfAbsent(mKeyName, key -> {
@@ -197,7 +197,7 @@ public final class RedisReentrantLock {
 		});
 
 		mImmutableLockData = namesToImmutableLockData.computeIfAbsent(mKeyName, key -> new ImmutableLockData(
-			timeoutMS,
+			redisExpiryMS,
 			refreshIntervalMS
 		));
 
@@ -287,7 +287,7 @@ public final class RedisReentrantLock {
 				.set(
 					mKeyName,
 					ConfigAPI.getShardName(),
-					SetArgs.Builder.nx().px(mImmutableLockData.timeoutMS())
+					SetArgs.Builder.nx().px(mImmutableLockData.redisExpiryMS())
 				)
 		)
 		.map(response -> "OK".equals(response))
@@ -394,7 +394,7 @@ public final class RedisReentrantLock {
 								.ifPresentOrElse(
 									lockingShard -> {
 										connection.async().multi();
-										connection.async().pexpire(mKeyName, mImmutableLockData.timeoutMS());
+										connection.async().pexpire(mKeyName, mImmutableLockData.redisExpiryMS());
 										connection.async().exec();
 									},
 									() -> connection.async().unwatch()

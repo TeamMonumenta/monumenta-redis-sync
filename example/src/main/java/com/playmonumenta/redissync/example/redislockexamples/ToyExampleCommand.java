@@ -4,14 +4,9 @@ import com.playmonumenta.redissync.ConfigAPI;
 import com.playmonumenta.redissync.RedisAPI;
 import com.playmonumenta.redissync.RedisReentrantLock;
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.arguments.StringArgument;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
-import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -80,7 +75,6 @@ public class ToyExampleCommand {
 
 					@Override
 					public void run() {
-						List<String> logs = Collections.synchronizedList(new ArrayList<>());
 						lock.lock();
 						try {
 							logExact(plugin, "Lock acquired");

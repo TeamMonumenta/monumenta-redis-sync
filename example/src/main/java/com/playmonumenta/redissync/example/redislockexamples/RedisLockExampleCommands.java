@@ -9,6 +9,8 @@ public class RedisLockExampleCommands {
 			.withPermission("monumenta.redislockexamples")
 			.withSubcommand(ToyExampleCommand.command(plugin))
 			.withSubcommand(ExceptionsToyExampleCommand.command(plugin))
+			.withSubcommand(GlobalCounterCommand.command(plugin))
+			.withSubcommand(ReentrantFunctionalityToyCommand.command(plugin))
 			.register();
 	}
 }

@@ -7,7 +7,7 @@ import java.util.logging.Level;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-public class ExceptionsExampleCommand {
+public class ExceptionsToyExampleCommand {
 	public static CommandAPICommand command(Plugin plugin) {
 		return new CommandAPICommand("exception")
 			.executes((sender, args) -> {

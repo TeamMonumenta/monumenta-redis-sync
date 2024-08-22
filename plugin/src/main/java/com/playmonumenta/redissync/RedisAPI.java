@@ -9,8 +9,11 @@ import io.lettuce.core.codec.RedisCodec;
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
 import io.lettuce.core.pubsub.api.async.RedisPubSubAsyncCommands;
 import io.lettuce.core.pubsub.api.sync.RedisPubSubCommands;
+import io.lettuce.core.support.ConnectionPoolSupport;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 public class RedisAPI {
 	private static final class StringByteCodec implements RedisCodec<String, byte[]> {
@@ -53,12 +56,14 @@ public class RedisAPI {
 	private static RedisAPI INSTANCE = null;
 
 	private final RedisClient mRedisClient;
+	private final GenericObjectPool<StatefulRedisConnection<String, String>> mConnectionPool;
 	private final StatefulRedisConnection<String, String> mConnection;
 	private final StatefulRedisConnection<String, byte[]> mStringByteConnection;
 	private final StatefulRedisPubSubConnection<String, String> mPubSubConnection;
 
 	protected RedisAPI(String hostname, int port) {
 		mRedisClient = RedisClient.create(RedisURI.Builder.redis(hostname, port).build());
+		mConnectionPool = ConnectionPoolSupport.createGenericObjectPool(() -> mRedisClient.connect(), new GenericObjectPoolConfig<>());
 		mConnection = mRedisClient.connect();
 		mStringByteConnection = mRedisClient.connect(StringByteCodec.INSTANCE);
 		mPubSubConnection = mRedisClient.connectPubSub();
@@ -67,6 +72,7 @@ public class RedisAPI {
 
 	protected void shutdown() {
 		mConnection.close();
+		mConnectionPool.close();
 		mStringByteConnection.close();
 		mPubSubConnection.close();
 		mRedisClient.shutdown();
@@ -102,6 +108,19 @@ public class RedisAPI {
 
 	public StatefulRedisPubSubConnection<String, String> pubSubConnection() {
 		return mPubSubConnection;
+	}
+
+	public GenericObjectPool<StatefulRedisConnection<String, String>> connectionPool() {
+		return mConnectionPool;
+	}
+
+	public StatefulRedisConnection<String, String> getConnectionFromPool() {
+		try {
+			return RedisAPI.getInstance().connectionPool().borrowObject();
+		} catch (Exception e) {
+			// Thanks, apache pools
+			throw new RuntimeException("Should never happen; borrowing from connection pool failed.");
+		}
 	}
 
 	public boolean isReady() {

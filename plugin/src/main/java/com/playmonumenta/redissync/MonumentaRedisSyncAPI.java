@@ -181,6 +181,10 @@ public class MonumentaRedisSyncAPI {
 		return mNameToUuidTrie.suggestions(currentInput, maxSuggestions);
 	}
 
+	public static boolean isPlayerTransferring(Player player) {
+		return DataEventListener.isPlayerTransferring(player);
+	}
+
 	public static void sendPlayer(Player player, String target) throws Exception {
 		sendPlayer(player, target, null);
 	}

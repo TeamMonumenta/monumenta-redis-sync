@@ -1,5 +1,5 @@
 plugins {
-    id("com.playmonumenta.redissync.java-conventions")
+	`java-library`
 }
 
 dependencies {

@@ -1,7 +1,7 @@
 import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
 
 plugins {
-	id("com.playmonumenta.gradle-config") version "1.+"
+	id("com.playmonumenta.gradle-config") version "1.3+"
 }
 
 monumenta {
@@ -19,4 +19,5 @@ monumenta {
 	versionAdapter("adapter_v1_18_R2", "1.18.2")
 	versionAdapter("adapter_v1_19_R2", "1.19.3")
 	versionAdapter("adapter_v1_19_R3", "1.19.4")
+	javaSimple(":redissync-example")
 }

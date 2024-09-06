@@ -6,74 +6,34 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.internal.Streams;
-import com.google.gson.stream.JsonReader;
-import com.mojang.datafixers.DataFixer;
-import com.mojang.serialization.Dynamic;
-import com.mojang.serialization.JsonOps;
+import com.playmonumenta.mixinapi.v1.RedisSyncIO;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.StringReader;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
 import net.minecraft.SharedConstants;
 import net.minecraft.nbt.*;
-import net.minecraft.server.PlayerAdvancements;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.players.PlayerList;
-import net.minecraft.util.datafix.DataFixTypes;
-import net.minecraft.world.scores.Objective;
-import net.minecraft.world.scores.Score;
 import net.minecraft.world.scores.Scoreboard;
-import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_20_R3.CraftServer;
-import org.bukkit.craftbukkit.v1_20_R3.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_20_R3.scoreboard.CraftScoreboard;
 import org.bukkit.entity.Player;
 
 public class VersionAdapter_v1_20_R3 implements VersionAdapter {
+	@Nullable
 	private static Gson advancementsGson = null;
 
-	private Method mSaveMethod = null;
-	private final Logger mLogger;
-
+	/**
+	 * Creates the version adapter.
+	 *
+	 * @param logger The logger to use
+	 */
 	public VersionAdapter_v1_20_R3(Logger logger) {
-		mLogger = logger;
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public JsonObject getPlayerScoresAsJson(String playerName, org.bukkit.scoreboard.Scoreboard scoreboard) {
-		Scoreboard nmsScoreboard = ((CraftScoreboard) scoreboard).getHandle();
-
-		JsonObject data = new JsonObject();
-		Map<String, Map<Objective, Score>> playerScores = null;
-
-		try {
-			Field playerScoresField = Scoreboard.class.getDeclaredField("j");
-			playerScoresField.setAccessible(true);
-			playerScores = (Map<String, Map<Objective, Score>>) playerScoresField.get(nmsScoreboard);
-		} catch (NoSuchFieldException | IllegalAccessException ex) {
-			mLogger.severe("Failed to access playerScores scoreboard field: " + ex.getMessage());
-			ex.printStackTrace();
-			return data;
-		}
-
-		Map<Objective, Score> scores = playerScores.get(playerName);
-		if (scores == null) {
-			// No scores for this player
-			return data;
-		}
-
-		for (Map.Entry<Objective, Score> entry : scores.entrySet()) {
-			data.addProperty(entry.getKey().getName(), entry.getValue().value());
-		}
-
-		return data;
+		return RedisSyncIO.getInstance().getPlayerScoresAsJson(playerName, scoreboard);
 	}
 
 	@Override
@@ -172,49 +132,22 @@ public class VersionAdapter_v1_20_R3 implements VersionAdapter {
 	}
 
 	@Override
-	public void savePlayer(Player player) throws Exception {
-		PlayerList playerList = ((CraftServer) Bukkit.getServer()).getHandle();
-
-		if (mSaveMethod == null) {
-			mSaveMethod = PlayerList.class.getDeclaredMethod("b", ServerPlayer.class);
-			mSaveMethod.setAccessible(true);
-		}
-
-		mSaveMethod.invoke(playerList, ((CraftPlayer) player).getHandle());
+	public void savePlayer(Player player) {
+		RedisSyncIO.getInstance().savePlayer(player);
 	}
 
 	@Override
 	public Object upgradePlayerData(Object nbtCompoundTag) {
 		CompoundTag nbt = (CompoundTag) nbtCompoundTag;
 		int i = nbt.contains("DataVersion", 3) ? nbt.getInt("DataVersion") : -1;
-		nbt = MCDataConverter.convertTag(MCTypeRegistry.PLAYER, nbt, i, SharedConstants.getCurrentVersion().getDataVersion().getVersion());
+		nbt = MCDataConverter.convertTag(MCTypeRegistry.PLAYER, nbt, i,
+			SharedConstants.getCurrentVersion().getDataVersion().getVersion());
 		return nbt;
 	}
 
 	@Override
 	public String upgradePlayerAdvancements(String advancementsStr) throws Exception {
-		JsonReader jsonreader = new JsonReader(new StringReader(advancementsStr));
-		jsonreader.setLenient(false);
-		Dynamic<JsonElement> dynamic = new Dynamic<>(JsonOps.INSTANCE, Streams.parse(jsonreader));
-
-		if (!dynamic.get("DataVersion").asNumber().result().isPresent()) {
-			dynamic = dynamic.set("DataVersion", dynamic.createInt(1343));
-		}
-
-		DataFixer dataFixer = ((CraftServer) Bukkit.getServer()).getHandle().getServer().getFixerUpper();
-		dynamic = DataFixTypes.ADVANCEMENTS.update(dataFixer, dynamic, dynamic.get("DataVersion").asInt(0), SharedConstants.getCurrentVersion().getDataVersion().getVersion());
-		dynamic = dynamic.remove("DataVersion");
-
-		if (advancementsGson == null) {
-			Field gsonField = PlayerAdvancements.class.getDeclaredField("b");
-			gsonField.setAccessible(true);
-			advancementsGson = (Gson) gsonField.get(null);
-		}
-
-		JsonElement element = dynamic.getValue();
-		element.getAsJsonObject().addProperty("DataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
-
-		return advancementsGson.toJson(element);
+		return RedisSyncIO.getInstance().upgradePlayerAdvancements(advancementsStr);
 	}
 
 	protected ListTag toDoubleList(double... doubles) {

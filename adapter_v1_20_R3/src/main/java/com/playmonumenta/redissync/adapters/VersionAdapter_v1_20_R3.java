@@ -45,6 +45,7 @@ public class VersionAdapter_v1_20_R3 implements VersionAdapter {
 		mLogger = logger;
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
 	public JsonObject getPlayerScoresAsJson(String playerName, org.bukkit.scoreboard.Scoreboard scoreboard) {
 		Scoreboard nmsScoreboard = ((CraftScoreboard) scoreboard).getHandle();
@@ -75,11 +76,13 @@ public class VersionAdapter_v1_20_R3 implements VersionAdapter {
 		return data;
 	}
 
+	@Override
 	public void resetPlayerScores(String playerName, org.bukkit.scoreboard.Scoreboard scoreboard) {
 		Scoreboard nmsScoreboard = ((CraftScoreboard) scoreboard).getHandle();
 		nmsScoreboard.resetSinglePlayerScore(() -> playerName, null);
 	}
 
+	@Override
 	public Object retrieveSaveData(byte[] data, JsonObject shardData) throws IOException {
 		ByteArrayInputStream inBytes = new ByteArrayInputStream(data);
 		CompoundTag nbt = NbtIo.readCompressed(inBytes, NbtAccounter.unlimitedHeap());
@@ -117,6 +120,7 @@ public class VersionAdapter_v1_20_R3 implements VersionAdapter {
 		return nbt;
 	}
 
+	@Override
 	public VersionAdapter.SaveData extractSaveData(Object nbtObj, @Nullable VersionAdapter.ReturnParams returnParams) throws IOException {
 		CompoundTag nbt = (CompoundTag) nbtObj;
 
@@ -167,6 +171,7 @@ public class VersionAdapter_v1_20_R3 implements VersionAdapter {
 		return new VersionAdapter.SaveData(outBytes.toByteArray(), obj.toString());
 	}
 
+	@Override
 	public void savePlayer(Player player) throws Exception {
 		PlayerList playerList = ((CraftServer) Bukkit.getServer()).getHandle();
 
@@ -178,6 +183,7 @@ public class VersionAdapter_v1_20_R3 implements VersionAdapter {
 		mSaveMethod.invoke(playerList, ((CraftPlayer) player).getHandle());
 	}
 
+	@Override
 	public Object upgradePlayerData(Object nbtCompoundTag) {
 		CompoundTag nbt = (CompoundTag) nbtCompoundTag;
 		int i = nbt.contains("DataVersion", 3) ? nbt.getInt("DataVersion") : -1;
@@ -185,6 +191,7 @@ public class VersionAdapter_v1_20_R3 implements VersionAdapter {
 		return nbt;
 	}
 
+	@Override
 	public String upgradePlayerAdvancements(String advancementsStr) throws Exception {
 		JsonReader jsonreader = new JsonReader(new StringReader(advancementsStr));
 		jsonreader.setLenient(false);

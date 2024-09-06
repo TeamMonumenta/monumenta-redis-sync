@@ -20,9 +20,6 @@ import org.bukkit.craftbukkit.v1_20_R3.scoreboard.CraftScoreboard;
 import org.bukkit.entity.Player;
 
 public class VersionAdapter_v1_20_R3 implements VersionAdapter {
-	@Nullable
-	private static Gson advancementsGson = null;
-
 	/**
 	 * Creates the version adapter.
 	 *

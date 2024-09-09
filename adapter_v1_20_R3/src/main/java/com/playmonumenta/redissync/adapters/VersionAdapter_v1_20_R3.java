@@ -24,6 +24,7 @@ public class VersionAdapter_v1_20_R3 implements VersionAdapter {
 	 *
 	 * @param logger The logger to use
 	 */
+	@SuppressWarnings("unused")
 	public VersionAdapter_v1_20_R3(Logger logger) {
 	}
 

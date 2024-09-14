@@ -22,6 +22,8 @@ public class MonumentaRedisSyncBungee extends Plugin {
 		loadConfig();
 		mRedisAPI = new RedisAPI(ConfigAPI.getRedisHost(), ConfigAPI.getRedisPort());
 		getProxy().getPluginManager().registerListener(this, new BungeeListener());
+
+		mRedisAPI.sync().configSet("notify-keyspace-events", "Kgx");
 	}
 
 	@Override
@@ -30,6 +32,7 @@ public class MonumentaRedisSyncBungee extends Plugin {
 			mRedisAPI.shutdown();
 		}
 		mRedisAPI = null;
+		RedisReentrantLock.shutdownExecutors();
 	}
 
 	private void loadConfig() {

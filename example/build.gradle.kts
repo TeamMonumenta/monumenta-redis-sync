@@ -1,9 +1,26 @@
+import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
+
+plugins {
+	id("com.playmonumenta.gradle-config") version "1.3+"
+}
+
 dependencies {
 	compileOnly(project(":redissync"))
-	compileOnly("io.papermc.paper:paper-api:1.18.2-R0.1-SNAPSHOT")
-	compileOnly("net.md-5:bungeecord-api:1.15-SNAPSHOT")
+	compileOnly(libs.commandapi)
+	compileOnly(libs.velocity)
+	compileOnly(libs.lettuce)
 }
 
 group = "com.playmonumenta"
 description = "redissync-example"
 version = rootProject.version
+
+monumenta {
+	name("redissync-example")
+	paper(
+		"com.playmonumenta.redissync.MonumentaRedisSyncExample", BukkitPluginDescription.PluginLoadOrder.POSTWORLD, "1.19",
+		depends = listOf("CommandAPI", "MonumentaRedisSync"),
+	)
+
+	waterfall("com.playmonumenta.redissync.MonumentaRedisSyncExampleBungee", "1.19")
+}

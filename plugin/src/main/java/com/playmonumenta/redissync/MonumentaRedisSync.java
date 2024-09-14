@@ -94,6 +94,8 @@ public class MonumentaRedisSync extends JavaPlugin {
 		}
 
 		this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
+
+		mRedisAPI.sync().configSet("notify-keyspace-events", "Kgx");
 	}
 
 	@Override
@@ -104,6 +106,7 @@ public class MonumentaRedisSync extends JavaPlugin {
 		}
 		mRedisAPI = null;
 		getServer().getScheduler().cancelTasks(this);
+		RedisReentrantLock.shutdownExecutors();
 	}
 
 	@SuppressWarnings("NullAway") // Intentionally don't mark this as nullable - if this plugin is working, this will not be null

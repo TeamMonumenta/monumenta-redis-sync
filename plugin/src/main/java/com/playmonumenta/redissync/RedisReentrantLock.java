@@ -28,7 +28,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * some classes of race conditions.</p>
  *
  * <p>The code executed between acquiring and releasing the lock is called
- * the <bold>critical section</bold>.</p>
+ * the <b>critical section</b>.</p>
  *
  * <pre>{@code
  * RedisLock lock = new Lock(...);

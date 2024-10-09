@@ -107,7 +107,7 @@ public class MonumentaRedisSync extends JavaPlugin {
 	}
 
 	@SuppressWarnings("NullAway") // Intentionally don't mark this as nullable - if this plugin is working, this will not be null
-	protected static MonumentaRedisSync getInstance() {
+	public static MonumentaRedisSync getInstance() {
 		return INSTANCE;
 	}
 

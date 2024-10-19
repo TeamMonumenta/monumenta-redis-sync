@@ -8,6 +8,7 @@ import io.lettuce.core.api.sync.RedisCommands;
 import io.lettuce.core.codec.RedisCodec;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RedisAPI {
 	private static final class StringByteCodec implements RedisCodec<String, byte[]> {
@@ -52,11 +53,21 @@ public class RedisAPI {
 	private final RedisClient mRedisClient;
 	private final StatefulRedisConnection<String, String> mConnection;
 	private final StatefulRedisConnection<String, byte[]> mStringByteConnection;
+	private final ConcurrentHashMap<Long, StatefulRedisConnection<String, String>> mThreadStringStringConnections
+		= new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<Long, StatefulRedisConnection<String, byte[]>> mThreadStringByteConnections
+		= new ConcurrentHashMap<>();
 
 	protected RedisAPI(String hostname, int port) {
 		mRedisClient = RedisClient.create(RedisURI.Builder.redis(hostname, port).build());
 		mConnection = mRedisClient.connect();
 		mStringByteConnection = mRedisClient.connect(StringByteCodec.INSTANCE);
+
+		Thread thread = Thread.currentThread();
+		long threadId = thread.getId();
+		mThreadStringStringConnections.put(threadId, mConnection);
+		mThreadStringByteConnections.put(threadId, mStringByteConnection);
+
 		INSTANCE = this;
 	}
 
@@ -71,7 +82,28 @@ public class RedisAPI {
 	}
 
 	public RedisCommands<String, String> sync() {
-		return mConnection.sync();
+		Thread thread = Thread.currentThread();
+		long threadId = thread.getId();
+		return mThreadStringStringConnections.computeIfAbsent(threadId, k -> {
+			StatefulRedisConnection<String, String> connection = mRedisClient.connect();
+			/* TODO Create thread to run this:
+			{
+				while (true) {
+					try {
+						thread.join();
+						break;
+					} catch (InterruptedException ignored) {
+						// We don't care about interrupts in the current thread;
+						// We're just waiting for the other thread to be done.
+						// The fact the exception was thrown means the interrupt status was cleared
+					}
+				}
+				mThreadStringStringConnections.remove(k, connection);
+				connection.close();
+			}
+			*/
+			return connection;
+		}).sync();
 	}
 
 	public RedisAsyncCommands<String, String> async() {

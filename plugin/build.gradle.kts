@@ -3,7 +3,7 @@ dependencies {
 	compileOnly(libs.networkrelay)
 	compileOnly(libs.commandapi)
 
-	// velocity depenedencies
+	// velocity dependencies
 	compileOnly(libs.velocity)
 	annotationProcessor(libs.velocity)
 }

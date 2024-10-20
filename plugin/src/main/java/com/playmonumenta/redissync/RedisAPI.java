@@ -1,20 +1,23 @@
 package com.playmonumenta.redissync;
 
+import com.google.common.util.concurrent.Uninterruptibles;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.api.sync.RedisCommands;
 import io.lettuce.core.codec.RedisCodec;
+import io.lettuce.core.codec.StringCodec;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RedisAPI {
 	private static final class StringByteCodec implements RedisCodec<String, byte[]> {
 		private static final StringByteCodec INSTANCE = new StringByteCodec();
 		private static final byte[] EMPTY = new byte[0];
-		private final Charset mCharset = Charset.forName("UTF-8");
+		private final Charset mCharset = StandardCharsets.UTF_8;
 
 		@Override
 		public String decodeKey(final ByteBuffer bytes) {
@@ -46,6 +49,9 @@ public class RedisAPI {
 			return b;
 		}
 	}
+
+	public static final RedisCodec<String, String> STRING_STRING_CODEC = StringCodec.UTF8;
+	public static final RedisCodec<String, byte[]> STRING_BYTE_CODEC = StringByteCodec.INSTANCE;
 
 	@SuppressWarnings("NullAway") // Required to avoid many null checks, this class will always be instantiated if this plugin is loaded
 	private static RedisAPI INSTANCE = null;
@@ -83,100 +89,69 @@ public class RedisAPI {
 		return INSTANCE;
 	}
 
-	public RedisCommands<String, String> sync() {
+	/**
+	 * Opens a new autoClosable connection regardless of open connections
+	 * Your code is responsible for closing this when it is done, ideally using a try with resources block
+	 * @return A new connection that you are responsible for closing
+	 */
+	public <K, V> StatefulRedisConnection<K, V> getConnection(RedisCodec<K, V> codec) {
+		return mRedisClient.connect(codec);
+	}
+
+	/**
+	 * Provides a connection that closes automagically when the executing thread terminates.
+	 * If the current thread already has an open connection, that is returned instead.
+	 * The main thread may be used as well, and is closed when the plugin is disabled.
+	 * @return A connection associated with the current thread
+	 */
+	public StatefulRedisConnection<String, String> getMagicallyClosingStringStringConnection() {
 		Thread thread = Thread.currentThread();
 		long threadId = thread.getId();
-		//noinspection resource
 		return mThreadStringStringConnections.computeIfAbsent(threadId, k -> {
 			StatefulRedisConnection<String, String> connection = mRedisClient.connect();
 			mServer.runAsync(() -> {
-				while (true) {
-					try {
-						thread.join();
-						break;
-					} catch (InterruptedException ignored) {
-						// We don't care about interrupts in the current thread;
-						// We're just waiting for the other thread to be done.
-						// The fact the exception was thrown means the interrupt status was cleared
-					}
-				}
+				Uninterruptibles.joinUninterruptibly(thread);
 				mThreadStringStringConnections.remove(k, connection);
 				connection.close();
 			});
 			return connection;
-		}).sync();
+		});
+	}
+
+	/**
+	 * Provides a connection that closes automagically when the executing thread terminates.
+	 * If the current thread already has an open connection, that is returned instead.
+	 * The main thread may be used as well, and is closed when the plugin is disabled.
+	 * @return A connection associated with the current thread
+	 */
+	public StatefulRedisConnection<String, byte[]> getMagicallyClosingStringByteConnection() {
+		Thread thread = Thread.currentThread();
+		long threadId = thread.getId();
+		return mThreadStringByteConnections.computeIfAbsent(threadId, k -> {
+			StatefulRedisConnection<String, byte[]> connection = mRedisClient.connect(STRING_BYTE_CODEC);
+			mServer.runAsync(() -> {
+				Uninterruptibles.joinUninterruptibly(thread);
+				mThreadStringByteConnections.remove(k, connection);
+				connection.close();
+			});
+			return connection;
+		});
+	}
+
+	public RedisCommands<String, String> sync() {
+		return getMagicallyClosingStringStringConnection().sync();
 	}
 
 	public RedisAsyncCommands<String, String> async() {
-		Thread thread = Thread.currentThread();
-		long threadId = thread.getId();
-		//noinspection resource
-		return mThreadStringStringConnections.computeIfAbsent(threadId, k -> {
-			StatefulRedisConnection<String, String> connection = mRedisClient.connect();
-			mServer.runAsync(() -> {
-				while (true) {
-					try {
-						thread.join();
-						break;
-					} catch (InterruptedException ignored) {
-						// We don't care about interrupts in the current thread;
-						// We're just waiting for the other thread to be done.
-						// The fact the exception was thrown means the interrupt status was cleared
-					}
-				}
-				mThreadStringStringConnections.remove(k, connection);
-				connection.close();
-			});
-			return connection;
-		}).async();
+		return getMagicallyClosingStringStringConnection().async();
 	}
 
 	public RedisCommands<String, byte[]> syncStringBytes() {
-		Thread thread = Thread.currentThread();
-		long threadId = thread.getId();
-		//noinspection resource
-		return mThreadStringByteConnections.computeIfAbsent(threadId, k -> {
-			StatefulRedisConnection<String, byte[]> connection = mRedisClient.connect(StringByteCodec.INSTANCE);
-			mServer.runAsync(() -> {
-				while (true) {
-					try {
-						thread.join();
-						break;
-					} catch (InterruptedException ignored) {
-						// We don't care about interrupts in the current thread;
-						// We're just waiting for the other thread to be done.
-						// The fact the exception was thrown means the interrupt status was cleared
-					}
-				}
-				mThreadStringStringConnections.remove(k, connection);
-				connection.close();
-			});
-			return connection;
-		}).sync();
+		return getMagicallyClosingStringByteConnection().sync();
 	}
 
 	public RedisAsyncCommands<String, byte[]> asyncStringBytes() {
-		Thread thread = Thread.currentThread();
-		long threadId = thread.getId();
-		//noinspection resource
-		return mThreadStringByteConnections.computeIfAbsent(threadId, k -> {
-			StatefulRedisConnection<String, byte[]> connection = mRedisClient.connect(StringByteCodec.INSTANCE);
-			mServer.runAsync(() -> {
-				while (true) {
-					try {
-						thread.join();
-						break;
-					} catch (InterruptedException ignored) {
-						// We don't care about interrupts in the current thread;
-						// We're just waiting for the other thread to be done.
-						// The fact the exception was thrown means the interrupt status was cleared
-					}
-				}
-				mThreadStringStringConnections.remove(k, connection);
-				connection.close();
-			});
-			return connection;
-		}).async();
+		return getMagicallyClosingStringByteConnection().async();
 	}
 
 	public boolean isReady() {

@@ -50,6 +50,7 @@ public class RedisAPI {
 	@SuppressWarnings("NullAway") // Required to avoid many null checks, this class will always be instantiated if this plugin is loaded
 	private static RedisAPI INSTANCE = null;
 
+	private final MonumentaRedisSyncInterface mServer;
 	private final RedisClient mRedisClient;
 	private final StatefulRedisConnection<String, String> mConnection;
 	private final StatefulRedisConnection<String, byte[]> mStringByteConnection;
@@ -58,7 +59,8 @@ public class RedisAPI {
 	private final ConcurrentHashMap<Long, StatefulRedisConnection<String, byte[]>> mThreadStringByteConnections
 		= new ConcurrentHashMap<>();
 
-	protected RedisAPI(String hostname, int port) {
+	protected RedisAPI(MonumentaRedisSyncInterface server, String hostname, int port) {
+		mServer = server;
 		mRedisClient = RedisClient.create(RedisURI.Builder.redis(hostname, port).build());
 		mConnection = mRedisClient.connect();
 		mStringByteConnection = mRedisClient.connect(StringByteCodec.INSTANCE);
@@ -84,10 +86,10 @@ public class RedisAPI {
 	public RedisCommands<String, String> sync() {
 		Thread thread = Thread.currentThread();
 		long threadId = thread.getId();
+		//noinspection resource
 		return mThreadStringStringConnections.computeIfAbsent(threadId, k -> {
 			StatefulRedisConnection<String, String> connection = mRedisClient.connect();
-			/* TODO Create thread to run this:
-			{
+			mServer.runAsync(() -> {
 				while (true) {
 					try {
 						thread.join();
@@ -100,22 +102,81 @@ public class RedisAPI {
 				}
 				mThreadStringStringConnections.remove(k, connection);
 				connection.close();
-			}
-			*/
+			});
 			return connection;
 		}).sync();
 	}
 
 	public RedisAsyncCommands<String, String> async() {
-		return mConnection.async();
+		Thread thread = Thread.currentThread();
+		long threadId = thread.getId();
+		//noinspection resource
+		return mThreadStringStringConnections.computeIfAbsent(threadId, k -> {
+			StatefulRedisConnection<String, String> connection = mRedisClient.connect();
+			mServer.runAsync(() -> {
+				while (true) {
+					try {
+						thread.join();
+						break;
+					} catch (InterruptedException ignored) {
+						// We don't care about interrupts in the current thread;
+						// We're just waiting for the other thread to be done.
+						// The fact the exception was thrown means the interrupt status was cleared
+					}
+				}
+				mThreadStringStringConnections.remove(k, connection);
+				connection.close();
+			});
+			return connection;
+		}).async();
 	}
 
 	public RedisCommands<String, byte[]> syncStringBytes() {
-		return mStringByteConnection.sync();
+		Thread thread = Thread.currentThread();
+		long threadId = thread.getId();
+		//noinspection resource
+		return mThreadStringByteConnections.computeIfAbsent(threadId, k -> {
+			StatefulRedisConnection<String, byte[]> connection = mRedisClient.connect(StringByteCodec.INSTANCE);
+			mServer.runAsync(() -> {
+				while (true) {
+					try {
+						thread.join();
+						break;
+					} catch (InterruptedException ignored) {
+						// We don't care about interrupts in the current thread;
+						// We're just waiting for the other thread to be done.
+						// The fact the exception was thrown means the interrupt status was cleared
+					}
+				}
+				mThreadStringStringConnections.remove(k, connection);
+				connection.close();
+			});
+			return connection;
+		}).sync();
 	}
 
 	public RedisAsyncCommands<String, byte[]> asyncStringBytes() {
-		return mStringByteConnection.async();
+		Thread thread = Thread.currentThread();
+		long threadId = thread.getId();
+		//noinspection resource
+		return mThreadStringByteConnections.computeIfAbsent(threadId, k -> {
+			StatefulRedisConnection<String, byte[]> connection = mRedisClient.connect(StringByteCodec.INSTANCE);
+			mServer.runAsync(() -> {
+				while (true) {
+					try {
+						thread.join();
+						break;
+					} catch (InterruptedException ignored) {
+						// We don't care about interrupts in the current thread;
+						// We're just waiting for the other thread to be done.
+						// The fact the exception was thrown means the interrupt status was cleared
+					}
+				}
+				mThreadStringStringConnections.remove(k, connection);
+				connection.close();
+			});
+			return connection;
+		}).async();
 	}
 
 	public boolean isReady() {

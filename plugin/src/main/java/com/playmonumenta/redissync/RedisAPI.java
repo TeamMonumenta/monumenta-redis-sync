@@ -1,6 +1,7 @@
 package com.playmonumenta.redissync;
 
 import com.google.common.util.concurrent.Uninterruptibles;
+import com.playmonumenta.networkrelay.util.MMLog;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
@@ -95,6 +96,8 @@ public class RedisAPI {
 	 * @return A new connection that you are responsible for closing
 	 */
 	public <K, V> StatefulRedisConnection<K, V> getConnection(RedisCodec<K, V> codec) {
+		Thread thread = Thread.currentThread();
+		MMLog.info("Creating a new autocloseable connection on thread " + thread.getId());
 		return mRedisClient.connect(codec);
 	}
 
@@ -107,12 +110,15 @@ public class RedisAPI {
 	public StatefulRedisConnection<String, String> getMagicallyClosingStringStringConnection() {
 		Thread thread = Thread.currentThread();
 		long threadId = thread.getId();
+		MMLog.info("Magically closing connection request from thread " + thread.getId());
 		return mThreadStringStringConnections.computeIfAbsent(threadId, k -> {
 			StatefulRedisConnection<String, String> connection = mRedisClient.connect();
+			MMLog.info("Created new magically closing connection request from thread " + thread.getId());
 			mServer.runAsync(() -> {
 				Uninterruptibles.joinUninterruptibly(thread);
 				mThreadStringStringConnections.remove(k, connection);
 				connection.close();
+				MMLog.info("Closed magically closing connection request from thread " + thread.getId());
 			});
 			return connection;
 		});

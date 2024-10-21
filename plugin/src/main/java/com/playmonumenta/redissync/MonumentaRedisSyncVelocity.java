@@ -19,7 +19,7 @@ import org.spongepowered.configurate.yaml.NodeStyle;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 @Plugin(id = "monumenta-redisapi", name = "Monumenta-RedisAPI", version = "", url = "", description = "", authors = {""})
-public class MonumentaRedisSyncVelocity {
+public class MonumentaRedisSyncVelocity implements MonumentaRedisSyncInterface {
 	private @Nullable RedisAPI mRedisAPI = null;
 	private final ProxyServer mServer;
 	private final Logger mLogger;
@@ -42,7 +42,7 @@ public class MonumentaRedisSyncVelocity {
 		System.setProperty("com.playmonumenta.redissync.internal.netty", "com.playmonumenta.redissync.internal");
 
 		loadConfig();
-		mRedisAPI = new RedisAPI(ConfigAPI.getRedisHost(), ConfigAPI.getRedisPort());
+		mRedisAPI = new RedisAPI(this, ConfigAPI.getRedisHost(), ConfigAPI.getRedisPort());
 	}
 
 	@Subscribe
@@ -97,6 +97,13 @@ public class MonumentaRedisSyncVelocity {
 		} catch (ConfigurateException ex) {
 			mLogger.warn("Could not save config.yaml", ex);
 		}
+	}
+
+	@Override
+	public void runAsync(Runnable runnable) {
+		mServer.getScheduler()
+			.buildTask(this, runnable)
+			.schedule();
 	}
 
 	@ConfigSerializable

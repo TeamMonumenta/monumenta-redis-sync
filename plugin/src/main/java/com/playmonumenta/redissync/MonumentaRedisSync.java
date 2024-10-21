@@ -14,11 +14,12 @@ import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class MonumentaRedisSync extends JavaPlugin {
+public class MonumentaRedisSync extends JavaPlugin implements MonumentaRedisSyncInterface {
 	private static @Nullable MonumentaRedisSync INSTANCE = null;
 	private @Nullable RedisAPI mRedisAPI = null;
 	private @Nullable VersionAdapter mVersionAdapter = null;
@@ -86,7 +87,7 @@ public class MonumentaRedisSync extends JavaPlugin {
 		}
 
 		loadConfig();
-		mRedisAPI = new RedisAPI(ConfigAPI.getRedisHost(), ConfigAPI.getRedisPort());
+		mRedisAPI = new RedisAPI(this, ConfigAPI.getRedisHost(), ConfigAPI.getRedisPort());
 		getServer().getPluginManager().registerEvents(new DataEventListener(this.getLogger(), mVersionAdapter), this);
 		getServer().getPluginManager().registerEvents(new ScoreboardCleanupListener(this, this.getLogger(), mVersionAdapter), this);
 		if (ConfigAPI.getTicksPerPlayerAutosave() > 0) {
@@ -106,14 +107,20 @@ public class MonumentaRedisSync extends JavaPlugin {
 		getServer().getScheduler().cancelTasks(this);
 	}
 
-	@SuppressWarnings("NullAway") // Intentionally don't mark this as nullable - if this plugin is working, this will not be null
 	protected static MonumentaRedisSync getInstance() {
-		return INSTANCE;
+		MonumentaRedisSync instance = INSTANCE;
+		if (instance == null) {
+			throw new RuntimeException("MonumentaRedisSync is not enabled yet");
+		}
+		return instance;
 	}
 
-	@SuppressWarnings("NullAway") // Intentionally don't mark this as nullable - if this plugin is working, this will not be null
 	public VersionAdapter getVersionAdapter() {
-		return mVersionAdapter;
+		VersionAdapter versionAdapter = mVersionAdapter;
+		if (versionAdapter == null) {
+			throw new RuntimeException("MonumentaRedisSync is not enabled yet");
+		}
+		return versionAdapter;
 	}
 
 	private void loadConfig() {
@@ -165,5 +172,10 @@ public class MonumentaRedisSync extends JavaPlugin {
 			mLogger = new CustomLogger(super.getLogger(), Level.INFO);
 		}
 		return mLogger;
+	}
+
+	@Override
+	public void runAsync(Runnable runnable) {
+		Bukkit.getScheduler().runTaskAsynchronously(this, runnable);
 	}
 }

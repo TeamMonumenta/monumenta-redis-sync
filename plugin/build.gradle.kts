@@ -7,3 +7,9 @@ dependencies {
 	compileOnly(libs.velocity)
 	annotationProcessor(libs.velocity)
 }
+
+tasks {
+	shadowJar {
+		exclude("META-INF/**/*")
+	}
+}

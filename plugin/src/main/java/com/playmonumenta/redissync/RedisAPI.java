@@ -95,7 +95,7 @@ public class RedisAPI {
 	 * Your code is responsible for closing this when it is done, ideally using a try with resources block
 	 * @return A new connection that you are responsible for closing
 	 */
-	public <K, V> StatefulRedisConnection<K, V> getConnection(RedisCodec<K, V> codec) {
+	public <K, V> StatefulRedisConnection<K, V> openConnection(RedisCodec<K, V> codec) {
 		Thread thread = Thread.currentThread();
 		MMLog.info("Creating a new autocloseable connection on thread " + thread.getId());
 		return mRedisClient.connect(codec);

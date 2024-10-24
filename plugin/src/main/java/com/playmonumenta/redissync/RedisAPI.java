@@ -107,6 +107,7 @@ public class RedisAPI {
 	 * The main thread may be used as well, and is closed when the plugin is disabled.
 	 * @return A connection associated with the current thread
 	 */
+	@Deprecated
 	public StatefulRedisConnection<String, String> getMagicallyClosingStringStringConnection() {
 		Thread thread = Thread.currentThread();
 		long threadId = thread.getId();
@@ -130,6 +131,7 @@ public class RedisAPI {
 	 * The main thread may be used as well, and is closed when the plugin is disabled.
 	 * @return A connection associated with the current thread
 	 */
+	@Deprecated
 	public StatefulRedisConnection<String, byte[]> getMagicallyClosingStringByteConnection() {
 		Thread thread = Thread.currentThread();
 		long threadId = thread.getId();
@@ -144,18 +146,22 @@ public class RedisAPI {
 		});
 	}
 
+	@Deprecated
 	public RedisCommands<String, String> sync() {
 		return getMagicallyClosingStringStringConnection().sync();
 	}
 
+	@Deprecated
 	public RedisAsyncCommands<String, String> async() {
 		return getMagicallyClosingStringStringConnection().async();
 	}
 
+	@Deprecated
 	public RedisCommands<String, byte[]> syncStringBytes() {
 		return getMagicallyClosingStringByteConnection().sync();
 	}
 
+	@Deprecated
 	public RedisAsyncCommands<String, byte[]> asyncStringBytes() {
 		return getMagicallyClosingStringByteConnection().async();
 	}

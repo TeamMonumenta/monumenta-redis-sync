@@ -148,22 +148,20 @@ public class RedisAPI {
 
 	@Deprecated
 	public RedisCommands<String, String> sync() {
-		return getMagicallyClosingStringStringConnection().sync();
+		return mConnection.sync();
 	}
 
-	@Deprecated
 	public RedisAsyncCommands<String, String> async() {
-		return getMagicallyClosingStringStringConnection().async();
+		return mConnection.async();
 	}
 
 	@Deprecated
 	public RedisCommands<String, byte[]> syncStringBytes() {
-		return getMagicallyClosingStringByteConnection().sync();
+		return mStringByteConnection.sync();
 	}
 
-	@Deprecated
 	public RedisAsyncCommands<String, byte[]> asyncStringBytes() {
-		return getMagicallyClosingStringByteConnection().async();
+		return mStringByteConnection.async();
 	}
 
 	public boolean isReady() {

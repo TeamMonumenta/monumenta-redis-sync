@@ -17,7 +17,6 @@ import com.playmonumenta.redissync.event.PlayerTransferFailEvent;
 import com.playmonumenta.redissync.utils.ScoreboardUtils;
 import io.lettuce.core.LettuceFutures;
 import io.lettuce.core.RedisFuture;
-import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.output.KeyValueStreamingChannel;
 import io.papermc.paper.event.server.ServerResourcesReloadedEvent;
@@ -136,17 +135,11 @@ public class DataEventListener implements Listener {
 		INSTANCE = this;
 
 		Bukkit.getServer().getScheduler().runTaskAsynchronously(MonumentaRedisSync.getInstance(), () -> {
-			try (StatefulRedisConnection<String, String> connection = RedisAPI.getInstance().openConnection(RedisAPI.STRING_STRING_CODEC)) {
-				KeyValueStreamingChannel<String, String> uuidToNameChannel = new PlayerUuidToNameStreamingChannel();
-				RedisFuture<Long> setNameFuture = connection.async().hgetall(uuidToNameChannel, "uuid2name");
+			KeyValueStreamingChannel<String, String> uuidToNameChannel = new PlayerUuidToNameStreamingChannel();
+			RedisAPI.getInstance().async().hgetall(uuidToNameChannel, "uuid2name");
 
-				KeyValueStreamingChannel<String, String> nameToUuidChannel = new PlayerNameToUuidStreamingChannel();
-				RedisFuture<Long> setUuidFuture = connection.async().hgetall(nameToUuidChannel, "name2uuid");
-
-				// Wait for completion before terminating connection
-				setNameFuture.toCompletableFuture().join();
-				setUuidFuture.toCompletableFuture().join();
-			}
+			KeyValueStreamingChannel<String, String> nameToUuidChannel = new PlayerNameToUuidStreamingChannel();
+			RedisAPI.getInstance().async().hgetall(nameToUuidChannel, "name2uuid");
 		});
 	}
 
@@ -294,25 +287,23 @@ public class DataEventListener implements Listener {
 		/* Wait until player has finished saving if they just logged out and back in */
 		blockingWaitForPlayerToSave(player);
 
-		try (StatefulRedisConnection<String, String> stringStringConnection = RedisAPI.getInstance().openConnection(RedisAPI.STRING_STRING_CODEC)) {
-			RedisFuture<String> advanceFuture = stringStringConnection.async().lindex(MonumentaRedisSyncAPI.getRedisAdvancementsPath(player), 0);
+		RedisFuture<String> advanceFuture = RedisAPI.getInstance().async().lindex(MonumentaRedisSyncAPI.getRedisAdvancementsPath(player), 0);
 
-			try {
-				/* Advancements */
-				final String advanceData = advanceFuture.get();
-				mLogger.finer(() -> "Advancements data loaded for player=" + player.getName());
-				mLogger.finest(() -> "Advancements data:" + advanceData);
-				if (advanceData != null) {
-					event.setJsonData(advanceData);
-				} else {
-					mLogger.warning("No advancements data for player '" + player.getName() + "' - if they are not new, this is a serious error!");
-				}
-
-				mLogger.fine(() -> "Processing PlayerAdvancementDataLoadEvent took " + (System.currentTimeMillis() - startTime) + " milliseconds on main thread");
-			} catch (InterruptedException | ExecutionException ex) {
-				mLogger.severe("Failed to get advancements data for player '" + player.getName() + "'. This is very bad!");
-				ex.printStackTrace();
+		try {
+			/* Advancements */
+			final String advanceData = advanceFuture.get();
+			mLogger.finer(() -> "Advancements data loaded for player=" + player.getName());
+			mLogger.finest(() -> "Advancements data:" + advanceData);
+			if (advanceData != null) {
+				event.setJsonData(advanceData);
+			} else {
+				mLogger.warning("No advancements data for player '" + player.getName() + "' - if they are not new, this is a serious error!");
 			}
+
+			mLogger.fine(() -> "Processing PlayerAdvancementDataLoadEvent took " + (System.currentTimeMillis() - startTime) + " milliseconds on main thread");
+		} catch (InterruptedException | ExecutionException ex) {
+			mLogger.severe("Failed to get advancements data for player '" + player.getName() + "'. This is very bad!");
+			ex.printStackTrace();
 		}
 	}
 
@@ -332,7 +323,6 @@ public class DataEventListener implements Listener {
 			return;
 		}
 
-		List<RedisFuture<?>> localRedisFutures = new ArrayList<>();
 		List<RedisFuture<?>> futures = mPendingSaves.remove(player.getUniqueId());
 		if (futures == null) {
 			futures = new ArrayList<>();
@@ -340,28 +330,21 @@ public class DataEventListener implements Listener {
 			futures.removeIf(Future::isDone);
 		}
 
-		// We need to hold onto this connection until all operations are complete
-		StatefulRedisConnection<String, String> connection = RedisAPI.getInstance().openConnection(RedisAPI.STRING_STRING_CODEC);
-
 		/* Execute the advancements as a multi() batch */
-		RedisAsyncCommands<String, String> commands = connection.async();
-		localRedisFutures.add(commands.multi()); /* < MULTI */
+		RedisAsyncCommands<String, String> commands = RedisAPI.getInstance().async();
+		futures.add(commands.multi()); /* < MULTI */
 
 		/* Advancements */
 		mLogger.fine("Saving advancements data for player=" + player.getName());
 		mLogger.finest(() -> "Data:" + event.getJsonData());
 		String advPath = MonumentaRedisSyncAPI.getRedisAdvancementsPath(player);
-		localRedisFutures.add(commands.lpush(advPath, event.getJsonData()));
-		localRedisFutures.add(commands.ltrim(advPath, 0, ConfigAPI.getHistoryAmount()));
+		commands.lpush(advPath, event.getJsonData());
+		commands.ltrim(advPath, 0, ConfigAPI.getHistoryAmount());
 
-		localRedisFutures.add(commands.exec()); /* MULTI > */
-		futures.addAll(localRedisFutures);
+		futures.add(commands.exec()); /* MULTI > */
 
 		/* Don't block - store the pending futures for completion later */
 		mPendingSaves.put(player.getUniqueId(), futures);
-
-		// Close connection once all futures are completed
-		RedisAPI.getInstance().closeConnectionWhenDone(connection, localRedisFutures, List.of());
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
@@ -379,172 +362,167 @@ public class DataEventListener implements Listener {
 		/* Wait until player has finished saving if they just logged out and back in */
 		blockingWaitForPlayerToSave(player);
 
-		StatefulRedisConnection<String, byte[]> stringByteConnection = RedisAPI.getInstance().openConnection(RedisAPI.STRING_BYTE_CODEC);
-		RedisFuture<byte[]> dataFuture = stringByteConnection.async().lindex(MonumentaRedisSyncAPI.getRedisDataPath(player), 0);
-		RedisAPI.getInstance().closeConnectionWhenDone(stringByteConnection, List.of(dataFuture), List.of());
+		RedisFuture<byte[]> dataFuture = RedisAPI.getInstance().asyncStringBytes().lindex(MonumentaRedisSyncAPI.getRedisDataPath(player), 0);
+		RedisAsyncCommands<String, String> commands = RedisAPI.getInstance().async();
+		commands.multi();
+		RedisFuture<String> pluginDataFuture = commands.lindex(MonumentaRedisSyncAPI.getRedisPluginDataPath(player), 0);
+		RedisFuture<String> scoreFuture = commands.lindex(MonumentaRedisSyncAPI.getRedisScoresPath(player), 0);
+		RedisFuture<Map<String, String>> shardDataFuture = commands.hgetall(MonumentaRedisSyncAPI.getRedisPerShardDataPath(player));
+		commands.exec();
 
-		try (StatefulRedisConnection<String, String> stringStringConnection = RedisAPI.getInstance().openConnection(RedisAPI.STRING_STRING_CODEC)) {
-			RedisAsyncCommands<String, String> commands = stringStringConnection.async();
-			commands.multi();
-			RedisFuture<String> pluginDataFuture = commands.lindex(MonumentaRedisSyncAPI.getRedisPluginDataPath(player), 0);
-			RedisFuture<String> scoreFuture = commands.lindex(MonumentaRedisSyncAPI.getRedisScoresPath(player), 0);
-			RedisFuture<Map<String, String>> shardDataFuture = commands.hgetall(MonumentaRedisSyncAPI.getRedisPerShardDataPath(player));
-			commands.exec();
+		try {
+			/* Load the primary shared NBT data */
+			byte[] data = dataFuture.get();
+			if (data == null) {
+				mLogger.warning("No data for player '" + player.getName() + "' - if they are not new, this is a serious error!");
+				return;
+			}
+			mLogger.finer("Player data loaded for player=" + player.getName());
+			mLogger.finest(() -> "Player data: " + b64encode(data));
 
-			try {
-				/* Load the primary shared NBT data */
-				byte[] data = dataFuture.get();
-				if (data == null) {
-					mLogger.warning("No data for player '" + player.getName() + "' - if they are not new, this is a serious error!");
-					return;
-				}
-				mLogger.finer("Player data loaded for player=" + player.getName());
-				mLogger.finest(() -> "Player data: " + b64encode(data));
+			/* Load plugin data */
+			String pluginData = pluginDataFuture.get();
+			if (pluginData == null) {
+				mLogger.fine("Player '" + player.getName() + "' has no plugin data");
+			} else {
+				mLoadingPlayers.add(player.getUniqueId());
+				mPluginData.put(player.getUniqueId(), mGson.fromJson(pluginData, JsonObject.class));
+				mLogger.finer("Plugin data loaded for player=" + player.getName());
+				mLogger.finest(() -> "Plugin data: " + pluginData);
+			}
 
-				/* Load plugin data */
-				String pluginData = pluginDataFuture.get();
-				if (pluginData == null) {
-					mLogger.fine("Player '" + player.getName() + "' has no plugin data");
+			/* Load scoreboards */
+			final String scoreData = scoreFuture.get();
+			mLogger.fine("Scoreboard data loaded for player=" + player.getName());
+			mLogger.finest(() -> "Score data:" + scoreData);
+			if (scoreData != null) {
+				JsonObject obj = mGson.fromJson(scoreData, JsonObject.class);
+				if (obj != null) {
+					ScoreboardUtils.loadFromJsonObject(player, obj);
 				} else {
-					mLoadingPlayers.add(player.getUniqueId());
-					mPluginData.put(player.getUniqueId(), mGson.fromJson(pluginData, JsonObject.class));
-					mLogger.finer("Plugin data loaded for player=" + player.getName());
-					mLogger.finest(() -> "Plugin data: " + pluginData);
+					mLogger.severe("Failed to parse player '" + player.getName() + "' scoreboard data as JSON. This results in data loss!");
 				}
+			} else {
+				mLogger.warning("No scoreboard data for player '" + player.getName() + "' - if they are not new, this is a serious error!");
+			}
 
-				/* Load scoreboards */
-				final String scoreData = scoreFuture.get();
-				mLogger.fine("Scoreboard data loaded for player=" + player.getName());
-				mLogger.finest(() -> "Score data:" + scoreData);
-				if (scoreData != null) {
-					JsonObject obj = mGson.fromJson(scoreData, JsonObject.class);
-					if (obj != null) {
-						ScoreboardUtils.loadFromJsonObject(player, obj);
-					} else {
-						mLogger.severe("Failed to parse player '" + player.getName() + "' scoreboard data as JSON. This results in data loss!");
-					}
+			/* Get all the shard data for all shards and worlds */
+			Map<String, String> shardData = shardDataFuture.get();
+			/* Look up in the shard data first the "overall" part - which world this player was on last time they were on this shard */
+			World playerWorld = null; // If null at the end of this block, will use default world
+			UUID lastSavedWorldUUID = null; // The saved world UUID from shard data. Might be different from the playerWorld if save data indicated one world, but it is not loaded so fell back to the default
+			String lastSavedWorldName = null; // The saved world name from shard data. Might be different from the playerWorld if save data indicated one world, but it is not loaded so fell back to the default
+			if (shardData == null) {
+				/* Maintain a local cache of shard data while the player is logged in here */
+				mShardData.put(player.getUniqueId(), new HashMap<>());
+
+				/* This is not an error - this will happen whenever a player first joins the game */
+				mLogger.fine("Player '" + player.getName() + "' has never been to any shard before");
+			} else {
+				/* Maintain a local cache of shard data while the player is logged in here */
+				mShardData.put(player.getUniqueId(), shardData);
+
+				mLogger.finer("Shard data loaded for player=" + player.getName());
+				mLogger.finest(() -> "Shard data: " + mGson.toJson(shardData));
+
+				/* Figure out what world the player's sharddata indicates they should join
+				 * If shard data does not contain this shard name, no info on what world to use - use the default one
+				 * If shard data contains this shard name, fetch world parameters from it, preferring UUID, then name. Loaded worlds only, this plugin does not load worlds automatically.
+				 */
+				String overallShardData = shardData.get(ConfigAPI.getShardName());
+				if (overallShardData == null) {
+					/* This is not an error - this will happen whenever a player first visits a new shard */
+					mLogger.fine("Player '" + player.getName() + "' has never been to this shard before");
 				} else {
-					mLogger.warning("No scoreboard data for player '" + player.getName() + "' - if they are not new, this is a serious error!");
-				}
+					JsonObject shardDataJson = mGson.fromJson(overallShardData, JsonObject.class);
 
-				/* Get all the shard data for all shards and worlds */
-				Map<String, String> shardData = shardDataFuture.get();
-				/* Look up in the shard data first the "overall" part - which world this player was on last time they were on this shard */
-				World playerWorld = null; // If null at the end of this block, will use default world
-				UUID lastSavedWorldUUID = null; // The saved world UUID from shard data. Might be different from the playerWorld if save data indicated one world, but it is not loaded so fell back to the default
-				String lastSavedWorldName = null; // The saved world name from shard data. Might be different from the playerWorld if save data indicated one world, but it is not loaded so fell back to the default
-				if (shardData == null) {
-					/* Maintain a local cache of shard data while the player is logged in here */
-					mShardData.put(player.getUniqueId(), new HashMap<>());
-
-					/* This is not an error - this will happen whenever a player first joins the game */
-					mLogger.fine("Player '" + player.getName() + "' has never been to any shard before");
-				} else {
-					/* Maintain a local cache of shard data while the player is logged in here */
-					mShardData.put(player.getUniqueId(), shardData);
-
-					mLogger.finer("Shard data loaded for player=" + player.getName());
-					mLogger.finest(() -> "Shard data: " + mGson.toJson(shardData));
-
-					/* Figure out what world the player's sharddata indicates they should join
-					 * If shard data does not contain this shard name, no info on what world to use - use the default one
-					 * If shard data contains this shard name, fetch world parameters from it, preferring UUID, then name. Loaded worlds only, this plugin does not load worlds automatically.
-					 */
-					String overallShardData = shardData.get(ConfigAPI.getShardName());
-					if (overallShardData == null) {
-						/* This is not an error - this will happen whenever a player first visits a new shard */
-						mLogger.fine("Player '" + player.getName() + "' has never been to this shard before");
-					} else {
-						JsonObject shardDataJson = mGson.fromJson(overallShardData, JsonObject.class);
-
-						if (shardDataJson.has("WorldUUID")) {
-							try {
-								lastSavedWorldUUID = UUID.fromString(shardDataJson.get("WorldUUID").getAsString());
-								World world = Bukkit.getWorld(lastSavedWorldUUID);
-								if (world != null) {
-									playerWorld = world;
-								}
-							} catch (Exception ex) {
-								mLogger.severe("Got sharddata WorldUUID='" + shardDataJson.get("WorldUUID").getAsString() + "' which is invalid: " + ex.getMessage());
-								ex.printStackTrace();
-							}
-						}
-
-						if (shardDataJson.has("World")) {
-							lastSavedWorldName = shardDataJson.get("World").getAsString();
-						}
-
-						if (playerWorld == null && lastSavedWorldName != null) {
-							World world = Bukkit.getWorld(lastSavedWorldName);
+					if (shardDataJson.has("WorldUUID")) {
+						try {
+							lastSavedWorldUUID = UUID.fromString(shardDataJson.get("WorldUUID").getAsString());
+							World world = Bukkit.getWorld(lastSavedWorldUUID);
 							if (world != null) {
 								playerWorld = world;
 							}
+						} catch (Exception ex) {
+							mLogger.severe("Got sharddata WorldUUID='" + shardDataJson.get("WorldUUID").getAsString() + "' which is invalid: " + ex.getMessage());
+							ex.printStackTrace();
+						}
+					}
+
+					if (shardDataJson.has("World")) {
+						lastSavedWorldName = shardDataJson.get("World").getAsString();
+					}
+
+					if (playerWorld == null && lastSavedWorldName != null) {
+						World world = Bukkit.getWorld(lastSavedWorldName);
+						if (world != null) {
+							playerWorld = world;
 						}
 					}
 				}
+			}
 
-				if (playerWorld == null) {
-					playerWorld = Bukkit.getWorlds().get(0);
-				}
+			if (playerWorld == null) {
+				playerWorld = Bukkit.getWorlds().get(0);
+			}
 
-				/* After this point playerWorld is always non-null and a valid loaded world */
+			/* After this point playerWorld is always non-null and a valid loaded world */
 
-				// Throw an event that lets other plugins modify the join world.
-				mLogger.finer("Calling PlayerJoinSetWorldEvent for player '" + player.getName() + "' with world={" + playerWorld.getUID() + ": " + playerWorld.getName() + "}, lastSavedWorld={" + lastSavedWorldUUID + ": " + lastSavedWorldName + "}");
-				PlayerJoinSetWorldEvent worldEvent = new PlayerJoinSetWorldEvent(player, playerWorld, lastSavedWorldUUID, lastSavedWorldName);
-				Bukkit.getPluginManager().callEvent(worldEvent);
+			// Throw an event that lets other plugins modify the join world.
+			mLogger.finer("Calling PlayerJoinSetWorldEvent for player '" + player.getName() + "' with world={" + playerWorld.getUID() + ": " + playerWorld.getName() + "}, lastSavedWorld={" + lastSavedWorldUUID + ": " + lastSavedWorldName + "}");
+			PlayerJoinSetWorldEvent worldEvent = new PlayerJoinSetWorldEvent(player, playerWorld, lastSavedWorldUUID, lastSavedWorldName);
+			Bukkit.getPluginManager().callEvent(worldEvent);
 
-				playerWorld = worldEvent.getWorld();
-				mLogger.finer("After PlayerJoinSetWorldEvent for player '" + player.getName() + "' got world={" + playerWorld.getUID() + ": " + playerWorld.getName() + "}");
+			playerWorld = worldEvent.getWorld();
+			mLogger.finer("After PlayerJoinSetWorldEvent for player '" + player.getName() + "' got world={" + playerWorld.getUID() + ": " + playerWorld.getName() + "}");
 
-				final JsonObject shardDataJson;
-				if (shardData == null || shardData.isEmpty()) {
-					mLogger.finer("No shard data for player '" + player.getName() + "'");
+			final JsonObject shardDataJson;
+			if (shardData == null || shardData.isEmpty()) {
+				mLogger.finer("No shard data for player '" + player.getName() + "'");
+				shardDataJson = new JsonObject();
+			} else {
+				/* Look up in the shard data first the "world" part - data from this world about where the player should be */
+				String worldShardData = shardData.get(MonumentaRedisSyncAPI.getRedisPerShardDataWorldKey(playerWorld));
+				if (worldShardData == null || worldShardData.isEmpty()) {
+					mLogger.finer("No world shard data for player '" + player.getName() + "', using default");
 					shardDataJson = new JsonObject();
 				} else {
-					/* Look up in the shard data first the "world" part - data from this world about where the player should be */
-					String worldShardData = shardData.get(MonumentaRedisSyncAPI.getRedisPerShardDataWorldKey(playerWorld));
-					if (worldShardData == null || worldShardData.isEmpty()) {
-						mLogger.finer("No world shard data for player '" + player.getName() + "', using default");
-						shardDataJson = new JsonObject();
-					} else {
-						mLogger.finer("Found world shard data for player '" + player.getName() + "': '" + worldShardData + "'");
-						shardDataJson = mGson.fromJson(worldShardData, JsonObject.class);
-					}
+					mLogger.finer("Found world shard data for player '" + player.getName() + "': '" + worldShardData + "'");
+					shardDataJson = mGson.fromJson(worldShardData, JsonObject.class);
 				}
-
-				/* At this point shardDataJson is a JSON object, possibly empty or containing this world's last saved data elements */
-
-				if (!shardDataJson.has("Pos")) {
-					// No position data, put player at world spawn
-					Location spawn = playerWorld.getSpawnLocation();
-
-					JsonArray pos = new JsonArray();
-					pos.add(spawn.getX());
-					pos.add(spawn.getY());
-					pos.add(spawn.getZ());
-					shardDataJson.add("Pos", pos);
-
-					JsonArray rotation = new JsonArray();
-					rotation.add(spawn.getYaw());
-					rotation.add(spawn.getPitch());
-					shardDataJson.add("Rotation", rotation);
-				}
-
-				shardDataJson.addProperty("world", playerWorld.getName());
-				shardDataJson.addProperty("WorldUUIDMost", playerWorld.getUID().getMostSignificantBits());
-				shardDataJson.addProperty("WorldUUIDLeast", playerWorld.getUID().getLeastSignificantBits());
-
-				/* At this point shardDataJson contains at minimum the world the player should be attached to and the location/rotation */
-
-				Object nbtTagCompound = mAdapter.retrieveSaveData(data, shardDataJson);
-				event.setData(nbtTagCompound);
-
-				mLogger.fine(() -> "Processing PlayerDataLoadEvent took " + (System.currentTimeMillis() - startTime) + " milliseconds on main thread");
-			} catch (IOException | InterruptedException | ExecutionException ex) {
-				mLogger.severe("Failed to load player data: " + ex);
-				ex.printStackTrace();
 			}
+
+			/* At this point shardDataJson is a JSON object, possibly empty or containing this world's last saved data elements */
+
+			if (!shardDataJson.has("Pos")) {
+				// No position data, put player at world spawn
+				Location spawn = playerWorld.getSpawnLocation();
+
+				JsonArray pos = new JsonArray();
+				pos.add(spawn.getX());
+				pos.add(spawn.getY());
+				pos.add(spawn.getZ());
+				shardDataJson.add("Pos", pos);
+
+				JsonArray rotation = new JsonArray();
+				rotation.add(spawn.getYaw());
+				rotation.add(spawn.getPitch());
+				shardDataJson.add("Rotation", rotation);
+			}
+
+			shardDataJson.addProperty("world", playerWorld.getName());
+			shardDataJson.addProperty("WorldUUIDMost", playerWorld.getUID().getMostSignificantBits());
+			shardDataJson.addProperty("WorldUUIDLeast", playerWorld.getUID().getLeastSignificantBits());
+
+			/* At this point shardDataJson contains at minimum the world the player should be attached to and the location/rotation */
+
+			Object nbtTagCompound = mAdapter.retrieveSaveData(data, shardDataJson);
+			event.setData(nbtTagCompound);
+
+			mLogger.fine(() -> "Processing PlayerDataLoadEvent took " + (System.currentTimeMillis() - startTime) + " milliseconds on main thread");
+		} catch (IOException | InterruptedException | ExecutionException ex) {
+			mLogger.severe("Failed to load player data: " + ex);
+			ex.printStackTrace();
 		}
 	}
 
@@ -565,9 +543,6 @@ public class DataEventListener implements Listener {
 
 		mLogger.fine("Saving data for player=" + player.getName());
 
-		StatefulRedisConnection<String, String> stringStringConnection = RedisAPI.getInstance().openConnection(RedisAPI.STRING_STRING_CODEC);
-		StatefulRedisConnection<String, byte[]> stringByteConnection = RedisAPI.getInstance().openConnection(RedisAPI.STRING_BYTE_CODEC);
-		List<RedisFuture<?>> localFutures = new ArrayList<>();
 		List<RedisFuture<?>> futures = mPendingSaves.remove(player.getUniqueId());
 		if (futures == null) {
 			futures = new ArrayList<>();
@@ -576,7 +551,11 @@ public class DataEventListener implements Listener {
 		}
 
 		/* Get the existing plugin data */
-		JsonObject pluginData = mPluginData.computeIfAbsent(player.getUniqueId(), k -> new JsonObject());
+		JsonObject pluginData = mPluginData.get(player.getUniqueId());
+		if (pluginData == null) {
+			pluginData = new JsonObject();
+			mPluginData.put(player.getUniqueId(), pluginData);
+		}
 
 		/* Call a custom save event that gives other plugins a chance to add data */
 		/* This is skipped until the join event finishes to prevent losing data if a save happens while joining */
@@ -604,12 +583,12 @@ public class DataEventListener implements Listener {
 
 			mLogger.finest(() -> "data: " + b64encode(data.getData()));
 			String dataPath = MonumentaRedisSyncAPI.getRedisDataPath(player);
-			localFutures.add(stringByteConnection.async().lpush(dataPath, data.getData()));
-			localFutures.add(stringByteConnection.async().ltrim(dataPath, 0, ConfigAPI.getHistoryAmount()));
+			futures.add(RedisAPI.getInstance().asyncStringBytes().lpush(dataPath, data.getData()));
+			futures.add(RedisAPI.getInstance().asyncStringBytes().ltrim(dataPath, 0, ConfigAPI.getHistoryAmount()));
 
 			/* Execute the sharddata, history and plugin data as a multi() batch */
-			RedisAsyncCommands<String, String> commands = stringStringConnection.async();
-			localFutures.add(commands.multi()); /* < MULTI */
+			RedisAsyncCommands<String, String> commands = RedisAPI.getInstance().async();
+			futures.add(commands.multi()); /* < MULTI */
 
 			/*
 			 * sharddata
@@ -618,7 +597,7 @@ public class DataEventListener implements Listener {
 			String shardDataPath = MonumentaRedisSyncAPI.getRedisPerShardDataPath(player);
 			// Save the data specifically for the world the player is currently on
 			String worldKey = MonumentaRedisSyncAPI.getRedisPerShardDataWorldKey(player.getWorld());
-			localFutures.add(commands.hset(shardDataPath, worldKey, data.getShardData()));
+			commands.hset(shardDataPath, worldKey, data.getShardData());
 			// Also update the local sharddata cache
 			Map<String, String> shardDataMap = mShardData.get(player.getUniqueId());
 			if (shardDataMap == null) {
@@ -633,7 +612,7 @@ public class DataEventListener implements Listener {
 			overallShardData.addProperty("WorldUUID", player.getWorld().getUID().toString());
 			overallShardData.addProperty("World", player.getWorld().getName());
 			String overallShardDataStr = mGson.toJson(overallShardData);
-			localFutures.add(commands.hset(shardDataPath, ConfigAPI.getShardName(), overallShardDataStr));
+			commands.hset(shardDataPath, ConfigAPI.getShardName(), overallShardDataStr);
 			if (shardDataMap != null) {
 				shardDataMap.put(ConfigAPI.getShardName(), overallShardDataStr);
 			}
@@ -643,16 +622,16 @@ public class DataEventListener implements Listener {
 			String histPath = MonumentaRedisSyncAPI.getRedisHistoryPath(player);
 			String history = ConfigAPI.getShardName() + "|" + System.currentTimeMillis() + "|" + player.getName();
 			mLogger.finest(() -> "history: " + history);
-			localFutures.add(commands.lpush(histPath, history));
-			localFutures.add(commands.ltrim(histPath, 0, ConfigAPI.getHistoryAmount()));
+			commands.lpush(histPath, history);
+			commands.ltrim(histPath, 0, ConfigAPI.getHistoryAmount());
 
 			/* plugindata */
 			String pluginDataPath = MonumentaRedisSyncAPI.getRedisPluginDataPath(player);
 			mPluginData.put(player.getUniqueId(), pluginData); // Update cache
 			String pluginDataStr = mGson.toJson(pluginData);
 			mLogger.finest(() -> "plugindata: " + pluginDataStr);
-			localFutures.add(commands.lpush(pluginDataPath, pluginDataStr));
-			localFutures.add(commands.ltrim(pluginDataPath, 0, ConfigAPI.getHistoryAmount()));
+			commands.lpush(pluginDataPath, pluginDataStr);
+			commands.ltrim(pluginDataPath, 0, ConfigAPI.getHistoryAmount());
 
 			/* Scoreboards */
 			mLogger.fine("Saving scoreboard data for player=" + player.getName());
@@ -661,22 +640,17 @@ public class DataEventListener implements Listener {
 			mLogger.fine(() -> "Scoreboard saving took " + (System.currentTimeMillis() - scoreStartTime) + " milliseconds on main thread");
 			mLogger.finest(() -> "Data:" + scoreboardData);
 			String scorePath = MonumentaRedisSyncAPI.getRedisScoresPath(player);
-			localFutures.add(commands.lpush(scorePath, scoreboardData));
-			localFutures.add(commands.ltrim(scorePath, 0, ConfigAPI.getHistoryAmount()));
+			commands.lpush(scorePath, scoreboardData);
+			commands.ltrim(scorePath, 0, ConfigAPI.getHistoryAmount());
 
-			localFutures.add(commands.exec()); /* MULTI > */
+			futures.add(commands.exec()); /* MULTI > */
 		} catch (IOException ex) {
 			mLogger.severe("Failed to save player data: " + ex);
 			ex.printStackTrace();
 		}
 
-		futures.addAll(localFutures);
-
 		/* Don't block - store the pending futures for completion later */
 		mPendingSaves.put(player.getUniqueId(), futures);
-
-		RedisAPI.getInstance().closeConnectionWhenDone(stringByteConnection, localFutures, List.of());
-		RedisAPI.getInstance().closeConnectionWhenDone(stringStringConnection, localFutures, List.of());
 	}
 
 	/********************* Transferring Restriction Event Handlers *********************/
@@ -693,15 +667,10 @@ public class DataEventListener implements Listener {
 		String uuidStr = uuid.toString();
 
 		Bukkit.getServer().getScheduler().runTaskAsynchronously(MonumentaRedisSync.getInstance(), () -> {
-			try (StatefulRedisConnection<String, String> stringStringConnection = RedisAPI.getInstance().openConnection(RedisAPI.STRING_STRING_CODEC)) {
-				RedisFuture<Boolean> setNameFuture = stringStringConnection.async().hset("uuid2name", uuidStr, nameStr);
-				RedisFuture<Boolean> setUuidFuture = stringStringConnection.async().hset("name2uuid", nameStr, uuidStr);
-				MonumentaRedisSyncAPI.updateUuidToName(uuid, nameStr);
-				MonumentaRedisSyncAPI.updateNameToUuid(nameStr, uuid);
-
-				setNameFuture.toCompletableFuture().join();
-				setUuidFuture.toCompletableFuture().join();
-			}
+			RedisAPI.getInstance().async().hset("uuid2name", uuidStr, nameStr);
+			RedisAPI.getInstance().async().hset("name2uuid", nameStr, uuidStr);
+			MonumentaRedisSyncAPI.updateUuidToName(uuid, nameStr);
+			MonumentaRedisSyncAPI.updateNameToUuid(nameStr, uuid);
 		});
 	}
 
@@ -868,13 +837,13 @@ public class DataEventListener implements Listener {
 	}
 
 	/*
-	 * This event fires very early in the chain, it also isn't safe to do database lookups
-	 * Ideally this should also be done on the proxy but this is a failsafe in case a shard still has player data loaded
-	 * Login events are fired in this order:
-	 * - AsyncPlayerPreLoginEvent
-	 * - PlayerJoinEvent
-	 * However, PlayerJoinEvent will sometimes not get called if the player disconnects while logging in
-	 */
+	* This event fires very early in the chain, it also isn't safe to do database lookups
+	* Ideally this should also be done on the proxy but this is a failsafe incase a shard still has player data loaded
+	* Login events are fired in this order:
+	* - AsyncPlayerPreLoginEvent
+	* - PlayerJoinEvent
+	* However, PlayerJoinEvent will sometimes not get called if the player disconnects while logging in
+	*/
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
 	public void kickPlayerIfDuplicateLogin(AsyncPlayerPreLoginEvent event) {
 		if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) {

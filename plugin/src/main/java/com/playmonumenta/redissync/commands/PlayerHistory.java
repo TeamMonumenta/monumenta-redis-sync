@@ -34,7 +34,7 @@ public class PlayerHistory {
 		Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
 			// ASYNC
 			RedisAPI api = RedisAPI.getInstance();
-			List<String> history = api.sync().lrange(MonumentaRedisSyncAPI.getRedisHistoryPath(target), 0, -1);
+			List<String> history = api.async().lrange(MonumentaRedisSyncAPI.getRedisHistoryPath(target), 0, -1).toCompletableFuture().join();
 
 			Bukkit.getScheduler().runTask(plugin, () -> {
 				// SYNC

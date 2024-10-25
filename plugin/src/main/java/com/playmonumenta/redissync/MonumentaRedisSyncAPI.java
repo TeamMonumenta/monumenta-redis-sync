@@ -378,7 +378,7 @@ public class MonumentaRedisSyncAPI {
 		}
 
 		Bukkit.getScheduler().runTaskAsynchronously(mrs, () -> {
-			String history = api.sync().hget(getStashPath(), saveName + "-history");
+			String history = api.async().hget(getStashPath(), saveName + "-history").toCompletableFuture().join();
 			Bukkit.getScheduler().runTask(mrs, () -> {
 				if (history == null) {
 					if (name == null) {

@@ -107,7 +107,7 @@ public class MonumentaRedisSync extends JavaPlugin implements MonumentaRedisSync
 		getServer().getScheduler().cancelTasks(this);
 	}
 
-	protected static MonumentaRedisSync getInstance() {
+	public static MonumentaRedisSync getInstance() {
 		MonumentaRedisSync instance = INSTANCE;
 		if (instance == null) {
 			throw new RuntimeException("MonumentaRedisSync is not enabled yet");

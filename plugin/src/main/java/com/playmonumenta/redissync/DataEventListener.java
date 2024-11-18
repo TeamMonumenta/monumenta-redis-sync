@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -78,6 +79,7 @@ import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.scoreboard.Score;
 
 public class DataEventListener implements Listener {
 	private static class PlayerUuidToNameStreamingChannel implements KeyValueStreamingChannel<String, String> {
@@ -636,8 +638,15 @@ public class DataEventListener implements Listener {
 			/* Scoreboards */
 			mLogger.fine("Saving scoreboard data for player=" + player.getName());
 			long scoreStartTime = System.currentTimeMillis();
-			String scoreboardData = mGson.toJson(mAdapter.getPlayerScoresAsJson(player.getName(), Bukkit.getScoreboardManager().getMainScoreboard()));
-			mLogger.fine(() -> "Scoreboard saving took " + (System.currentTimeMillis() - scoreStartTime) + " milliseconds on main thread");
+
+			String scoreboardData = new Gson().toJson(
+				Bukkit.getScoreboardManager().getMainScoreboard().getScoresFor(player).stream().collect(Collectors.toMap(
+					entry -> entry.getObjective().getName(),
+					Score::getScore
+				))
+			);
+
+			mLogger.fine(() -> "Scoreboard saving took " + (System.currentTimeMillis() - scoreStartTime) + " " + "milliseconds on main thread");
 			mLogger.finest(() -> "Data:" + scoreboardData);
 			String scorePath = MonumentaRedisSyncAPI.getRedisScoresPath(player);
 			commands.lpush(scorePath, scoreboardData);

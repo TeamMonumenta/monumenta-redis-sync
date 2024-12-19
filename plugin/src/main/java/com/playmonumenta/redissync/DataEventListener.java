@@ -396,6 +396,7 @@ public class DataEventListener implements Listener {
 			/* Load scoreboards */
 			final String scoreData = scoreFuture.get();
 			mLogger.fine("Scoreboard data loaded for player=" + player.getName());
+			mAdapter.resetPlayerScores(player.getName(), Bukkit.getScoreboardManager().getMainScoreboard());
 			mLogger.finest(() -> "Score data:" + scoreData);
 			if (scoreData != null) {
 				JsonObject obj = mGson.fromJson(scoreData, JsonObject.class);

@@ -553,8 +553,7 @@ public class DataEventListener implements Listener {
 			}
 
 			mLogger.severe("Bail: kicking player early in order to prevent data loss!");
-
-			event.getPlayer().kick();
+			Bukkit.getScheduler().runTask(MonumentaRedisSync.getInstance(), () -> event.getPlayer().kick());
 		}
 	}
 

@@ -579,7 +579,9 @@ public class DataEventListener implements Listener {
 				});
 			} catch (IOException e) {
 				// there's nothing we can do here if we can't create the directory...
-				mLogger.log(Level.SEVERE, "Failed to create directory for saving player info", e);
+				mLogger.log(Level.SEVERE, "Failed to create directory for saving player info");
+				// TODO Copy MessagingUtils.sendStacktrace(CommandSender, Throwable) into this plugin and/or monumenta-lib, throw to Bukkit.getConsoleSender
+				ex.printStackTrace();
 			}
 
 			mLogger.severe("Bail: kicking player early in order to prevent data loss!");

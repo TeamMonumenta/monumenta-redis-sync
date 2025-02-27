@@ -21,6 +21,12 @@ import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.output.KeyValueStreamingChannel;
 import io.papermc.paper.event.server.ServerResourcesReloadedEvent;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -33,8 +39,8 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -79,7 +85,6 @@ import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.scoreboard.Score;
 
 public class DataEventListener implements Listener {
 	private static class PlayerUuidToNameStreamingChannel implements KeyValueStreamingChannel<String, String> {
@@ -349,6 +354,30 @@ public class DataEventListener implements Listener {
 		mPendingSaves.put(player.getUniqueId(), futures);
 	}
 
+	private interface Callable {
+		void run(Path dest) throws Exception;
+	}
+
+	private static String exceptionToString(Throwable ex) {
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		ex.printStackTrace(pw);
+		return sw.toString();
+	}
+
+	private void trySave(Path path, String name, Callable callable) {
+		try {
+			callable.run(path.resolve(name));
+		} catch (Throwable e) {
+			mLogger.log(Level.SEVERE, "failed to save data to file", e);
+			try {
+				Files.writeString(path.resolve(name + ".save_error.txt"), exceptionToString(e));
+			} catch (Throwable e2) {
+				mLogger.log(Level.SEVERE, "I give up!", e2);
+			}
+		}
+	}
+
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
 	public void playerDataLoadEvent(PlayerDataLoadEvent event) {
 		Player player = event.getPlayer();
@@ -523,9 +552,38 @@ public class DataEventListener implements Listener {
 			event.setData(nbtTagCompound);
 
 			mLogger.fine(() -> "Processing PlayerDataLoadEvent took " + (System.currentTimeMillis() - startTime) + " milliseconds on main thread");
-		} catch (IOException | InterruptedException | ExecutionException ex) {
-			mLogger.severe("Failed to load player data: " + ex);
-			ex.printStackTrace();
+		} catch (Throwable ex) {
+			mLogger.severe("!!! Failed to load player data !!!");
+			mLogger.log(Level.SEVERE, "Exception", ex);
+
+			final var rootPath = MonumentaRedisSync.getInstance().getDataFolder().toPath()
+				.resolve("data-fail-report-%s-%s-%s".formatted(
+					new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS").format(Instant.now()),
+					player.getName(),
+					player.getUniqueId()
+				));
+
+			mLogger.severe("Writing data files to for analysis..." + rootPath);
+
+			try {
+				Files.createDirectories(rootPath);
+				trySave(rootPath, "error.txt", dest -> Files.writeString(dest, exceptionToString(ex)));
+				trySave(rootPath, "data.nbt", dest -> Files.write(dest, dataFuture.get()));
+				trySave(rootPath, "plugin_data.nbt", dest -> Files.writeString(dest, pluginDataFuture.get()));
+				trySave(rootPath, "score.nbt", dest -> Files.writeString(dest, scoreFuture.get()));
+				trySave(rootPath, "shard", dest -> {
+					Files.createDirectories(dest);
+					for (final var ent : shardDataFuture.get().entrySet()) {
+						Files.writeString(dest.resolve(ent.getKey() + ".json"), ent.getValue());
+					}
+				});
+			} catch (IOException e) {
+				// there's nothing we can do here if we can't create the directory...
+				mLogger.log(Level.SEVERE, "Failed to create directory for saving player info", e);
+			}
+
+			mLogger.severe("Bail: kicking player early in order to prevent data loss!");
+			Bukkit.getScheduler().runTask(MonumentaRedisSync.getInstance(), () -> event.getPlayer().kick());
 		}
 	}
 

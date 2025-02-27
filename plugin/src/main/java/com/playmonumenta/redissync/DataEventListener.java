@@ -29,7 +29,6 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -580,7 +579,7 @@ public class DataEventListener implements Listener {
 				});
 			} catch (IOException e) {
 				// there's nothing we can do here if we can't create the directory...
-				mLogger.log(Level.SEVERE, "Failed to store player data!", e);
+				mLogger.log(Level.SEVERE, "Failed to create directory for saving player info", e);
 			}
 
 			mLogger.severe("Bail: kicking player early in order to prevent data loss!");

@@ -577,7 +577,7 @@ public class DataEventListener implements Listener {
 						Files.writeString(dest.resolve(ent.getKey() + ".json"), ent.getValue());
 					}
 				});
-			}catch (IOException e) {
+			} catch (IOException e) {
 				// there's nothing we can do here if we can't create the directory...
 				mLogger.log(Level.SEVERE, "Failed to store player data!", e);
 			}

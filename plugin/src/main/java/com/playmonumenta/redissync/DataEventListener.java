@@ -21,8 +21,10 @@ import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.output.KeyValueStreamingChannel;
 import io.papermc.paper.event.server.ServerResourcesReloadedEvent;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -33,6 +35,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -523,9 +526,35 @@ public class DataEventListener implements Listener {
 			event.setData(nbtTagCompound);
 
 			mLogger.fine(() -> "Processing PlayerDataLoadEvent took " + (System.currentTimeMillis() - startTime) + " milliseconds on main thread");
-		} catch (IOException | InterruptedException | ExecutionException ex) {
-			mLogger.severe("Failed to load player data: " + ex);
-			ex.printStackTrace();
+		} catch (Throwable ex) {
+			mLogger.severe("!!! Failed to load player data !!!");
+			mLogger.log(Level.SEVERE, "Exception", ex);
+
+			final var rootPath = MonumentaRedisSync.getInstance().getDataFolder().toPath()
+				.resolve("data-fail-report-%s-%s-%s".formatted(
+					System.currentTimeMillis(),
+					player.getName(),
+					player.getUniqueId()
+				));
+
+			mLogger.severe("Writing data files to for analysis..." + rootPath);
+
+			try {
+				Files.createDirectories(rootPath);
+				Files.write(rootPath.resolve("data.nbt"), dataFuture.get());
+				Files.writeString(rootPath.resolve("plugin_data.json"), pluginDataFuture.get());
+				Files.writeString(rootPath.resolve("score.json"), scoreFuture.get());
+
+				for (final var ent : shardDataFuture.get().entrySet()) {
+					Files.writeString(rootPath.resolve("shard_" + ent.getKey() + ".json"), ent.getValue());
+				}
+			} catch (IOException | InterruptedException | ExecutionException e) {
+				mLogger.severe("Failed to store player data!");
+			}
+
+			mLogger.severe("Bail: kicking player early in order to prevent data loss!");
+
+			event.getPlayer().kick();
 		}
 	}
 

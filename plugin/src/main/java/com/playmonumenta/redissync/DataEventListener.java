@@ -27,6 +27,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -558,7 +561,7 @@ public class DataEventListener implements Listener {
 
 			final var rootPath = MonumentaRedisSync.getInstance().getDataFolder().toPath()
 				.resolve("data-fail-report-%s-%s-%s".formatted(
-					new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS").format(Instant.now()),
+					DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-SSS").format(LocalDateTime.now()),
 					player.getName(),
 					player.getUniqueId()
 				));

@@ -25,8 +25,9 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -369,11 +370,13 @@ public class DataEventListener implements Listener {
 		try {
 			callable.run(path.resolve(name));
 		} catch (Throwable e) {
-			mLogger.log(Level.SEVERE, "failed to save data to file", e);
+			mLogger.severe("failed to save data to file");
+			e.printStackTrace();
 			try {
 				Files.writeString(path.resolve(name + ".save_error.txt"), exceptionToString(e));
 			} catch (Throwable e2) {
-				mLogger.log(Level.SEVERE, "I give up!", e2);
+				mLogger.severe("I give up!");
+				e2.printStackTrace();
 			}
 		}
 	}
@@ -554,11 +557,11 @@ public class DataEventListener implements Listener {
 			mLogger.fine(() -> "Processing PlayerDataLoadEvent took " + (System.currentTimeMillis() - startTime) + " milliseconds on main thread");
 		} catch (Throwable ex) {
 			mLogger.severe("!!! Failed to load player data !!!");
-			mLogger.log(Level.SEVERE, "Exception", ex);
+			ex.printStackTrace();
 
 			final var rootPath = MonumentaRedisSync.getInstance().getDataFolder().toPath()
 				.resolve("data-fail-report-%s-%s-%s".formatted(
-					new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS").format(Instant.now()),
+					DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-SSS").format(LocalDateTime.now(ZoneId.systemDefault())),
 					player.getName(),
 					player.getUniqueId()
 				));
@@ -579,7 +582,8 @@ public class DataEventListener implements Listener {
 				});
 			} catch (IOException e) {
 				// there's nothing we can do here if we can't create the directory...
-				mLogger.log(Level.SEVERE, "Failed to create directory for saving player info", e);
+				mLogger.severe("Failed to create directory for saving player info");
+				e.printStackTrace();
 			}
 
 			mLogger.severe("Bail: kicking player early in order to prevent data loss!");

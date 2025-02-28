@@ -10,6 +10,11 @@ import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.api.sync.RedisCommands;
 import io.lettuce.core.codec.RedisCodec;
 import io.lettuce.core.codec.StringCodec;
+import io.lettuce.core.resource.ClientResources;
+import io.lettuce.core.resource.NettyCustomizer;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.ChannelOption;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -64,6 +69,7 @@ public class RedisAPI {
 
 	private final MonumentaRedisSyncInterface mServer;
 	private final RedisClient mRedisClient;
+	private final ClientResources mClientResources;
 	private final StatefulRedisConnection<String, String> mConnection;
 	private final StatefulRedisConnection<String, byte[]> mStringByteConnection;
 	private final ConcurrentHashMap<Long, StatefulRedisConnection<String, String>> mThreadStringStringConnections
@@ -73,7 +79,15 @@ public class RedisAPI {
 
 	protected RedisAPI(MonumentaRedisSyncInterface server, String hostname, int port) {
 		mServer = server;
-		mRedisClient = RedisClient.create(RedisURI.Builder.redis(hostname, port).build());
+		// OutOfDirectMemoryError workaround: https://github.com/redis/lettuce/issues/2590#issuecomment-1888683541
+		mClientResources = ClientResources.builder()
+		.nettyCustomizer(new NettyCustomizer() {
+				@Override
+				public void afterBootstrapInitialized(Bootstrap bootstrap) {
+						bootstrap.option(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false));
+				}
+		}).build();
+		mRedisClient = RedisClient.create(mClientResources, RedisURI.Builder.redis(hostname, port).build());
 		mConnection = mRedisClient.connect();
 		mStringByteConnection = mRedisClient.connect(StringByteCodec.INSTANCE);
 
@@ -89,6 +103,7 @@ public class RedisAPI {
 		mConnection.close();
 		mStringByteConnection.close();
 		mRedisClient.shutdown();
+		mClientResources.shutdown();
 	}
 
 	public static RedisAPI getInstance() {

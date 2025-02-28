@@ -381,10 +381,6 @@ public class DataEventListener implements Listener {
 		}
 	}
 
-	private void sneakyThrow() throws Exception {
-		throw new Exception("testing!");
-	}
-
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
 	public void playerDataLoadEvent(PlayerDataLoadEvent event) {
 		Player player = event.getPlayer();
@@ -444,8 +440,6 @@ public class DataEventListener implements Listener {
 			} else {
 				mLogger.warning("No scoreboard data for player '" + player.getName() + "' - if they are not new, this is a serious error!");
 			}
-
-			sneakyThrow();
 
 			/* Get all the shard data for all shards and worlds */
 			Map<String, String> shardData = shardDataFuture.get();

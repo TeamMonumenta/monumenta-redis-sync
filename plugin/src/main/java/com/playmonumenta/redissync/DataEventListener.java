@@ -370,13 +370,19 @@ public class DataEventListener implements Listener {
 		try {
 			callable.run(path.resolve(name));
 		} catch (Throwable e) {
-			mLogger.log(Level.SEVERE, "failed to save data to file", e);
+			mLogger.severe("failed to save data to file");
+			e.printStackTrace();
 			try {
 				Files.writeString(path.resolve(name + ".save_error.txt"), exceptionToString(e));
 			} catch (Throwable e2) {
-				mLogger.log(Level.SEVERE, "I give up!", e2);
+				mLogger.severe("I give up!");
+				e2.printStackTrace();
 			}
 		}
+	}
+
+	private void sneakyThrow() throws Exception {
+		throw new Exception("testing!");
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
@@ -438,6 +444,8 @@ public class DataEventListener implements Listener {
 			} else {
 				mLogger.warning("No scoreboard data for player '" + player.getName() + "' - if they are not new, this is a serious error!");
 			}
+
+			sneakyThrow();
 
 			/* Get all the shard data for all shards and worlds */
 			Map<String, String> shardData = shardDataFuture.get();
@@ -555,7 +563,7 @@ public class DataEventListener implements Listener {
 			mLogger.fine(() -> "Processing PlayerDataLoadEvent took " + (System.currentTimeMillis() - startTime) + " milliseconds on main thread");
 		} catch (Throwable ex) {
 			mLogger.severe("!!! Failed to load player data !!!");
-			mLogger.log(Level.SEVERE, "Exception", ex);
+			ex.printStackTrace();
 
 			final var rootPath = MonumentaRedisSync.getInstance().getDataFolder().toPath()
 				.resolve("data-fail-report-%s-%s-%s".formatted(
@@ -580,7 +588,8 @@ public class DataEventListener implements Listener {
 				});
 			} catch (IOException e) {
 				// there's nothing we can do here if we can't create the directory...
-				mLogger.log(Level.SEVERE, "Failed to create directory for saving player info", e);
+				mLogger.severe("Failed to create directory for saving player info");
+				e.printStackTrace();
 			}
 
 			mLogger.severe("Bail: kicking player early in order to prevent data loss!");

@@ -572,8 +572,8 @@ public class DataEventListener implements Listener {
 				Files.createDirectories(rootPath);
 				trySave(rootPath, "error.txt", dest -> Files.writeString(dest, exceptionToString(ex)));
 				trySave(rootPath, "data.nbt", dest -> Files.write(dest, dataFuture.get()));
-				trySave(rootPath, "plugin_data.nbt", dest -> Files.writeString(dest, pluginDataFuture.get()));
-				trySave(rootPath, "score.nbt", dest -> Files.writeString(dest, scoreFuture.get()));
+				trySave(rootPath, "plugin_data.json", dest -> Files.writeString(dest, pluginDataFuture.get()));
+				trySave(rootPath, "score.json", dest -> Files.writeString(dest, scoreFuture.get()));
 				trySave(rootPath, "shard", dest -> {
 					Files.createDirectories(dest);
 					for (final var ent : shardDataFuture.get().entrySet()) {

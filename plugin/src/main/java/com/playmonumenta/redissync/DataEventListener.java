@@ -44,6 +44,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -116,6 +117,8 @@ public class DataEventListener implements Listener {
 
 	private static final Map<UUID, BukkitTask> TRANSFER_UNLOCK_TASKS = new HashMap<>();
 	private static final int TRANSFER_UNLOCK_TIMEOUT_TICKS = 10 * 20;
+	private static final Component LOAD_ERROR_MSG =
+		Component.text("Critical error occurred when loading playerdata! Please notify a moderator.", NamedTextColor.RED);
 	@SuppressWarnings("NullAway") // Required to avoid many null checks, this class will always be instantiated if this plugin is loaded
 	private static DataEventListener INSTANCE = null;
 
@@ -130,6 +133,7 @@ public class DataEventListener implements Listener {
 	private final Map<UUID, List<RedisFuture<?>>> mPendingSaves = new HashMap<>();
 	private final Map<UUID, JsonObject> mPluginData = new HashMap<>();
 	private final Set<UUID> mLoadingPlayers = new HashSet<>();
+	private final Set<UUID> mLoadFailedPlayers = new HashSet<>();
 
 	/*
 	 * Cached local copy of shard data to provide to API to get player locations on other worlds
@@ -556,6 +560,7 @@ public class DataEventListener implements Listener {
 
 			mLogger.fine(() -> "Processing PlayerDataLoadEvent took " + (System.currentTimeMillis() - startTime) + " milliseconds on main thread");
 		} catch (Throwable ex) {
+			mLoadFailedPlayers.add(event.getPlayer().getUniqueId());
 			mLogger.severe("!!! Failed to load player data !!!");
 			ex.printStackTrace();
 
@@ -587,7 +592,7 @@ public class DataEventListener implements Listener {
 			}
 
 			mLogger.severe("Bail: kicking player early in order to prevent data loss!");
-			Bukkit.getScheduler().runTask(MonumentaRedisSync.getInstance(), () -> event.getPlayer().kick());
+			Bukkit.getScheduler().runTask(MonumentaRedisSync.getInstance(), () -> event.getPlayer().kick(LOAD_ERROR_MSG));
 		}
 	}
 
@@ -597,6 +602,12 @@ public class DataEventListener implements Listener {
 
 		if (ConfigAPI.getSavingDisabled()) {
 			/* No data saved, no data loaded */
+			return;
+		}
+
+		if(mLoadFailedPlayers.contains(event.getPlayer().getUniqueId())) {
+			mLoadFailedPlayers.remove(event.getPlayer().getUniqueId());
+			mLogger.warning("Skipping playerdata save for " + event.getPlayer().getUniqueId() + " because their playerdata failed to load");
 			return;
 		}
 

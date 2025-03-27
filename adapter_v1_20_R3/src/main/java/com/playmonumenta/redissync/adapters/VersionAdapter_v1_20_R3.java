@@ -36,7 +36,7 @@ public class VersionAdapter_v1_20_R3 implements VersionAdapter {
 	@Override
 	public void resetPlayerScores(String playerName, org.bukkit.scoreboard.Scoreboard scoreboard) {
 		Scoreboard nmsScoreboard = ((CraftScoreboard) scoreboard).getHandle();
-		nmsScoreboard.resetSinglePlayerScore(() -> playerName, null);
+		nmsScoreboard.resetAllPlayerScores(() -> playerName);
 	}
 
 	@Override

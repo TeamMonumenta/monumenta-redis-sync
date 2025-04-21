@@ -39,4 +39,8 @@ public class PlayerAccountTransferEvent extends PlayerEvent {
 	public @NotNull HandlerList getHandlers() {
 		return handlers;
 	}
+
+	public static HandlerList getHandlerList() {
+		return handlers;
+	}
 }

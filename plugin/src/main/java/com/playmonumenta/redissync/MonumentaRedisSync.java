@@ -5,6 +5,7 @@ import com.playmonumenta.redissync.commands.ChangeLogLevel;
 import com.playmonumenta.redissync.commands.PlayerHistory;
 import com.playmonumenta.redissync.commands.PlayerLoadFromPlayer;
 import com.playmonumenta.redissync.commands.PlayerRollback;
+import com.playmonumenta.redissync.commands.PlayerTransferHistory;
 import com.playmonumenta.redissync.commands.RboardCommand;
 import com.playmonumenta.redissync.commands.RemoteDataCommand;
 import com.playmonumenta.redissync.commands.Stash;
@@ -59,6 +60,7 @@ public class MonumentaRedisSync extends JavaPlugin implements MonumentaRedisSync
 		PlayerHistory.register(this);
 		PlayerRollback.register();
 		PlayerLoadFromPlayer.register();
+		PlayerTransferHistory.register(this);
 		UpgradeAllPlayers.register(this);
 		ChangeLogLevel.register(this);
 		RboardCommand.register(this);

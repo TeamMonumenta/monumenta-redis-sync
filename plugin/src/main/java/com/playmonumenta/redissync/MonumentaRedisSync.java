@@ -90,6 +90,7 @@ public class MonumentaRedisSync extends JavaPlugin implements MonumentaRedisSync
 		mRedisAPI = new RedisAPI(this, ConfigAPI.getRedisHost(), ConfigAPI.getRedisPort());
 		getServer().getPluginManager().registerEvents(new DataEventListener(this.getLogger(), mVersionAdapter), this);
 		getServer().getPluginManager().registerEvents(new ScoreboardCleanupListener(this, this.getLogger(), mVersionAdapter), this);
+		getServer().getPluginManager().registerEvents(AccountTransferManager.getInstance(), this);
 		if (ConfigAPI.getTicksPerPlayerAutosave() > 0) {
 			getServer().getPluginManager().registerEvents(new AutoSaveListener(this, mVersionAdapter), this);
 		}
@@ -100,6 +101,7 @@ public class MonumentaRedisSync extends JavaPlugin implements MonumentaRedisSync
 	@Override
 	public void onDisable() {
 		INSTANCE = null;
+		AccountTransferManager.onDisable();
 		if (mRedisAPI != null) {
 			mRedisAPI.shutdown();
 		}

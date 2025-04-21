@@ -40,7 +40,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
@@ -642,10 +641,8 @@ public class DataEventListener implements Listener {
 
 			/* Merge any data from the save event to the player's locally cached plugin data */
 			Map<String, JsonObject> eventData = newEvent.getPluginData();
-			if (eventData != null) {
-				for (Map.Entry<String, JsonObject> ent : eventData.entrySet()) {
-					pluginData.add(ent.getKey(), ent.getValue());
-				}
+			for (Map.Entry<String, JsonObject> ent : eventData.entrySet()) {
+				pluginData.add(ent.getKey(), ent.getValue());
 			}
 			mLogger.fine(() -> "Getting plugindata from other plugins took " + (System.currentTimeMillis() - startTime) + " milliseconds");
 		} else {

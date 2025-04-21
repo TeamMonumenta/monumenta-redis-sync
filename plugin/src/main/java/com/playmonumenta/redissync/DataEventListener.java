@@ -911,13 +911,13 @@ public class DataEventListener implements Listener {
 	}
 
 	/*
-	* This event fires very early in the chain, it also isn't safe to do database lookups
-	* Ideally this should also be done on the proxy but this is a failsafe incase a shard still has player data loaded
-	* Login events are fired in this order:
-	* - AsyncPlayerPreLoginEvent
-	* - PlayerJoinEvent
-	* However, PlayerJoinEvent will sometimes not get called if the player disconnects while logging in
-	*/
+	 * This event fires very early in the chain, it also isn't safe to do database lookups
+	 * Ideally this should also be done on the proxy but this is a failsafe incase a shard still has player data loaded
+	 * Login events are fired in this order:
+	 * - AsyncPlayerPreLoginEvent
+	 * - PlayerJoinEvent
+	 * However, PlayerJoinEvent will sometimes not get called if the player disconnects while logging in
+	 */
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
 	public void kickPlayerIfDuplicateLogin(AsyncPlayerPreLoginEvent event) {
 		if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) {

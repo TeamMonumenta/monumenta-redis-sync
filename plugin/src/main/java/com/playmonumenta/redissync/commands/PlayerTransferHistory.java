@@ -51,19 +51,23 @@ public class PlayerTransferHistory {
 						}
 
 						Bukkit.getScheduler().runTask(plugin, () -> {
-							for (AccountTransferDetails transferDetails : transferDetailsList) {
-								String transferStr = String.format(
-									"- %s: %s (%s) -> %s (%s)",
-									transferDetails.transferTime().format(DateTimeFormatter.ISO_INSTANT),
-									transferDetails.oldName(),
-									transferDetails.oldId(),
-									transferDetails.newName(),
-									transferDetails.newId()
-								);
-								sender.sendMessage(Component.text(transferStr, NamedTextColor.YELLOW));
+							try {
+								for (AccountTransferDetails transferDetails : transferDetailsList) {
+									String transferStr = String.format(
+										"- %s: %s (%s) -> %s (%s)",
+										DateTimeFormatter.ISO_INSTANT.format(transferDetails.transferTime().toInstant(ZoneOffset.UTC)),
+										transferDetails.oldName(),
+										transferDetails.oldId(),
+										transferDetails.newName(),
+										transferDetails.newId()
+									);
+									sender.sendMessage(Component.text(transferStr, NamedTextColor.YELLOW));
+								}
+								sender.sendMessage(Component.text("Done!", NamedTextColor.GREEN));
+							} catch (Throwable throwable) {
+								sender.sendMessage(Component.text("Unable to display transfer history: " + throwable, NamedTextColor.RED));
+								plugin.getLogger().log(Level.WARNING,"Unable to display transfer history: ", throwable);
 							}
-
-							sender.sendMessage(Component.text("Done!", NamedTextColor.GREEN));
 						});
 					});
 				})
@@ -91,19 +95,23 @@ public class PlayerTransferHistory {
 						}
 
 						Bukkit.getScheduler().runTask(plugin, () -> {
-							for (AccountTransferDetails transferDetails : transferDetailsList) {
-								String transferStr = String.format(
-									"- %s: %s (%s) -> %s (%s)",
-									transferDetails.transferTime().format(DateTimeFormatter.ISO_INSTANT),
-									transferDetails.oldName(),
-									transferDetails.oldId(),
-									transferDetails.newName(),
-									transferDetails.newId()
-								);
-								sender.sendMessage(Component.text(transferStr, NamedTextColor.YELLOW));
+							try {
+								for (AccountTransferDetails transferDetails : transferDetailsList) {
+									String transferStr = String.format(
+										"- %s: %s (%s) -> %s (%s)",
+										DateTimeFormatter.ISO_INSTANT.format(transferDetails.transferTime().toInstant(ZoneOffset.UTC)),
+										transferDetails.oldName(),
+										transferDetails.oldId(),
+										transferDetails.newName(),
+										transferDetails.newId()
+									);
+									sender.sendMessage(Component.text(transferStr, NamedTextColor.YELLOW));
+								}
+								sender.sendMessage(Component.text("Done!", NamedTextColor.GREEN));
+							} catch (Throwable throwable) {
+								sender.sendMessage(Component.text("Unable to display transfer history: " + throwable, NamedTextColor.RED));
+								plugin.getLogger().log(Level.WARNING,"Unable to display transfer history: ", throwable);
 							}
-
-							sender.sendMessage(Component.text("Done!", NamedTextColor.GREEN));
 						});
 					});
 				})

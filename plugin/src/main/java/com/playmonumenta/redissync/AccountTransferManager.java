@@ -81,9 +81,9 @@ public class AccountTransferManager implements Listener {
 
 		if (
 			data.get("last_account_name") instanceof JsonPrimitive lastAccountNamePrimitive
-				&& lastAccountUuidPrimitive.isString()
+				&& lastAccountNamePrimitive.isString()
 		) {
-			lastAccountName = lastAccountUuidPrimitive.getAsString();
+			lastAccountName = lastAccountNamePrimitive.getAsString();
 		} else {
 			lastAccountName = MonumentaRedisSyncAPI.cachedUuidToName(lastAccountId);
 			if (lastAccountName == null) {

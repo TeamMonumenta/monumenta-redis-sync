@@ -1,7 +1,7 @@
 import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
 
 plugins {
-	id("com.playmonumenta.gradle-config") version "2.+"
+	id("com.playmonumenta.gradle-config") version "3.+"
 }
 
 val mixinapi = libs.mixinapi
@@ -14,7 +14,8 @@ tasks {
 }
 
 monumenta {
-	name("MonumentaRedisSync")
+	id("MonumentaRedisSync")
+	name("RedisSync")
 	pluginProject(":redissync")
 	paper(
 		"com.playmonumenta.redissync.MonumentaRedisSync", BukkitPluginDescription.PluginLoadOrder.POSTWORLD, "1.20",

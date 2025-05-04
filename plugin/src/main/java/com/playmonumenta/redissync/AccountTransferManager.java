@@ -147,7 +147,7 @@ public class AccountTransferManager implements Listener {
 		LocalDateTime startTime,
 		@Nullable LocalDateTime endTime
 	) {
-		long startTimestampMillis = AccountTransferManager.EPOCH.until(startTime, ChronoUnit.MILLIS);
+		long startTimestampMillis = EPOCH.until(startTime, ChronoUnit.MILLIS);
 		Range.Boundary<Long> startBound = Range.Boundary.including(startTimestampMillis);
 
 		int currentTick = Bukkit.getCurrentTick();
@@ -234,12 +234,12 @@ public class AccountTransferManager implements Listener {
 				if (earliestLoadedRequest == null) {
 					endBound = Range.Boundary.unbounded();
 				} else {
-					long timestampMillis = AccountTransferManager.EPOCH.until(earliestLoadedRequest, ChronoUnit.MILLIS);
+					long timestampMillis = EPOCH.until(earliestLoadedRequest, ChronoUnit.MILLIS);
 					endBound = Range.Boundary.excluding(timestampMillis);
 				}
 
 				// Fetch the list of transfers from Redis
-				List<String> transferJsonStrList = RedisAPI.getInstance().async().zrangebyscore(AccountTransferManager.REDIS_KEY, Range.from(
+				List<String> transferJsonStrList = RedisAPI.getInstance().async().zrangebyscore(REDIS_KEY, Range.from(
 					startBound,
 					endBound
 				)).toCompletableFuture().join();

@@ -174,6 +174,7 @@ public class AccountTransferManager implements Listener {
 					if (mTransferCacheRequestExpiry.isEmpty() && mTransferCacheLoadedExpiry.isEmpty()) {
 						mTransferCacheExpirationRunnable = null;
 						cancel();
+						return;
 					}
 
 					int currentTick = Bukkit.getCurrentTick();

@@ -178,8 +178,8 @@ public class AccountTransferManager implements Listener {
 					}
 
 					int currentTick = Bukkit.getCurrentTick();
-					removeExpiredCacheRequests(mTransferCacheRequestExpiry, currentTick);
 					removeExpiredCacheRequests(mTransferCacheLoadedExpiry, currentTick);
+					removeExpiredCacheRequests(mTransferCacheRequestExpiry, currentTick);
 
 					LocalDateTime earliestRequest = getEarliestRequestedTime(mTransferCacheRequestExpiry);
 

@@ -1,27 +1,48 @@
 package com.playmonumenta.redissync;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.playmonumenta.redissync.event.PlayerAccountTransferEvent;
 import com.playmonumenta.redissync.event.PlayerSaveEvent;
+import io.lettuce.core.Range;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Level;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class AccountTransferManager implements Listener {
 	protected static final String PLUGIN_KEY = "MonumentaRedisSync";
 	protected static final String REDIS_KEY = "account_transfer_log";
 	protected static final LocalDateTime EPOCH = LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC);
+	private static final int CACHE_EXPIRY_TICKS = 5 * 60 * 20;
 
 	private static @Nullable AccountTransferManager INSTANCE = null;
+	private static final NavigableSet<AccountTransferDetails> mTransferCache = new ConcurrentSkipListSet<>();
+	private static final NavigableSet<TransferCacheRequest> mTransferCacheRequestExpiry = new ConcurrentSkipListSet<>();
+	private static final NavigableSet<TransferCacheRequest> mTransferCacheLoadedExpiry = new ConcurrentSkipListSet<>();
+	private static final NavigableMap<LocalDateTime, CompletableFuture<List<AccountTransferDetails>>> mPendingTransfers
+		= new ConcurrentSkipListMap<>();
+	private static @Nullable BukkitRunnable mTransferCacheExpirationRunnable = null;
 
 	private AccountTransferManager() {
 	}
@@ -34,6 +55,14 @@ public class AccountTransferManager implements Listener {
 	}
 
 	public static void onDisable() {
+		if (mTransferCacheExpirationRunnable != null) {
+			mTransferCacheExpirationRunnable.cancel();
+			mTransferCacheExpirationRunnable = null;
+
+			mTransferCache.clear();
+			mTransferCacheRequestExpiry.clear();
+			mTransferCacheLoadedExpiry.clear();
+		}
 		INSTANCE = null;
 	}
 
@@ -112,5 +141,211 @@ public class AccountTransferManager implements Listener {
 		transferDetails.addProperty("new_name", currentPlayerName);
 
 		RedisAPI.getInstance().async().zadd(REDIS_KEY, (double) timestampMillis, transferDetails.toString());
+	}
+
+	public static CompletableFuture<List<AccountTransferDetails>> getTransfersInRange(
+		LocalDateTime startTime,
+		@Nullable LocalDateTime endTime
+	) {
+		long startTimestampMillis = AccountTransferManager.EPOCH.until(startTime, ChronoUnit.MILLIS);
+		Range.Boundary<Long> startBound = Range.Boundary.including(startTimestampMillis);
+
+		int currentTick = Bukkit.getCurrentTick();
+		int expiryTick = currentTick + CACHE_EXPIRY_TICKS;
+
+		CompletableFuture<List<AccountTransferDetails>> future = new CompletableFuture<>();
+		MonumentaRedisSync plugin = MonumentaRedisSync.getInstance();
+
+		LocalDateTime previousEarliestRequest = getEarliestRequestedTime(mTransferCacheRequestExpiry);
+
+		registerCacheRequest(mTransferCacheRequestExpiry, expiryTick, startTime);
+		if (previousEarliestRequest == null || startTime.isBefore(previousEarliestRequest)) {
+			mPendingTransfers.put(startTime, future);
+		}
+
+		Bukkit.getScheduler().runTask(plugin, () -> {
+			if (mTransferCacheExpirationRunnable != null) {
+				return;
+			}
+
+			mTransferCacheExpirationRunnable = new BukkitRunnable() {
+				@Override
+				public void run() {
+					if (mTransferCacheRequestExpiry.isEmpty() && mTransferCacheLoadedExpiry.isEmpty()) {
+						mTransferCacheExpirationRunnable = null;
+						cancel();
+					}
+
+					int currentTick = Bukkit.getCurrentTick();
+					removeExpiredCacheRequests(mTransferCacheRequestExpiry, currentTick);
+					removeExpiredCacheRequests(mTransferCacheLoadedExpiry, currentTick);
+
+					LocalDateTime earliestRequest = getEarliestRequestedTime(mTransferCacheRequestExpiry);
+
+					Iterator<AccountTransferDetails> transferIt = mTransferCache.iterator();
+					while (transferIt.hasNext()) {
+						if (!mPendingTransfers.isEmpty()) {
+							// Entries are loading, pause removal for now!
+							return;
+						}
+
+						AccountTransferDetails oldTransfer = transferIt.next();
+						if (earliestRequest == null || oldTransfer.transferTime().isBefore(earliestRequest)) {
+							transferIt.remove();
+						} else {
+							break;
+						}
+					}
+				}
+			};
+			mTransferCacheExpirationRunnable.runTaskTimer(plugin, CACHE_EXPIRY_TICKS, 60 * 20L);
+		});
+
+		Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+			try {
+				// Wait for later requests to wrap up first
+				if (previousEarliestRequest != null) {
+					while (true) {
+						Map.Entry<LocalDateTime, CompletableFuture<List<AccountTransferDetails>>> previousRequestEntry = mPendingTransfers.higherEntry(startTime);
+						if (previousRequestEntry == null) {
+							return;
+						}
+
+						try {
+							previousRequestEntry.getValue().join();
+						} catch (Throwable ignored) {
+							// Not our problem; try the request again
+						}
+					}
+				}
+
+				LocalDateTime earliestLoadedRequest = getEarliestRequestedTime(mTransferCacheLoadedExpiry);
+
+				Range.Boundary<Long> endBound;
+				if (earliestLoadedRequest == null) {
+					endBound = Range.Boundary.unbounded();
+				} else {
+					long timestampMillis = AccountTransferManager.EPOCH.until(earliestLoadedRequest, ChronoUnit.MILLIS);
+					endBound = Range.Boundary.excluding(timestampMillis);
+				}
+
+				// Fetch the list of transfers from Redis
+				List<String> transferJsonStrList = RedisAPI.getInstance().async().zrangebyscore(AccountTransferManager.REDIS_KEY, Range.from(
+					startBound,
+					endBound
+				)).toCompletableFuture().join();
+
+				// Parse them as-is
+				Gson gson = new Gson();
+				for (String transferJsonStr : transferJsonStrList) {
+					JsonObject transferJson = gson.fromJson(transferJsonStr, JsonObject.class);
+					mTransferCache.add(new AccountTransferDetails(transferJson));
+				}
+
+				// Return the results
+				List<AccountTransferDetails> transfers = new ArrayList<>();
+				for (AccountTransferDetails transfer : mTransferCache) {
+					LocalDateTime transferTime = transfer.transferTime();
+					if (transferTime.isBefore(startTime)) {
+						continue;
+					}
+
+					if (endTime != null && transferTime.isBefore(endTime)) {
+						break;
+					}
+
+					transfers.add(transfer);
+				}
+				future.complete(transfers);
+				registerCacheRequest(mTransferCacheLoadedExpiry, expiryTick, startTime);
+				mPendingTransfers.remove(startTime, future);
+			} catch (Throwable throwable) {
+				future.completeExceptionally(throwable);
+				mPendingTransfers.remove(startTime, future);
+			}
+		});
+
+		return future;
+	}
+
+	public static List<AccountTransferDetails> getEffectiveTransfersFromRange(List<AccountTransferDetails> allTransfersInRange) {
+		Map<UUID, AccountTransferDetails> mTransfersByNewId = new HashMap<>();
+
+		for (AccountTransferDetails transferDetails : allTransfersInRange) {
+			AccountTransferDetails oldTransfer = mTransfersByNewId.remove(transferDetails.oldId());
+			if (oldTransfer == null) {
+				mTransfersByNewId.put(transferDetails.newId(), transferDetails);
+			} else {
+				AccountTransferDetails mergedTransfer = new AccountTransferDetails(oldTransfer, transferDetails);
+				mTransfersByNewId.put(mergedTransfer.newId(), mergedTransfer);
+			}
+		}
+
+		return new ArrayList<>(mTransfersByNewId.values().stream()
+			.filter(transfer -> !transfer.oldId().equals(transfer.newId()))
+			.sorted().toList());
+	}
+
+	private record TransferCacheRequest(int mExpiryTick, LocalDateTime mRequestTime) implements Comparable<TransferCacheRequest> {
+		@Override
+		public int compareTo(@NotNull TransferCacheRequest o) {
+			int result;
+
+			result = Integer.compare(mExpiryTick, o.mExpiryTick);
+			if (result != 0) {
+				return result;
+			}
+
+			return mRequestTime.compareTo(o.mRequestTime);
+		}
+	}
+
+	private static @Nullable LocalDateTime getEarliestRequestedTime(NavigableSet<TransferCacheRequest> cacheRequests) {
+		LocalDateTime earliestRequest = null;
+		for (TransferCacheRequest request : cacheRequests) {
+			if (earliestRequest == null) {
+				earliestRequest = request.mRequestTime;
+				continue;
+			}
+
+			if (request.mRequestTime.isBefore(earliestRequest)) {
+				earliestRequest = request.mRequestTime;
+			}
+		}
+		return earliestRequest;
+	}
+
+	private static void registerCacheRequest(
+		NavigableSet<TransferCacheRequest> cacheRequests,
+		int expiryTick,
+		LocalDateTime requestedTime
+	) {
+		TransferCacheRequest request = new TransferCacheRequest(expiryTick, requestedTime);
+		if (!cacheRequests.add(request)) {
+			return;
+		}
+
+		Iterator<TransferCacheRequest> it = cacheRequests.iterator();
+		while (it.hasNext()) {
+			TransferCacheRequest oldRequest = it.next();
+			if (oldRequest.mExpiryTick > expiryTick) {
+				break;
+			}
+
+			if (!requestedTime.isAfter(oldRequest.mRequestTime)) {
+				it.remove();
+			}
+		}
+	}
+
+	private static void removeExpiredCacheRequests(NavigableSet<TransferCacheRequest> cacheRequests, int currentTick) {
+		Iterator<TransferCacheRequest> it = cacheRequests.iterator();
+		while (it.hasNext()) {
+			TransferCacheRequest request = it.next();
+			if (request.mExpiryTick > currentTick) {
+				return;
+			}
+			it.remove();
+		}
 	}
 }

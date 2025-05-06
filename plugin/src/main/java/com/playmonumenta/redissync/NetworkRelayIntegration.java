@@ -4,7 +4,7 @@ import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.GatherHeartbeatDataEvent;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
-import java.util.Iterator;
+import com.playmonumenta.redissync.event.PlayerAccountTransferEvent;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -19,6 +19,7 @@ import org.bukkit.event.player.PlayerLoginEvent;
 public class NetworkRelayIntegration implements Listener {
 	private static @Nullable NetworkRelayIntegration INSTANCE = null;
 	private static final String LOGIN_EVENT_CHANNEL = "com.playmonumenta.redissync.loginEvent";
+	private static final String ACCOUNT_TRANSFER_EVENT_CHANNEL = "com.playmonumenta.redissync.AccountTransferEvent";
 	private static final String PLUGIN_IDENTIFIER = "com.playmonumenta.redissync";
 	private final Logger mLogger;
 	private final String mShardName;
@@ -54,19 +55,61 @@ public class NetworkRelayIntegration implements Listener {
 		});
 	}
 
+	public static void broadcastPlayerAccountTransferEvent(
+		long timestampMillis,
+		UUID oldId,
+		String oldName,
+		UUID currentId,
+		String currentName
+	) {
+		if (INSTANCE == null) {
+			return;
+		}
+
+		Bukkit.getServer().getScheduler().runTaskAsynchronously(MonumentaRedisSync.getInstance(), () -> {
+			try {
+				JsonObject eventData = new JsonObject();
+
+				eventData.addProperty("timestamp_millis", timestampMillis);
+				eventData.addProperty("old_id", oldId.toString());
+				eventData.addProperty("old_name", oldName);
+				eventData.addProperty("new_id", currentId.toString());
+				eventData.addProperty("new_name", currentName);
+
+				NetworkRelayAPI.sendBroadcastMessage(ACCOUNT_TRANSFER_EVENT_CHANNEL, eventData);
+			} catch (Exception e) {
+				INSTANCE.mLogger.warning("Failed to broadcast account transfer event for " + currentName);
+			}
+		});
+	}
+
 	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = false)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) throws Exception {
 		switch (event.getChannel()) {
-		case LOGIN_EVENT_CHANNEL:
-			JsonObject data = event.getData();
-			if (data == null) {
-				mLogger.severe("Got " + LOGIN_EVENT_CHANNEL + " channel with null data");
-				return;
+			case LOGIN_EVENT_CHANNEL -> {
+				JsonObject data = event.getData();
+				if (data == null) {
+					mLogger.severe("Got " + LOGIN_EVENT_CHANNEL + " channel with null data");
+					return;
+				}
+				remoteLoginEvent(data);
 			}
-			remoteLoginEvent(data);
-			break;
-		default:
-			break;
+			case ACCOUNT_TRANSFER_EVENT_CHANNEL -> {
+				if (event.getSource().equals(mShardName)) {
+					// Ignore local events
+					return;
+				}
+
+				JsonObject data = event.getData();
+				if (data == null) {
+					mLogger.severe("Got " + ACCOUNT_TRANSFER_EVENT_CHANNEL + " channel with null data");
+					return;
+				}
+
+				remoteAccountTransferEvent(data);
+			}
+			default -> {
+			}
 		}
 	}
 
@@ -82,15 +125,12 @@ public class NetworkRelayIntegration implements Listener {
 			try {
 				Set<String> shards = NetworkRelayAPI.getOnlineShardNames();
 
-				Iterator<String> iter = shards.iterator();
-				while (iter.hasNext()) {
-					String shardName = iter.next();
-					if (NetworkRelayAPI.getHeartbeatPluginData(shardName, PLUGIN_IDENTIFIER) == null ||
-						shardName.equals(INSTANCE.mShardName)) {
-						iter.remove();
-					}
-				}
-				return shards.toArray(new String[shards.size()]);
+				shards.removeIf(shardName -> (
+					NetworkRelayAPI.getHeartbeatPluginData(shardName, PLUGIN_IDENTIFIER) == null
+						|| shardName.equals(INSTANCE.mShardName)
+				));
+
+				return shards.toArray(new String[0]);
 			} catch (Exception ex) {
 				INSTANCE.mLogger.warning("NetworkRelayAPI.getOnlineShardNames failed: " + ex.getMessage());
 				ex.printStackTrace();
@@ -125,6 +165,16 @@ public class NetworkRelayIntegration implements Listener {
 
 		MonumentaRedisSyncAPI.updateUuidToName(playerUuid, playerName);
 		MonumentaRedisSyncAPI.updateNameToUuid(playerName, playerUuid);
+	}
+
+	private void remoteAccountTransferEvent(JsonObject data) {
+		AccountTransferDetails transferDetails = new  AccountTransferDetails(data);
+		MonumentaRedisSync.getInstance().getLogger()
+			.info("[AccountTransferManager] Detected remote account transfer for " + transferDetails.oldName() + " (" + transferDetails.oldId() +") -> " + transferDetails.newName() + " (" + transferDetails.newId() + ")");
+		AccountTransferManager.registerRemoteTransfer(transferDetails);
+
+		PlayerAccountTransferEvent event = new PlayerAccountTransferEvent(transferDetails);
+		Bukkit.getPluginManager().callEvent(event);
 	}
 
 	public static @Nullable String getShardName() {

@@ -123,15 +123,19 @@ public class AccountTransferManager implements Listener {
 		MonumentaRedisSync plugin = MonumentaRedisSync.getInstance();
 		plugin.getLogger().info("[AccountTransferManager] Detected account transfer for " + lastAccountName + " (" + lastAccountId +") -> " + currentPlayerName + " (" + currentPlayerId + ")");
 
-		// Alert plugins
-
-		PlayerAccountTransferEvent newEvent = new PlayerAccountTransferEvent(player, lastAccountId, lastAccountName);
-		Bukkit.getPluginManager().callEvent(newEvent);
-
-		// Log to Redis
-
 		LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
 		long timestampMillis = EPOCH.until(now, ChronoUnit.MILLIS);
+
+		// Alert local plugins
+
+		PlayerAccountTransferEvent newEvent = new PlayerAccountTransferEvent(now, player, lastAccountId, lastAccountName);
+		Bukkit.getPluginManager().callEvent(newEvent);
+
+		// Alert remote plugins if possible
+
+		NetworkRelayIntegration.broadcastPlayerAccountTransferEvent(timestampMillis, lastAccountId, lastAccountName, currentPlayerId, currentPlayerName);
+
+		// Log to Redis
 
 		JsonObject transferDetails = new JsonObject();
 		transferDetails.addProperty("timestamp_millis", timestampMillis);
@@ -164,51 +168,7 @@ public class AccountTransferManager implements Listener {
 		}
 		logCacheStats("Attempted to register entry in mTransferCacheRequestExpiry");
 
-		Bukkit.getScheduler().runTask(plugin, () -> {
-			if (mTransferCacheExpirationRunnable != null) {
-				return;
-			}
-
-			mTransferCacheExpirationRunnable = new BukkitRunnable() {
-				@Override
-				public void run() {
-					if (mTransferCacheRequestExpiry.isEmpty() && mTransferCacheLoadedExpiry.isEmpty()) {
-						plugin.getLogger().fine("[AccountTransferManager] Shutting down cache runnable due to lack of entries");
-						mTransferCacheExpirationRunnable = null;
-						cancel();
-						return;
-					}
-
-					logCacheStats("pre-expiry check");
-
-					int currentTick = Bukkit.getCurrentTick();
-					removeExpiredCacheRequests(mTransferCacheLoadedExpiry, currentTick);
-					removeExpiredCacheRequests(mTransferCacheRequestExpiry, currentTick);
-					logCacheStats("pre-cleanup check");
-
-					LocalDateTime earliestRequest = getEarliestRequestedTime(mTransferCacheRequestExpiry);
-
-					Iterator<AccountTransferDetails> transferIt = mTransferCache.iterator();
-					while (transferIt.hasNext()) {
-						if (!mPendingTransfers.isEmpty()) {
-							// Entries are loading, pause removal for now!
-							plugin.getLogger().fine("[AccountTransferManager] Cache runnable pausing cleaning while transfers are in progress");
-							return;
-						}
-
-						AccountTransferDetails oldTransfer = transferIt.next();
-						if (earliestRequest == null || oldTransfer.transferTime().isBefore(earliestRequest)) {
-							transferIt.remove();
-						} else {
-							break;
-						}
-					}
-					logCacheStats("post-cleanup check");
-				}
-			};
-			mTransferCacheExpirationRunnable.runTaskTimer(plugin, CACHE_EXPIRY_TICKS, 60 * 20L);
-			plugin.getLogger().fine("[AccountTransferManager] Started cache runnable");
-		});
+		startTransferCacheRunnable();
 
 		Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
 			try {
@@ -276,6 +236,72 @@ public class AccountTransferManager implements Listener {
 		});
 
 		return future;
+	}
+
+	protected static void registerRemoteTransfer(AccountTransferDetails transferDetails) {
+		// Add the remote transfer details to the local cache, and create a false request so it is properly cleaned up if it goes unused
+
+		LocalDateTime startTime = transferDetails.transferTime();
+
+		int currentTick = Bukkit.getCurrentTick();
+		int expiryTick = currentTick + CACHE_EXPIRY_TICKS;
+
+		registerCacheRequest(mTransferCacheRequestExpiry, expiryTick, startTime);
+		startTransferCacheRunnable();
+
+		mTransferCache.add(transferDetails);
+
+		registerCacheRequest(mTransferCacheLoadedExpiry, expiryTick, startTime);
+	}
+
+	private static void startTransferCacheRunnable() {
+		MonumentaRedisSync plugin = MonumentaRedisSync.getInstance();
+
+		Bukkit.getScheduler().runTask(plugin, () -> {
+			if (mTransferCacheExpirationRunnable != null) {
+				return;
+			}
+
+			mTransferCacheExpirationRunnable = new BukkitRunnable() {
+				@Override
+				public void run() {
+					if (mTransferCacheRequestExpiry.isEmpty() && mTransferCacheLoadedExpiry.isEmpty()) {
+						plugin.getLogger().fine("[AccountTransferManager] Shutting down cache runnable due to lack of entries");
+						mTransferCacheExpirationRunnable = null;
+						cancel();
+						return;
+					}
+
+					logCacheStats("pre-expiry check");
+
+					int currentTick = Bukkit.getCurrentTick();
+					removeExpiredCacheRequests(mTransferCacheLoadedExpiry, currentTick);
+					removeExpiredCacheRequests(mTransferCacheRequestExpiry, currentTick);
+					logCacheStats("pre-cleanup check");
+
+					LocalDateTime earliestRequest = getEarliestRequestedTime(mTransferCacheRequestExpiry);
+
+					Iterator<AccountTransferDetails> transferIt = mTransferCache.iterator();
+					while (transferIt.hasNext()) {
+						if (!mPendingTransfers.isEmpty()) {
+							// Entries are loading, pause removal for now!
+							plugin.getLogger().fine("[AccountTransferManager] Cache runnable pausing cleaning while transfers are in progress");
+							return;
+						}
+
+						AccountTransferDetails oldTransfer = transferIt.next();
+						if (earliestRequest == null || oldTransfer.transferTime().isBefore(earliestRequest)) {
+							transferIt.remove();
+						} else {
+							break;
+						}
+					}
+					logCacheStats("post-cleanup check");
+				}
+			};
+			mTransferCacheExpirationRunnable.runTaskTimer(plugin, CACHE_EXPIRY_TICKS, 60 * 20L);
+			plugin.getLogger().fine("[AccountTransferManager] Started cache runnable");
+		});
 	}
 
 	public static List<AccountTransferDetails> getEffectiveTransfersFromRange(List<AccountTransferDetails> allTransfersInRange) {

@@ -62,7 +62,8 @@ public class NetworkRelayIntegration implements Listener {
 		UUID currentId,
 		String currentName
 	) {
-		if (INSTANCE == null) {
+		NetworkRelayIntegration instance = INSTANCE;
+		if (instance == null) {
 			return;
 		}
 
@@ -78,7 +79,7 @@ public class NetworkRelayIntegration implements Listener {
 
 				NetworkRelayAPI.sendBroadcastMessage(ACCOUNT_TRANSFER_EVENT_CHANNEL, eventData);
 			} catch (Exception e) {
-				INSTANCE.mLogger.warning("Failed to broadcast account transfer event for " + currentName);
+				instance.mLogger.warning("Failed to broadcast account transfer event for " + currentName);
 			}
 		});
 	}
@@ -121,18 +122,19 @@ public class NetworkRelayIntegration implements Listener {
 	}
 
 	public static String[] getOnlineTransferTargets() {
-		if (INSTANCE != null) {
+		NetworkRelayIntegration instance = INSTANCE;
+		if (instance != null) {
 			try {
 				Set<String> shards = NetworkRelayAPI.getOnlineShardNames();
 
 				shards.removeIf(shardName -> (
 					NetworkRelayAPI.getHeartbeatPluginData(shardName, PLUGIN_IDENTIFIER) == null
-						|| shardName.equals(INSTANCE.mShardName)
+						|| shardName.equals(instance.mShardName)
 				));
 
 				return shards.toArray(new String[0]);
 			} catch (Exception ex) {
-				INSTANCE.mLogger.warning("NetworkRelayAPI.getOnlineShardNames failed: " + ex.getMessage());
+				instance.mLogger.warning("NetworkRelayAPI.getOnlineShardNames failed: " + ex.getMessage());
 				ex.printStackTrace();
 			}
 		}

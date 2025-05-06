@@ -178,11 +178,12 @@ public class NetworkRelayIntegration implements Listener {
 	}
 
 	public static @Nullable String getShardName() {
-		if (INSTANCE != null) {
+		NetworkRelayIntegration instance = INSTANCE;
+		if (instance != null) {
 			try {
 				return NetworkRelayAPI.getShardName();
 			} catch (Exception ex) {
-				INSTANCE.mLogger.warning("NetworkRelayAPI.getShardName failed: " + ex.getMessage());
+				instance.mLogger.warning("NetworkRelayAPI.getShardName failed: " + ex.getMessage());
 				ex.printStackTrace();
 			}
 		}

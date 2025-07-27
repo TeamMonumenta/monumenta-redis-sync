@@ -56,7 +56,7 @@ public class ScoreboardUtils {
 	public static int getScoreboardValue(String name, String scoreboardValue) {
 		Objective objective = Bukkit.getScoreboardManager().getMainScoreboard().getObjective(scoreboardValue);
 		if (objective != null) {
-			getScoreboardValue(name, objective);
+			return getScoreboardValue(name, objective);
 		}
 
 		return 0;

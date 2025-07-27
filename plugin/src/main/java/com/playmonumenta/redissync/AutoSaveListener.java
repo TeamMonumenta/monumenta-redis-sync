@@ -31,7 +31,7 @@ public class AutoSaveListener implements Listener {
 			// Create a local copy of the online players list
 			List<? extends Player> players = new ArrayList<>(Bukkit.getOnlinePlayers());
 
-			if (players.size() <= 0) {
+			if (players.isEmpty()) {
 				// Nothing to do this iteration
 				return;
 			}

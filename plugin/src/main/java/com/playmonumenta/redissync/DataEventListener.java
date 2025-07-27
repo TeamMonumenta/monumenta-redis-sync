@@ -916,7 +916,6 @@ public class DataEventListener implements Listener {
 		if (Bukkit.getPlayer(uuid) != null || mLoadingPlayers.contains(uuid) || mShardData.containsKey(uuid)) {
 			mLogger.warning(() -> "A player uuid=" + uuid + " name=" + profile.getName() + " tried to login while loading/online! Preventing duplicate uuid stupidity");
 			event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, Component.translatable("multiplayer.disconnect.duplicate_login"));
-			return;
 		}
 	}
 

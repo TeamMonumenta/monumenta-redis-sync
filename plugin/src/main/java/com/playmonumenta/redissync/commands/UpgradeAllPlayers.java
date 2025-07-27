@@ -43,26 +43,26 @@ public class UpgradeAllPlayers {
 
 			Object newData = mrs.getVersionAdapter().upgradePlayerData(data.getNbtTagCompoundData());
 			if (newData == null) {
-				Bukkit.getServer().sendMessage(Component.text("Failed to upgrade player data: " + uuid.toString()).color(NamedTextColor.RED));
+				Bukkit.getServer().sendMessage(Component.text("Failed to upgrade player data: " + uuid).color(NamedTextColor.RED));
 				return;
 			}
 			data.setNbtTagCompoundData(newData);
 
 			String newAdvancements = mrs.getVersionAdapter().upgradePlayerAdvancements(data.getAdvancements());
 			if (newAdvancements == null) {
-				Bukkit.getServer().sendMessage(Component.text("Failed to upgrade player advancements: " + uuid.toString()).color(NamedTextColor.RED));
+				Bukkit.getServer().sendMessage(Component.text("Failed to upgrade player advancements: " + uuid).color(NamedTextColor.RED));
 				return;
 			}
 			data.setAdvancements(newAdvancements);
 
-			data.setHistory("VERSION_UPGRADE|" + Long.toString(System.currentTimeMillis()) + "|" + uuid.toString());
+			data.setHistory("VERSION_UPGRADE|" + System.currentTimeMillis() + "|" + uuid);
 
 			/* Save and then wait for save to complete and check results */
 			if (!MonumentaRedisSyncAPI.saveOfflinePlayerData(data).get()) {
-				Bukkit.getServer().sendMessage(Component.text("Failed to save upgraded player: " + uuid.toString()).color(NamedTextColor.RED));
+				Bukkit.getServer().sendMessage(Component.text("Failed to save upgraded player: " + uuid).color(NamedTextColor.RED));
 			}
 		} catch (Exception ex) {
-			Bukkit.getServer().sendMessage(Component.text("Failed to upgrade player: " + uuid.toString() + " : " + ex.getMessage()).color(NamedTextColor.RED));
+			Bukkit.getServer().sendMessage(Component.text("Failed to upgrade player: " + uuid + " : " + ex.getMessage()).color(NamedTextColor.RED));
 			MonumentaRedisSync.getInstance().getLogger().log(Level.WARNING, "Failed to upgrade player: " + uuid + " : " + ex.getMessage(), ex);
 		}
 	}
@@ -80,7 +80,7 @@ public class UpgradeAllPlayers {
 				public void run() {
 					long startTime = System.currentTimeMillis();
 
-					Bukkit.getServer().sendMessage(Component.text("  Players left to process: " + Integer.toString(players.size())));
+					Bukkit.getServer().sendMessage(Component.text("  Players left to process: " + players.size()));
 
 					/* Only block here for up to 1 second at a time */
 					while (System.currentTimeMillis() < startTime + 1000) {

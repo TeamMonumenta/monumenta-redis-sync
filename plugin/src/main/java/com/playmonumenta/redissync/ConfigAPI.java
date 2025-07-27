@@ -25,7 +25,7 @@ public class ConfigAPI {
 
 	/**
 	 * Returns the current server domain as set in the config file for this plugin.
-	 *
+	 * <p>
 	 * This domain info is useful as a prefix for redis keys so that multiple different types of
 	 * servers can share the same redis database without intermingling data
 	 */
@@ -66,13 +66,13 @@ public class ConfigAPI {
 
 		logger.info("Configuration:");
 		logger.info("  redis_host = " + (mRedisHost == null ? "null" : mRedisHost));
-		logger.info("  redis_port = " + Integer.toString(mRedisPort));
+		logger.info("  redis_port = " + mRedisPort);
 		logger.info("  server_domain = " + (mServerDomain == null ? "null" : mServerDomain));
 		logger.info("  shard_name = " + (mShardName == null ? "null" : mShardName));
-		logger.info("  history_amount = " + Integer.toString(mHistoryAmount));
-		logger.info("  ticks_per_player_autosave = " + Integer.toString(mTicksPerPlayerAutosave));
-		logger.info("  saving_disabled = " + Boolean.toString(mSavingDisabled));
-		logger.info("  scoreboard_cleanup_enabled = " + Boolean.toString(mScoreboardCleanupEnabled));
+		logger.info("  history_amount = " + mHistoryAmount);
+		logger.info("  ticks_per_player_autosave = " + mTicksPerPlayerAutosave);
+		logger.info("  saving_disabled = " + mSavingDisabled);
+		logger.info("  scoreboard_cleanup_enabled = " + mScoreboardCleanupEnabled);
 	}
 
 	// Probably a better way to do this
@@ -88,13 +88,13 @@ public class ConfigAPI {
 		INSTANCE = this;
 
 		logger.info("Configuration:");
-		logger.info("  redis_host = " + (mRedisHost == null ? "null" : mRedisHost));
-		logger.info("  redis_port = " + Integer.toString(mRedisPort));
-		logger.info("  server_domain = " + (mServerDomain == null ? "null" : mServerDomain));
-		logger.info("  shard_name = " + (mShardName == null ? "null" : mShardName));
-		logger.info("  history_amount = " + Integer.toString(mHistoryAmount));
-		logger.info("  ticks_per_player_autosave = " + Integer.toString(mTicksPerPlayerAutosave));
-		logger.info("  saving_disabled = " + Boolean.toString(mSavingDisabled));
-		logger.info("  scoreboard_cleanup_enabled = " + Boolean.toString(mScoreboardCleanupEnabled));
+		logger.info("  redis_host = {}", (mRedisHost == null ? "null" : mRedisHost));
+		logger.info("  redis_port = {}", mRedisPort);
+		logger.info("  server_domain = {}", (mServerDomain == null ? "null" : mServerDomain));
+		logger.info("  shard_name = {}", (mShardName == null ? "null" : mShardName));
+		logger.info("  history_amount = {}", mHistoryAmount);
+		logger.info("  ticks_per_player_autosave = {}", mTicksPerPlayerAutosave);
+		logger.info("  saving_disabled = {}", mSavingDisabled);
+		logger.info("  scoreboard_cleanup_enabled = {}", mScoreboardCleanupEnabled);
 	}
 }

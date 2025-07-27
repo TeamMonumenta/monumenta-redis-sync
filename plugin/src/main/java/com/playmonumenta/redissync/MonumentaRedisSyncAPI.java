@@ -113,7 +113,7 @@ public class MonumentaRedisSyncAPI {
 
 	public static final int TIMEOUT_SECONDS = 10;
 	public static final ArgumentSuggestions<CommandSender> SUGGESTIONS_ALL_CACHED_PLAYER_NAMES = ArgumentSuggestions.strings((info) ->
-		MonumentaRedisSyncAPI.getAllCachedPlayerNames().toArray(String[]::new));
+		getAllCachedPlayerNames().toArray(String[]::new));
 
 	private static final Trie<UUID> mNameToUuidTrie = new Trie<>();
 	private static final Map<String, UUID> mNameToUuid = new ConcurrentHashMap<>();
@@ -264,11 +264,11 @@ public class MonumentaRedisSyncAPI {
 
 			try {
 				/* Read the most-recent player data save, and copy it to the stash */
-				RedisFuture<byte[]> dataFuture = api.asyncStringBytes().lindex(MonumentaRedisSyncAPI.getRedisDataPath(player), 0);
-				RedisFuture<String> advanceFuture = api.async().lindex(MonumentaRedisSyncAPI.getRedisAdvancementsPath(player), 0);
-				RedisFuture<String> scoreFuture = api.async().lindex(MonumentaRedisSyncAPI.getRedisScoresPath(player), 0);
-				RedisFuture<String> pluginFuture = api.async().lindex(MonumentaRedisSyncAPI.getRedisPluginDataPath(player), 0);
-				RedisFuture<String> historyFuture = api.async().lindex(MonumentaRedisSyncAPI.getRedisHistoryPath(player), 0);
+				RedisFuture<byte[]> dataFuture = api.asyncStringBytes().lindex(getRedisDataPath(player), 0);
+				RedisFuture<String> advanceFuture = api.async().lindex(getRedisAdvancementsPath(player), 0);
+				RedisFuture<String> scoreFuture = api.async().lindex(getRedisScoresPath(player), 0);
+				RedisFuture<String> pluginFuture = api.async().lindex(getRedisPluginDataPath(player), 0);
+				RedisFuture<String> historyFuture = api.async().lindex(getRedisHistoryPath(player), 0);
 
 				futures.add(api.asyncStringBytes().hset(getStashPath(), saveName + "-data", dataFuture.get()));
 				futures.add(api.async().hset(getStashPath(), saveName + "-scores", scoreFuture.get()));
@@ -333,11 +333,11 @@ public class MonumentaRedisSyncAPI {
 					return;
 				}
 
-				futures.add(api.asyncStringBytes().lpush(MonumentaRedisSyncAPI.getRedisDataPath(player), dataFuture.get()));
-				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisAdvancementsPath(player), advanceFuture.get()));
-				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisScoresPath(player), scoreFuture.get()));
-				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisPluginDataPath(player), pluginFuture.get()));
-				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisHistoryPath(player), "stash@" + historyFuture.get()));
+				futures.add(api.asyncStringBytes().lpush(getRedisDataPath(player), dataFuture.get()));
+				futures.add(api.async().lpush(getRedisAdvancementsPath(player), advanceFuture.get()));
+				futures.add(api.async().lpush(getRedisScoresPath(player), scoreFuture.get()));
+				futures.add(api.async().lpush(getRedisPluginDataPath(player), pluginFuture.get()));
+				futures.add(api.async().lpush(getRedisHistoryPath(player), "stash@" + historyFuture.get()));
 
 				if (!LettuceFutures.awaitAll(TIMEOUT_SECONDS, TimeUnit.SECONDS, futures.toArray(new RedisFuture[0]))) {
 					MonumentaRedisSync.getInstance().getLogger().severe("Got timeout loading stash data for player '" + player.getName() + "'");
@@ -430,11 +430,11 @@ public class MonumentaRedisSyncAPI {
 					return;
 				}
 
-				futures.add(api.asyncStringBytes().lpush(MonumentaRedisSyncAPI.getRedisDataPath(player), dataFuture.get()));
-				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisAdvancementsPath(player), advanceFuture.get()));
-				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisScoresPath(player), scoreFuture.get()));
-				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisPluginDataPath(player), pluginFuture.get()));
-				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisHistoryPath(player), "rollback@" + historyFuture.get()));
+				futures.add(api.asyncStringBytes().lpush(getRedisDataPath(player), dataFuture.get()));
+				futures.add(api.async().lpush(getRedisAdvancementsPath(player), advanceFuture.get()));
+				futures.add(api.async().lpush(getRedisScoresPath(player), scoreFuture.get()));
+				futures.add(api.async().lpush(getRedisPluginDataPath(player), pluginFuture.get()));
+				futures.add(api.async().lpush(getRedisHistoryPath(player), "rollback@" + historyFuture.get()));
 
 				if (!LettuceFutures.awaitAll(TIMEOUT_SECONDS, TimeUnit.SECONDS, futures.toArray(new RedisFuture[0]))) {
 					MonumentaRedisSync.getInstance().getLogger().severe("Got timeout loading rollback data for player '" + player.getName() + "'");
@@ -487,11 +487,11 @@ public class MonumentaRedisSyncAPI {
 					return;
 				}
 
-				futures.add(api.asyncStringBytes().lpush(MonumentaRedisSyncAPI.getRedisDataPath(loadTo), dataFuture.get()));
-				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisAdvancementsPath(loadTo), advanceFuture.get()));
-				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisScoresPath(loadTo), scoreFuture.get()));
-				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisPluginDataPath(loadTo), pluginFuture.get()));
-				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisHistoryPath(loadTo), "loadfrom@" + loadFrom.getName() + "@" + historyFuture.get()));
+				futures.add(api.asyncStringBytes().lpush(getRedisDataPath(loadTo), dataFuture.get()));
+				futures.add(api.async().lpush(getRedisAdvancementsPath(loadTo), advanceFuture.get()));
+				futures.add(api.async().lpush(getRedisScoresPath(loadTo), scoreFuture.get()));
+				futures.add(api.async().lpush(getRedisPluginDataPath(loadTo), pluginFuture.get()));
+				futures.add(api.async().lpush(getRedisHistoryPath(loadTo), "loadfrom@" + loadFrom.getName() + "@" + historyFuture.get()));
 
 				if (!LettuceFutures.awaitAll(TIMEOUT_SECONDS, TimeUnit.SECONDS, futures.toArray(new RedisFuture[0]))) {
 					MonumentaRedisSync.getInstance().getLogger().severe("Got timeout loading data for player '" + loadFrom.getName() + "'");
@@ -980,11 +980,11 @@ public class MonumentaRedisSyncAPI {
 		RedisAsyncCommands<String, byte[]> commands = RedisAPI.getInstance().asyncStringBytes();
 		commands.multi();
 
-		commands.lindex(MonumentaRedisSyncAPI.getRedisDataPath(uuid), 0);
-		commands.lindex(MonumentaRedisSyncAPI.getRedisAdvancementsPath(uuid), 0);
-		commands.lindex(MonumentaRedisSyncAPI.getRedisScoresPath(uuid), 0);
-		commands.lindex(MonumentaRedisSyncAPI.getRedisPluginDataPath(uuid), 0);
-		commands.lindex(MonumentaRedisSyncAPI.getRedisHistoryPath(uuid), 0);
+		commands.lindex(getRedisDataPath(uuid), 0);
+		commands.lindex(getRedisAdvancementsPath(uuid), 0);
+		commands.lindex(getRedisScoresPath(uuid), 0);
+		commands.lindex(getRedisPluginDataPath(uuid), 0);
+		commands.lindex(getRedisHistoryPath(uuid), 0);
 
 		return commands.exec().thenApply((TransactionResult result) -> transformPlayerData(mrs, uuid, result)).toCompletableFuture();
 	}
@@ -1016,7 +1016,7 @@ public class MonumentaRedisSyncAPI {
 
 		RedisAsyncCommands<String, String> commands = RedisAPI.getInstance().async();
 
-		commands.lindex(MonumentaRedisSyncAPI.getRedisScoresPath(uuid), 0)
+		commands.lindex(getRedisScoresPath(uuid), 0)
 			.thenApply(
 				(scoreData) -> new Gson().fromJson(scoreData, JsonObject.class).entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, (entry) -> entry.getValue().getAsInt())))
 			.whenComplete((scoreMap, ex) -> Bukkit.getScheduler().runTask(mrs, () -> {
@@ -1048,11 +1048,11 @@ public class MonumentaRedisSyncAPI {
 		commands.multi();
 
 		SaveData splitData = mrs.getVersionAdapter().extractSaveData(data.getNbtTagCompoundData(), null);
-		commands.lpush(MonumentaRedisSyncAPI.getRedisDataPath(data.getUniqueId()), splitData.getData());
-		commands.lpush(MonumentaRedisSyncAPI.getRedisAdvancementsPath(data.getUniqueId()), data.getAdvancements().getBytes(StandardCharsets.UTF_8));
-		commands.lpush(MonumentaRedisSyncAPI.getRedisScoresPath(data.getUniqueId()), data.getScores().getBytes(StandardCharsets.UTF_8));
-		commands.lpush(MonumentaRedisSyncAPI.getRedisPluginDataPath(data.getUniqueId()), data.getPluginData().getBytes(StandardCharsets.UTF_8));
-		commands.lpush(MonumentaRedisSyncAPI.getRedisHistoryPath(data.getUniqueId()), data.getHistory().getBytes(StandardCharsets.UTF_8));
+		commands.lpush(getRedisDataPath(data.getUniqueId()), splitData.getData());
+		commands.lpush(getRedisAdvancementsPath(data.getUniqueId()), data.getAdvancements().getBytes(StandardCharsets.UTF_8));
+		commands.lpush(getRedisScoresPath(data.getUniqueId()), data.getScores().getBytes(StandardCharsets.UTF_8));
+		commands.lpush(getRedisPluginDataPath(data.getUniqueId()), data.getPluginData().getBytes(StandardCharsets.UTF_8));
+		commands.lpush(getRedisHistoryPath(data.getUniqueId()), data.getHistory().getBytes(StandardCharsets.UTF_8));
 
 		return commands.exec().thenApply((TransactionResult result) -> transformPlayerSaveResult(mrs, result)).toCompletableFuture();
 	}

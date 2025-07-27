@@ -230,7 +230,8 @@ public class RboardCommand {
 			                                                  RBoardAPI.get(rboardName, objects),
 			                                                  (Map<String, String> data, Throwable except) -> {
 				if (except != null) {
-					plugin.getLogger().log(Level.SEVERE, "rboard get failed:" + except.getMessage(), except);
+					plugin.getLogger().severe("rboard get failed:" + except.getMessage());
+					except.printStackTrace();
 				} else {
 					for (Map.Entry<String, String> entry : data.entrySet()) {
 						ScoreboardUtils.setScoreboardValue(scoreboardName, entry.getKey(), Integer.parseInt(entry.getValue()));
@@ -258,7 +259,8 @@ public class RboardCommand {
 			                                                  RBoardAPI.add(rboardName, objective.getName(), args.getByArgument(valueArg)),
 			                                                  (Long data, Throwable except) -> {
 				if (except != null) {
-					plugin.getLogger().log(Level.SEVERE, "rboard addandget failed:" + except.getMessage(), except);
+					plugin.getLogger().severe("rboard addandget failed:" + except.getMessage());
+					except.printStackTrace();
 				} else {
 					ScoreboardUtils.setScoreboardValue(scoreboardName, objective, data.intValue());
 					for (FunctionWrapper func : args.getByArgument(functionArg)) {
@@ -286,7 +288,8 @@ public class RboardCommand {
 			                                                  RBoardAPI.getAndReset(rboardName, objects),
 			                                                  (Map<String, String> data, Throwable except) -> {
 				if (except != null) {
-					plugin.getLogger().log(Level.SEVERE, "rboard getandreset failed:" + except.getMessage(), except);
+					plugin.getLogger().severe("rboard getandreset failed:" + except.getMessage());
+					except.printStackTrace();
 				} else {
 					for (Map.Entry<String, String> entry : data.entrySet()) {
 						ScoreboardUtils.setScoreboardValue(scoreboardName, entry.getKey(), Integer.parseInt(entry.getValue()));

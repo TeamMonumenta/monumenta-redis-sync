@@ -7,7 +7,6 @@ import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 import com.playmonumenta.redissync.event.PlayerAccountTransferEvent;
 import java.util.Set;
 import java.util.UUID;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
 import org.bukkit.Bukkit;
@@ -135,7 +134,8 @@ public class NetworkRelayIntegration implements Listener {
 
 				return shards.toArray(new String[0]);
 			} catch (Exception ex) {
-				instance.mLogger.log(Level.WARNING, "NetworkRelayAPI.getOnlineShardNames failed: " + ex.getMessage(), ex);
+				instance.mLogger.warning("NetworkRelayAPI.getOnlineShardNames failed: " + ex.getMessage());
+				ex.printStackTrace();
 			}
 		}
 		return new String[0];
@@ -185,7 +185,8 @@ public class NetworkRelayIntegration implements Listener {
 			try {
 				return NetworkRelayAPI.getShardName();
 			} catch (Exception ex) {
-				instance.mLogger.log(Level.WARNING, "NetworkRelayAPI.getShardName failed: " + ex.getMessage(), ex);
+				instance.mLogger.warning("NetworkRelayAPI.getShardName failed: " + ex.getMessage());
+				ex.printStackTrace();
 			}
 		}
 		return null;

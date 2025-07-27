@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -63,11 +62,12 @@ public class AutoSaveListener implements Listener {
 							adapter.savePlayer(player);
 						}
 					} catch (Exception ex) {
-						logger.log(Level.SEVERE, "Failed to autosave player " + player.getName() + ":" + ex.getMessage(), ex);
+						logger.severe("Failed to autosave player " + player.getName() + ":" + ex.getMessage());
+						ex.printStackTrace();
 					}
 
 					mPendingSaves.remove(uuid);
-				}, (long) i * delayBetweenSaves);
+				}, i * delayBetweenSaves);
 
 				mPendingSaves.put(uuid, task);
 			}

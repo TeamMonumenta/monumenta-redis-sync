@@ -40,7 +40,8 @@ public class MonumentaRedisSync extends JavaPlugin implements MonumentaRedisSync
 				mVersionAdapter = (VersionAdapter) clazz.getConstructor(Logger.class).newInstance(this.getLogger());
 			}
 		} catch (final Exception e) {
-			getLogger().log(Level.SEVERE, "Server version " + version + " is not supported!", e);
+			e.printStackTrace();
+			getLogger().severe("Server version " + version + " is not supported!");
 			return;
 		}
 		getLogger().info("Loading support for " + version);

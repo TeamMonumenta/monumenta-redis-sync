@@ -916,7 +916,7 @@ public class MonumentaRedisSyncAPI {
 	/** Future returns non-null if successfully loaded data, null on error */
 	@Nullable
 	private static RedisPlayerData transformPlayerData(MonumentaRedisSync mrs, UUID uuid, TransactionResult result) {
-		if (result.isEmpty() || result.size() == 0 || result.get(0) == null) {
+		if (result.isEmpty() || result.isEmpty() || result.get(0) == null) {
 			mrs.getLogger().warning("Failed to retrieve player data; likely player didn't make it past the tutorial");
 			return null;
 		}

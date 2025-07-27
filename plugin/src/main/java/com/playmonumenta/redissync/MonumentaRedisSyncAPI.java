@@ -200,9 +200,6 @@ public class MonumentaRedisSyncAPI {
 
 	public static void sendPlayer(Player player, String target, @Nullable Location returnLoc, @Nullable Float returnYaw, @Nullable Float returnPitch) throws Exception {
 		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
-		if (mrs == null) {
-			throw new Exception("MonumentaRedisSync is not loaded!");
-		}
 
 		/* Don't allow transferring while transferring */
 		if (DataEventListener.isPlayerTransferring(player)) {
@@ -296,9 +293,6 @@ public class MonumentaRedisSyncAPI {
 
 	public static void stashGet(Player player, @Nullable String name) throws Exception {
 		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
-		if (mrs == null) {
-			throw new Exception("MonumentaRedisSync is not loaded!");
-		}
 
 		/*
 		 * Save player in case this was a mistake so they can get back
@@ -363,9 +357,6 @@ public class MonumentaRedisSyncAPI {
 
 	public static void stashInfo(Player player, @Nullable String name) throws Exception {
 		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
-		if (mrs == null) {
-			throw new Exception("MonumentaRedisSync is not loaded!");
-		}
 
 		RedisAPI api = RedisAPI.getInstance();
 
@@ -405,9 +396,6 @@ public class MonumentaRedisSyncAPI {
 
 	public static void playerRollback(Player moderator, Player player, int index) throws Exception {
 		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
-		if (mrs == null) {
-			throw new Exception("MonumentaRedisSync is not loaded!");
-		}
 
 		/*
 		 * Save player in case this was a mistake so they can get back
@@ -468,9 +456,6 @@ public class MonumentaRedisSyncAPI {
 
 	public static void playerLoadFromPlayer(Player loadto, Player loadfrom, int index) throws Exception {
 		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
-		if (mrs == null) {
-			throw new Exception("MonumentaRedisSync is not loaded!");
-		}
 
 		/*
 		 * Save player in case this was a mistake so they can get back
@@ -733,9 +718,6 @@ public class MonumentaRedisSyncAPI {
 	 */
 	public static void savePlayer(Player player) throws Exception {
 		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
-		if (mrs == null) {
-			throw new Exception("MonumentaRedisSync invoked but is not loaded");
-		}
 
 		try {
 			mrs.getVersionAdapter().savePlayer(player);
@@ -994,9 +976,6 @@ public class MonumentaRedisSyncAPI {
 		}
 
 		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
-		if (mrs == null) {
-			throw new Exception("MonumentaRedisSync invoked but is not loaded");
-		}
 
 		RedisAsyncCommands<String, byte[]> commands = RedisAPI.getInstance().asyncStringBytes();
 		commands.multi();
@@ -1023,10 +1002,6 @@ public class MonumentaRedisSyncAPI {
 		CompletableFuture<Map<String, Integer>> future = new CompletableFuture<>();
 
 		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
-		if (mrs == null) {
-			future.completeExceptionally(new Exception("MonumentaRedisSync invoked but is not loaded"));
-			return future;
-		}
 
 		Player player = Bukkit.getPlayer(uuid);
 		if (player != null) {
@@ -1070,9 +1045,6 @@ public class MonumentaRedisSyncAPI {
 	/** Future returns true if successfully committed, false if not */
 	public static CompletableFuture<Boolean> saveOfflinePlayerData(RedisPlayerData data) throws Exception {
 		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
-		if (mrs == null) {
-			throw new Exception("MonumentaRedisSync invoked but is not loaded");
-		}
 
 		RedisAsyncCommands<String, byte[]> commands = RedisAPI.getInstance().asyncStringBytes();
 		commands.multi();

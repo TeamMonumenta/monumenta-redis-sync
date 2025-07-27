@@ -8,6 +8,7 @@ import java.util.Map;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
@@ -37,13 +38,13 @@ public class ScoreboardUtils {
 
 			Objective objective = scoreboard.getObjective(name);
 			if (objective == null) {
-				objective = scoreboard.registerNewObjective(name, "dummy", Component.text(name));
+				objective = scoreboard.registerNewObjective(name, Criteria.DUMMY, Component.text(name));
 			}
 
 			if (!objective.isModifiable()) {
-				final String criteriaName = objective.getCriteria();
+				final Criteria criteriaName = objective.getTrackedCriteria();
 				// TODO: remove debug logging :3
-				MonumentaRedisSync.getInstance().getLogger().warning(() -> "Objective " + name + " is not modifiable. Criteria: " + criteriaName);
+				MonumentaRedisSync.getInstance().getLogger().warning(() -> "Objective " + name + " is not modifiable. Criteria: " + criteriaName.getName());
 				continue;
 			}
 

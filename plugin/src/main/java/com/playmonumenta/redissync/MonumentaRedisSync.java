@@ -70,7 +70,7 @@ public class MonumentaRedisSync extends JavaPlugin implements MonumentaRedisSync
 	public void onEnable() {
 		/* Refuse to enable without a version adapter */
 		if (mVersionAdapter == null) {
-			this.setEnabled(false);
+			Bukkit.getPluginManager().disablePlugin(this);
 			return;
 		}
 

@@ -114,7 +114,7 @@ public class DataEventListener implements Listener {
 		}
 	}
 
-	private static final Map<UUID, BukkitTask> TRANSFER_UNLOCK_TASKS = new HashMap<>();
+	private static final Map<UUID, BukkitTask> TRANSFER_UNLOCK_TASKS = new HashMap<>(); // TODO Never queried
 	private static final int TRANSFER_UNLOCK_TIMEOUT_TICKS = 10 * 20;
 	private static final Component LOAD_ERROR_MSG =
 		Component.text("Critical error occurred when loading playerdata! Please notify a moderator.", NamedTextColor.RED);

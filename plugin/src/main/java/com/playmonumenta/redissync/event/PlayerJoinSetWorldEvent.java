@@ -10,7 +10,7 @@ import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * This event fires when a player joins and their data is loaded but before they are loaded into a world.
+ * This event fires when a player joins and their data is loaded, but before they are loaded into a world.
  * <p>
  * This is useful to change the player's world seamlessly without them ever seeing a flash of a different world on join.
  * <p>

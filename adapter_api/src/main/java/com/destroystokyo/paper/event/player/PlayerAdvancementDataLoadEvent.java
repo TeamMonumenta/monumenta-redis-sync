@@ -1,7 +1,6 @@
 package com.destroystokyo.paper.event.player;
 
 import java.io.File;
-
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;

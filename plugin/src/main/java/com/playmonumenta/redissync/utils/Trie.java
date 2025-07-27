@@ -38,6 +38,7 @@ public class Trie<V> implements Cloneable {
 		mValue = null;
 	}
 
+	@SuppressWarnings("MethodDoesntCallSuperMethod")
 	@Override
 	public Trie<V> clone() {
 		Trie<V> result = new Trie<>(mDepth);

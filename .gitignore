@@ -1,10 +1,3 @@
-# Maven
-target/
-dependency-reduced-pom.xml
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-release.properties
-
 # Vim
 *.swp
 *.swo
@@ -15,28 +8,13 @@ release.properties
 *.ipr
 *.iws
 
+out/
+
 # Eclipse
 .settings/
 .classpath
 .project
 */bin/
-
-# User-specific stuff
-.idea/
-
-*.iml
-*.ipr
-*.iws
-
-# IntelliJ
-out/
-
-# Eclipse
-.classpath
-.project
-.settings/
-plugin/bin/
-api/bin/
 
 # Compiled class file
 *.class
@@ -124,6 +102,7 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# Maven
 target/
 
 pom.xml.tag

@@ -49,10 +49,12 @@ public class PlayerDataSaveEvent extends PlayerEvent implements Cancellable {
         return data;
     }
 
+	@Override
     public boolean isCancelled() {
         return cancel;
     }
 
+	@Override
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
     }

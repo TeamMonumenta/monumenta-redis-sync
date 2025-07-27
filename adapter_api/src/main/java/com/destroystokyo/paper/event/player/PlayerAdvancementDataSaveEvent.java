@@ -58,11 +58,13 @@ public class PlayerAdvancementDataSaveEvent extends PlayerEvent implements Cance
         this.jsonData = jsonData;
     }
 
+	@Override
     public boolean isCancelled() {
         return cancel;
     }
 
-    public void setCancelled(boolean cancel) {
+    @Override
+	public void setCancelled(boolean cancel) {
         this.cancel = cancel;
     }
 

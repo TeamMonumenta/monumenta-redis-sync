@@ -33,7 +33,7 @@ public interface VersionAdapter {
 			return mData;
 		}
 
-		public String getShardData() {
+		public @Nullable String getShardData() {
 			return mShardData;
 		}
 	}

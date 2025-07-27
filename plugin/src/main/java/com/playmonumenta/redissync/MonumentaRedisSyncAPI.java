@@ -863,7 +863,7 @@ public class MonumentaRedisSyncAPI {
 						onGround = obj.get("OnGround").getAsBoolean();
 					}
 				} catch (Exception ex) {
-					ex.printStackTrace();
+					MonumentaRedisSync.getInstance().getLogger().log(Level.SEVERE, "Failed to load player world data:", ex);
 				}
 			}
 
@@ -964,8 +964,7 @@ public class MonumentaRedisSyncAPI {
 
 			return new RedisPlayerData(uuid, mrs.getVersionAdapter().retrieveSaveData(data, new JsonObject()), advancements, scores, pluginData, history);
 		} catch (Exception e) {
-			mrs.getLogger().severe("Failed to parse player data: " + e.getMessage());
-			e.printStackTrace();
+			mrs.getLogger().log(Level.SEVERE, "Failed to parse player data: " + e.getMessage(), e);
 			return null;
 		}
 	}

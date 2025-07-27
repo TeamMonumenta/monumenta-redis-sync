@@ -27,7 +27,7 @@ public class LeaderboardAPI {
 		}
 
 		return values.thenApply((scores) -> {
-			LinkedHashMap<String, Integer> map = new LinkedHashMap<String, Integer>();
+			LinkedHashMap<String, Integer> map = new LinkedHashMap<>();
 			for (ScoredValue<String> value : scores) {
 				map.put(value.getValue(), (int)value.getScore());
 			}

@@ -4,6 +4,7 @@ import com.destroystokyo.paper.event.player.PlayerAdvancementDataLoadEvent;
 import com.destroystokyo.paper.event.player.PlayerDataLoadEvent;
 import com.playmonumenta.redissync.adapters.VersionAdapter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +38,7 @@ public class AutoSaveListener implements Listener {
 
 			// Sort the players list by name
 			// This helps ensure that a player will be saved consistently about the same time apart
-			players.sort((a, b) -> a.getName().compareTo(b.getName()));
+			players.sort(Comparator.comparing((Player a) -> a.getName()));
 
 			// Distribute saves evenly in the autosave interval.
 			// This means that at most a player will take two autosave intervals to save

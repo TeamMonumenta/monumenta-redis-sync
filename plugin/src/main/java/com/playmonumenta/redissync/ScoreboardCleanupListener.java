@@ -56,12 +56,7 @@ public class ScoreboardCleanupListener implements Listener {
 		}
 
 		// Remove any completed runnables from the map to keep things clean
-		Iterator<Map.Entry<UUID, BukkitTask>> iter = mCleanupTasks.entrySet().iterator();
-		while (iter.hasNext()) {
-			if (iter.next().getValue().isCancelled()) {
-				iter.remove();
-			}
-		}
+		mCleanupTasks.entrySet().removeIf(uuidBukkitTaskEntry -> uuidBukkitTaskEntry.getValue().isCancelled());
 
 		String playerName = event.getPlayer().getName();
 		mCleanupTasks.put(event.getPlayer().getUniqueId(), Bukkit.getScheduler().runTaskLater(mPlugin, () -> {

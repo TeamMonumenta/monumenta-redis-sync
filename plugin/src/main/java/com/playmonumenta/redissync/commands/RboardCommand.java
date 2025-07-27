@@ -191,10 +191,10 @@ public class RboardCommand {
 		regWrapper(arguments, action);
 
 		/* ******************* GetAll ******************* */
-		action = (sender, args, rboardName, scoreboardName) -> {
-			MonumentaRedisSyncAPI.runOnMainThreadWhenComplete(plugin,
-			                                                  RBoardAPI.getAll(rboardName),
-			                                                  (Map<String, String> data, Throwable except) -> {
+		action = (sender, args, rboardName, scoreboardName)
+			-> MonumentaRedisSyncAPI.runOnMainThreadWhenComplete(plugin,
+			RBoardAPI.getAll(rboardName),
+			(Map<String, String> data, Throwable except) -> {
 				if (except != null) {
 					plugin.getLogger().log(Level.SEVERE, "rboard getall failed:" + except.getMessage(), except);
 				} else {
@@ -213,7 +213,6 @@ public class RboardCommand {
 					);
 				}
 			});
-		};
 
 		arguments.clear();
 		arguments.add(new LiteralArgument("getall"));

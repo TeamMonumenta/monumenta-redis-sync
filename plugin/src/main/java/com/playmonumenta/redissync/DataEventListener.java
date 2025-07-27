@@ -619,11 +619,7 @@ public class DataEventListener implements Listener {
 		}
 
 		/* Get the existing plugin data */
-		JsonObject pluginData = mPluginData.get(player.getUniqueId());
-		if (pluginData == null) {
-			pluginData = new JsonObject();
-			mPluginData.put(player.getUniqueId(), pluginData);
-		}
+		JsonObject pluginData = mPluginData.computeIfAbsent(player.getUniqueId(), k -> new JsonObject());
 
 		/* Call a custom save event that gives other plugins a chance to add data */
 		/* This is skipped until the join event finishes to prevent losing data if a save happens while joining */
@@ -742,9 +738,8 @@ public class DataEventListener implements Listener {
 
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
 	public void playerJoinEvent(PlayerJoinEvent event) {
-		Bukkit.getScheduler().runTask(MonumentaRedisSync.getInstance(), () -> {
-			mLoadingPlayers.remove(event.getPlayer().getUniqueId());
-		});
+		Bukkit.getScheduler().runTask(MonumentaRedisSync.getInstance(),
+			() -> mLoadingPlayers.remove(event.getPlayer().getUniqueId()));
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)

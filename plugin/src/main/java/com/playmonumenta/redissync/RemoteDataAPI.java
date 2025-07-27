@@ -1,5 +1,7 @@
 package com.playmonumenta.redissync;
 
+import io.lettuce.core.KeyValue;
+import io.lettuce.core.Value;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -41,7 +43,7 @@ public class RemoteDataAPI {
 			return future;
 		}
 
-		return api.async().hmget(getRedisPath(uuid), keys).toCompletableFuture().thenApply((listResult) -> listResult.stream().filter(x -> x.hasValue()).collect(Collectors.toMap((entry) -> entry.getKey(), (entry) -> entry.getValue())));
+		return api.async().hmget(getRedisPath(uuid), keys).toCompletableFuture().thenApply((listResult) -> listResult.stream().filter(Value::hasValue).collect(Collectors.toMap(KeyValue::getKey, Value::getValue)));
 	}
 
 	/**

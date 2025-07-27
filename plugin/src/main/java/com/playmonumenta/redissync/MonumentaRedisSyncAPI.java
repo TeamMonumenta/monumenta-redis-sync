@@ -1018,15 +1018,13 @@ public class MonumentaRedisSyncAPI {
 		commands.lindex(MonumentaRedisSyncAPI.getRedisScoresPath(uuid), 0)
 			.thenApply(
 				(scoreData) -> new Gson().fromJson(scoreData, JsonObject.class).entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, (entry) -> entry.getValue().getAsInt())))
-			.whenComplete((scoreMap, ex) -> {
-				Bukkit.getScheduler().runTask(mrs, () -> {
-					if (ex != null) {
-						future.completeExceptionally(ex);
-					} else {
-						future.complete(scoreMap);
-					}
-				});
-			});
+			.whenComplete((scoreMap, ex) -> Bukkit.getScheduler().runTask(mrs, () -> {
+				if (ex != null) {
+					future.completeExceptionally(ex);
+				} else {
+					future.complete(scoreMap);
+				}
+			}));
 
 		return future;
 	}
@@ -1139,10 +1137,6 @@ public class MonumentaRedisSyncAPI {
 	 * or data will be null and the exception will be non-null
 	 */
 	public static <T> void runOnMainThreadWhenComplete(Plugin plugin, CompletableFuture<T> future, BiConsumer<T, Throwable> func) {
-		future.whenComplete((T result, Throwable ex) -> {
-			Bukkit.getScheduler().runTask(plugin, () -> {
-				func.accept(result, ex);
-			});
-		});
+		future.whenComplete((T result, Throwable ex) -> Bukkit.getScheduler().runTask(plugin, () -> func.accept(result, ex)));
 	}
 }

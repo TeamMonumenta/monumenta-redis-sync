@@ -19,7 +19,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
 public class ScoreboardCleanupListener implements Listener {
-	private static final int CLEANUP_LOGOUT_DELAY = 20 * 60 * 1; // 1 minute
+	private static final int CLEANUP_LOGOUT_DELAY = 20 * 60; // 1 minute
 
 	private final Plugin mPlugin;
 	private final Logger mLogger;

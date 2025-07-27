@@ -16,7 +16,7 @@ public class RBoardAPI {
 		return String.format("%s:rboard:%s", ConfigAPI.getServerDomain(), name);
 	}
 
-	/********************* Set *********************/
+	/* ******************* Set ******************* */
 	public static CompletableFuture<Long> set(String name, Map<String, String> data) {
 		final String redisPath;
 		try {
@@ -37,7 +37,7 @@ public class RBoardAPI {
 		return set(name, data);
 	}
 
-	/********************* Add *********************/
+	/* ******************* Add ******************* */
 	public static CompletableFuture<Long> add(String name, String key, long amount) {
 		final String redisPath;
 		try {
@@ -52,7 +52,7 @@ public class RBoardAPI {
 		return commands.hincrby(redisPath, key, amount).toCompletableFuture();
 	}
 
-	/********************* Get *********************/
+	/* ******************* Get ******************* */
 	public static CompletableFuture<Map<String, String>> get(String name, String... keys) {
 		final String redisPath;
 		try {
@@ -88,7 +88,7 @@ public class RBoardAPI {
 		});
 	}
 
-	/********************* GetAndReset *********************/
+	/* ******************* GetAndReset ******************* */
 	public static CompletableFuture<Map<String, String>> getAndReset(String name, String... keys) {
 		final String redisPath;
 		try {
@@ -111,7 +111,7 @@ public class RBoardAPI {
 		return retval;
 	}
 
-	/********************* GetKeys *********************/
+	/* ******************* GetKeys ******************* */
 	public static CompletableFuture<List<String>> getKeys(String name) {
 		final String redisPath;
 		try {
@@ -126,7 +126,7 @@ public class RBoardAPI {
 		return commands.hkeys(redisPath).toCompletableFuture();
 	}
 
-	/********************* GetAll *********************/
+	/* ******************* GetAll ******************* */
 	public static CompletableFuture<Map<String, String>> getAll(String name) {
 		final String redisPath;
 		try {
@@ -141,7 +141,7 @@ public class RBoardAPI {
 		return commands.hgetall(redisPath).toCompletableFuture();
 	}
 
-	/********************* Reset *********************/
+	/* ******************* Reset ******************* */
 	public static CompletableFuture<Long> reset(String name, String... keys) {
 		final String redisPath;
 		try {
@@ -156,7 +156,7 @@ public class RBoardAPI {
 		return commands.hdel(redisPath, keys).toCompletableFuture();
 	}
 
-	/********************* ResetAll *********************/
+	/* ******************* ResetAll ******************* */
 	public static CompletableFuture<Long> resetAll(String name) {
 		final String redisPath;
 		try {

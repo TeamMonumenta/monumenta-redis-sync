@@ -154,7 +154,7 @@ public class DataEventListener implements Listener {
 		});
 	}
 
-	/********************* Protected API *********************/
+	/* ******************* Protected API ******************* */
 
 	protected static void setPlayerAsTransferring(Player player) throws Exception {
 		if (INSTANCE.mTransferringPlayers.contains(player.getUniqueId())) {
@@ -264,7 +264,7 @@ public class DataEventListener implements Listener {
 		mLogger.fine("Pending save completed for player=" + player.getName());
 	}
 
-	/********************* Data Save/Load Event Handlers *********************/
+	/* ******************* Data Save/Load Event Handlers ******************* */
 
 	/*
 	 * When running /minecraft:reload, this event is triggered before player advancement data is reloaded
@@ -719,7 +719,7 @@ public class DataEventListener implements Listener {
 		mPendingSaves.put(player.getUniqueId(), futures);
 	}
 
-	/********************* Transferring Restriction Event Handlers *********************/
+	/* ******************* Transferring Restriction Event Handlers ******************* */
 
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
 	public void playerLoginEvent(PlayerLoginEvent event) {
@@ -925,7 +925,7 @@ public class DataEventListener implements Listener {
 		}
 	}
 
-	/********************* Private Utility Methods *********************/
+	/* ******************* Private Utility Methods ******************* */
 
 	private void cancelEventIfTransferring(Entity entity, Cancellable event) {
 		if (entity instanceof Player && isPlayerTransferring((Player) entity)) {

@@ -14,7 +14,7 @@ public class Stash {
 		String command = "stash";
 		CommandPermission perms = CommandPermission.fromString("monumenta.command.stash");
 
-		/********************* stash put *********************/
+		/* ******************* stash put ******************* */
 
 		StringArgument nameArg = new StringArgument("name");
 
@@ -38,7 +38,7 @@ public class Stash {
 		).register();
 
 
-		/********************* stash get *********************/
+		/* ******************* stash get ******************* */
 
 		new CommandAPICommand(command)
 			.withArguments(new LiteralArgument("get"))
@@ -59,7 +59,7 @@ public class Stash {
 			}
 		).register();
 
-		/********************* stash info *********************/
+		/* ******************* stash info ******************* */
 
 		new CommandAPICommand(command)
 			.withArguments(new LiteralArgument("info"))

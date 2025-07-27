@@ -1058,7 +1058,7 @@ public class MonumentaRedisSyncAPI {
 		return commands.exec().thenApply((TransactionResult result) -> transformPlayerSaveResult(mrs, result)).toCompletableFuture();
 	}
 
-	/*********************************************************************************
+	/* *******************************************************************************
 	 * rboard API
 	 */
 

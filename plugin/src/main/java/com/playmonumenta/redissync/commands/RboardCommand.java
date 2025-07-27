@@ -110,7 +110,7 @@ public class RboardCommand {
 		ObjectiveArgument objectiveToAddArg = new ObjectiveArgument("objectiveToAdd");
 		FunctionArgument functionArg = new FunctionArgument("function");
 
-		/********************* Set *********************/
+		/* ******************* Set ******************* */
 		RboardAction action = (sender, args, rboardName, scoreboardName) -> {
 			Map<String, String> values = new LinkedHashMap<>();
 			for (int i = 0; i < args.count() - 1; i += 2) {
@@ -128,7 +128,7 @@ public class RboardCommand {
 			regWrapper(arguments, action);
 		}
 
-		/********************* Store *********************/
+		/* ******************* Store ******************* */
 		action = (sender, args, rboardName, scoreboardName) -> {
 			Map<String, String> values = new LinkedHashMap<>();
 			for (int i = 0; i < args.count() - 1; i += 1) {
@@ -146,7 +146,7 @@ public class RboardCommand {
 			regWrapper(arguments, action);
 		}
 
-		/********************* Add *********************/
+		/* ******************* Add ******************* */
 		arguments.clear();
 		arguments.add(new LiteralArgument("add"));
 		arguments.add(playersArg);
@@ -155,7 +155,7 @@ public class RboardCommand {
 		regWrapper(arguments, (sender, args, rboardName, scoreboardName) ->
 			RBoardAPI.add(rboardName, args.getByArgument(objectiveArg).getName(), args.getByArgument(valueArg)));
 
-		/********************* AddScore *********************/
+		/* ******************* AddScore ******************* */
 		arguments.clear();
 		arguments.add(new LiteralArgument("addscore"));
 		arguments.add(playersArg);
@@ -164,7 +164,7 @@ public class RboardCommand {
 		regWrapper(arguments, (sender, args, rboardName, scoreboardName) ->
 			RBoardAPI.add(rboardName, args.getByArgument(objectiveArg).getName(), ScoreboardUtils.getScoreboardValue(scoreboardName, args.getByArgument(objectiveToAddArg))));
 
-		/********************* Reset *********************/
+		/* ******************* Reset ******************* */
 		action = (sender, args, rboardName, scoreboardName) -> {
 			String[] values = new String[args.count()];
 			for (int i = 0; i < args.count() - 1; i += 1) {
@@ -181,7 +181,7 @@ public class RboardCommand {
 			regWrapper(arguments, action);
 		}
 
-		/********************* ResetAll *********************/
+		/* ******************* ResetAll ******************* */
 		action = (sender, args, rboardName, scoreboardName) ->
 			RBoardAPI.resetAll(rboardName);
 
@@ -190,7 +190,7 @@ public class RboardCommand {
 		arguments.add(playersArg);
 		regWrapper(arguments, action);
 
-		/********************* GetAll *********************/
+		/* ******************* GetAll ******************* */
 		action = (sender, args, rboardName, scoreboardName) -> {
 			MonumentaRedisSyncAPI.runOnMainThreadWhenComplete(plugin,
 			                                                  RBoardAPI.getAll(rboardName),
@@ -220,7 +220,7 @@ public class RboardCommand {
 		arguments.add(playersArg);
 		regWrapper(arguments, action);
 
-		/********************* Get *********************/
+		/* ******************* Get ******************* */
 		action = (sender, args, rboardName, scoreboardName) -> {
 			String[] objects = new String[args.count() - 2];
 			for (int j = 0; j < args.count() - 2; j += 1) {
@@ -251,7 +251,7 @@ public class RboardCommand {
 			regWrapper(arguments, action);
 		}
 
-		/********************* AddAndGet *********************/
+		/* ******************* AddAndGet ******************* */
 		action = (sender, args, rboardName, scoreboardName) -> {
 			Objective objective = args.getByArgument(objectiveArg);
 			MonumentaRedisSyncAPI.runOnMainThreadWhenComplete(plugin,
@@ -276,7 +276,7 @@ public class RboardCommand {
 		arguments.add(valueArg);
 		regWrapper(arguments, action);
 
-		/********************* GetAndReset *********************/
+		/* ******************* GetAndReset ******************* */
 		action = (sender, args, rboardName, scoreboardName) -> {
 			String[] objects = new String[args.count() - 2];
 			for (int j = 0; j < args.count() - 2; j += 1) {

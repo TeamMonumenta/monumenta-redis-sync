@@ -12,6 +12,7 @@ import com.playmonumenta.redissync.commands.Stash;
 import com.playmonumenta.redissync.commands.TransferServer;
 import com.playmonumenta.redissync.commands.UpgradeAllPlayers;
 import java.io.File;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
@@ -148,7 +149,7 @@ public class MonumentaRedisSync extends JavaPlugin implements MonumentaRedisSync
 		boolean savingDisabled = config.getBoolean("saving_disabled", false);
 		boolean scoreboardCleanupEnabled = config.getBoolean("scoreboard_cleanup_enabled", true);
 
-		String level = config.getString("log_level", "INFO").toLowerCase();
+		String level = config.getString("log_level", "INFO").toLowerCase(Locale.ENGLISH);
 		switch (level) {
 			case "finest":
 				setLogLevel(Level.FINEST);

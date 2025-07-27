@@ -711,9 +711,9 @@ public class MonumentaRedisSyncAPI {
 
 	/**
 	 * Saves all of player's data, including advancements, scores, plugin data, inventory, world location, etc.
-	 *
+	 * <p>
 	 * Also creates a rollback point like all full saves.
-	 *
+	 * <p>
 	 * Takes several milliseconds so care should be taken not to call this too frequently
 	 */
 	public static void savePlayer(Player player) throws Exception {
@@ -730,7 +730,7 @@ public class MonumentaRedisSyncAPI {
 
 	/**
 	 * Gets player plugin data from the cache.
-	 *
+	 * <p>
 	 * Only valid if the player is currently on this shard.
 	 *
 	 * @param uuid              Player's UUID to get data for
@@ -873,7 +873,7 @@ public class MonumentaRedisSyncAPI {
 
 	/**
 	 * Gets player location data for a world
-	 *
+	 * <p>
 	 * Only valid if the player is currently on this shard.
 	 *
 	 * @param player  Player's to get data for
@@ -990,10 +990,10 @@ public class MonumentaRedisSyncAPI {
 
 	/**
 	 * Gets a map of all player scoreboard values.
-	 *
+	 * <p>
 	 * If player is online, will pull them from the current scoreboard. This work will be done on the main thread (will take several milliseconds).
 	 * If player is offline, will pull them from the most recent redis save on an async thread, then compose them into a map (basically no main thread time)
-	 *
+	 * <p>
 	 * The return future will always complete on the main thread with either results or an exception.
 	 * Suggest chaining on .whenComplete((data, ex) -> your code) to do something with this data when complete
 	 */
@@ -1121,7 +1121,7 @@ public class MonumentaRedisSyncAPI {
 	/**
 	 * If MonumentaNetworkRelay is installed, returns a list of all other shard names
 	 * that are currently up and valid transfer targets from this server.
-	 *
+	 * <p>
 	 * If MonumentaNetworkRelay is not installed, returns an empty array.
 	 */
 	public static String[] getOnlineTransferTargets() {
@@ -1130,9 +1130,9 @@ public class MonumentaRedisSyncAPI {
 
 	/**
 	 * Runs the result of an asynchronous transaction on the main thread after it is completed
-	 *
+	 * <p>
 	 * Will always call the callback function eventually, even if the resulting transaction fails or is lost.
-	 *
+	 * <p>
 	 * When the function is called, either data will be non-null and exception null,
 	 * or data will be null and the exception will be non-null
 	 */

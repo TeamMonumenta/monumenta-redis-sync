@@ -23,7 +23,7 @@ public class PlayerDataLoadEvent extends PlayerEvent {
 
     /**
      * Get the file path where data will be loaded from.
-     *
+     * <p>
      * Data will only be loaded from here if the data is not directly set by {@link #setData}
      *
      * @return data File to load from
@@ -35,7 +35,7 @@ public class PlayerDataLoadEvent extends PlayerEvent {
 
     /**
      * Set the file path where data will be loaded from.
-     *
+     * <p>
      * Data will only be loaded from here if the data is not directly set by {@link #setData}
      *
      * @param path data File to load from
@@ -46,7 +46,7 @@ public class PlayerDataLoadEvent extends PlayerEvent {
 
     /**
      * Get the data supplied by an earlier call to {@link #setData}.
-     *
+     * <p>
      * This data will be used instead of loading the player's file. It is null unless
      * supplied by a plugin.
      *
@@ -59,7 +59,7 @@ public class PlayerDataLoadEvent extends PlayerEvent {
 
     /**
      * Set the data to use for the player's data instead of loading it from a file.
-     *
+     * <p>
      * This data will be used instead of loading the player's .dat file. It is null unless
      * supplied by a plugin.
      *

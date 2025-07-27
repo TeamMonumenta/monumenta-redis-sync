@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 public class RemoteDataAPI {
 	/**
 	 * Gets a specific remote data entry for a player.
-	 *
+	 * <p>
 	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.
 	 * WARNING: These complete async, if you need to run a sync task on completion you need to schedule it yourself (or wrap with runOnMainThreadWhenComplete)
 	 *
@@ -29,7 +29,7 @@ public class RemoteDataAPI {
 
 	/**
 	 * Gets multiple remote data entries for a player.
-	 *
+	 * <p>
 	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.
 	 * WARNING: These complete async, if you need to run a sync task on completion you need to schedule it yourself (or wrap with runOnMainThreadWhenComplete)
 	 *
@@ -48,7 +48,7 @@ public class RemoteDataAPI {
 
 	/**
 	 * Sets a specific remote data entry for a player.
-	 *
+	 * <p>
 	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.
 	 * WARNING: These complete async, if you need to run a sync task on completion you need to schedule it yourself (or wrap with runOnMainThreadWhenComplete)
 	 *
@@ -67,9 +67,9 @@ public class RemoteDataAPI {
 
 	/**
 	 * Atomically increments a specific remote data entry for a player.
-	 *
+	 * <p>
 	 * Note that this will interpret the hash value as an integer (default 0 if not existing)
-	 *
+	 * <p>
 	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.
 	 * WARNING: These complete async, if you need to run a sync task on completion you need to schedule it yourself (or wrap with runOnMainThreadWhenComplete)
 	 *
@@ -88,7 +88,7 @@ public class RemoteDataAPI {
 
 	/**
 	 * Deletes a specific key in the player's remote data.
-	 *
+	 * <p>
 	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.
 	 * WARNING: These complete async, if you need to run a sync task on completion you need to schedule it yourself (or wrap with runOnMainThreadWhenComplete)
 	 *
@@ -107,7 +107,7 @@ public class RemoteDataAPI {
 
 	/**
 	 * Gets a map of all remote data for a player.
-	 *
+	 * <p>
 	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.
 	 * WARNING: These complete async, if you need to run a sync task on completion you need to schedule it yourself (or wrap with runOnMainThreadWhenComplete)
 	 *

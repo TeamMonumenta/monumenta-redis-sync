@@ -69,7 +69,7 @@ public class MonumentaRedisSyncVelocity implements MonumentaRedisSyncInterface {
 			}
 		} catch (ConfigurateException ex) {
 			// TODO: may want to shut down the proxy if configuration fails to load
-			mLogger.warn("Failed to load config file, using defaults: " + ex.getMessage());
+			mLogger.warn("Failed to load config file, using defaults: {}", ex.getMessage());
 		}
 		// save config
 		saveConfig();

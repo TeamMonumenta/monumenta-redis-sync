@@ -6,6 +6,7 @@ import java.util.Map;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class PlayerSaveEvent extends PlayerEvent {
 
@@ -35,7 +36,7 @@ public class PlayerSaveEvent extends PlayerEvent {
 	}
 
 	@Override
-	public HandlerList getHandlers() {
+	public @NotNull HandlerList getHandlers() {
 		return handlers;
 	}
 

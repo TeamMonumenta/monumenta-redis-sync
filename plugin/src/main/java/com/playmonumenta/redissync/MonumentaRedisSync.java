@@ -19,6 +19,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 
 public class MonumentaRedisSync extends JavaPlugin implements MonumentaRedisSyncInterface {
 	private static @Nullable MonumentaRedisSync INSTANCE = null;
@@ -170,7 +171,7 @@ public class MonumentaRedisSync extends JavaPlugin implements MonumentaRedisSync
 	}
 
 	@Override
-	public Logger getLogger() {
+	public @NotNull Logger getLogger() {
 		if (mLogger == null) {
 			mLogger = new CustomLogger(super.getLogger(), Level.INFO);
 		}

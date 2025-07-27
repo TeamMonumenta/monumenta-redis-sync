@@ -45,7 +45,6 @@ import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -179,7 +178,7 @@ public class DataEventListener implements Listener {
 		 */
 		TRANSFER_UNLOCK_TASKS.put(player.getUniqueId(), Bukkit.getScheduler().runTaskLater(MonumentaRedisSync.getInstance(), () -> {
 			if (DataEventListener.isPlayerTransferring(player)) {
-				player.sendMessage(ChatColor.RED + "Transferring timed out and your player has been unlocked");
+				player.sendMessage(Component.text("Transferring timed out and your player has been unlocked", NamedTextColor.RED));
 				DataEventListener.setPlayerAsNotTransferring(player);
 			}
 			TRANSFER_UNLOCK_TASKS.remove(player.getUniqueId());

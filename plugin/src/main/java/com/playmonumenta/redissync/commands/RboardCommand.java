@@ -22,7 +22,10 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.bukkit.ChatColor;
+import java.util.logging.Level;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -193,20 +196,21 @@ public class RboardCommand {
 			                                                  RBoardAPI.getAll(rboardName),
 			                                                  (Map<String, String> data, Throwable except) -> {
 				if (except != null) {
-					plugin.getLogger().severe("rboard getall failed:" + except.getMessage());
-					except.printStackTrace();
+					plugin.getLogger().log(Level.SEVERE, "rboard getall failed:" + except.getMessage(), except);
 				} else {
-					StringBuilder output = new StringBuilder("[");
-					boolean first = true;
+					List<Component> entryComponents = new ArrayList<>();
 					for (Map.Entry<String, String> entry : data.entrySet()) {
-						if (!first) {
-							output.append(" ");
-						}
-						output.append(ChatColor.GOLD).append(entry.getKey()).append(ChatColor.WHITE).append("=").append(ChatColor.GREEN).append(entry.getValue());
-						first = false;
+						entryComponents.add(
+							Component.text(entry.getKey(), NamedTextColor.GOLD)
+								.append(Component.text("=", NamedTextColor.WHITE))
+								.append(Component.text(entry.getValue(), NamedTextColor.GREEN))
+						);
 					}
-					output.append(ChatColor.WHITE).append("]");
-					sender.sendMessage(output.toString());
+					sender.sendMessage(
+						Component.text("[", NamedTextColor.WHITE)
+							.append(Component.join(JoinConfiguration.spaces(), entryComponents))
+							.append(Component.text("]"))
+					);
 				}
 			});
 		};

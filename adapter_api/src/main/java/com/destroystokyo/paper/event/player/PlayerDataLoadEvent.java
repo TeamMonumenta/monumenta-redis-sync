@@ -11,14 +11,14 @@ import org.jetbrains.annotations.Nullable;
  * Called when the server loads the playerdata data for a player
  */
 public class PlayerDataLoadEvent extends PlayerEvent {
-	private static final HandlerList handlers = new HandlerList();
-	@Nullable private Object data;
-	@NotNull private File path;
+	private static final HandlerList mHandlers = new HandlerList();
+	@Nullable private Object mData;
+	@NotNull private File mPath;
 
 	public PlayerDataLoadEvent(@NotNull Player who, @NotNull File path) {
 		super(who);
-		this.data = null;
-		this.path = path;
+		this.mData = null;
+		this.mPath = path;
 	}
 
 	/**
@@ -30,7 +30,7 @@ public class PlayerDataLoadEvent extends PlayerEvent {
 	 */
 	@NotNull
 	public File getPath() {
-		return path;
+		return mPath;
 	}
 
 	/**
@@ -41,7 +41,7 @@ public class PlayerDataLoadEvent extends PlayerEvent {
 	 * @param path data File to load from
 	 */
 	public void setPath(@NotNull File path) {
-		this.path = path;
+		this.mPath = path;
 	}
 
 	/**
@@ -54,7 +54,7 @@ public class PlayerDataLoadEvent extends PlayerEvent {
 	 */
 	@Nullable
 	public Object getData() {
-		return data;
+		return mData;
 	}
 
 	/**
@@ -66,17 +66,17 @@ public class PlayerDataLoadEvent extends PlayerEvent {
 	 * @param data NBTTagCompound data to load. If null, load from file
 	 */
 	public void setData(@Nullable Object data) {
-		this.data = data;
+		this.mData = data;
 	}
 
 	@NotNull
 	@Override
 	public HandlerList getHandlers() {
-		return handlers;
+		return mHandlers;
 	}
 
 	@NotNull
 	public static HandlerList getHandlerList() {
-		return handlers;
+		return mHandlers;
 	}
 }

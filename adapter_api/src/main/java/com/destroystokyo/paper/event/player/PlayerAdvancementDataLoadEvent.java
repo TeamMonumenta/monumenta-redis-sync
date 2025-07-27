@@ -11,14 +11,14 @@ import org.jetbrains.annotations.Nullable;
  * Called when the server loads the advancement data for a player
  */
 public class PlayerAdvancementDataLoadEvent extends PlayerEvent {
-	private static final HandlerList handlers = new HandlerList();
-	@Nullable private String jsonData;
-	@NotNull private File path;
+	private static final HandlerList mHandlers = new HandlerList();
+	@Nullable private String mJsonData;
+	@NotNull private File mPath;
 
 	public PlayerAdvancementDataLoadEvent(@NotNull Player who, @NotNull File path) {
 		super(who);
-		this.jsonData = null;
-		this.path = path;
+		this.mJsonData = null;
+		this.mPath = path;
 	}
 
 	/**
@@ -30,7 +30,7 @@ public class PlayerAdvancementDataLoadEvent extends PlayerEvent {
 	 */
 	@NotNull
 	public File getPath() {
-		return path;
+		return mPath;
 	}
 
 	/**
@@ -41,7 +41,7 @@ public class PlayerAdvancementDataLoadEvent extends PlayerEvent {
 	 * @param path advancement data File to load from
 	 */
 	public void setPath(@NotNull File path) {
-		this.path = path;
+		this.mPath = path;
 	}
 
 	/**
@@ -54,7 +54,7 @@ public class PlayerAdvancementDataLoadEvent extends PlayerEvent {
 	 */
 	@Nullable
 	public String getJsonData() {
-		return jsonData;
+		return mJsonData;
 	}
 
 	/**
@@ -66,17 +66,17 @@ public class PlayerAdvancementDataLoadEvent extends PlayerEvent {
 	 * @param jsonData advancement data JSON string to load. If null, load from file
 	 */
 	public void setJsonData(@Nullable String jsonData) {
-		this.jsonData = jsonData;
+		this.mJsonData = jsonData;
 	}
 
 	@NotNull
 	@Override
 	public HandlerList getHandlers() {
-		return handlers;
+		return mHandlers;
 	}
 
 	@NotNull
 	public static HandlerList getHandlerList() {
-		return handlers;
+		return mHandlers;
 	}
 }

@@ -11,15 +11,15 @@ import org.jetbrains.annotations.NotNull;
  * Called when the server saves the advancement data for a player
  */
 public class PlayerAdvancementDataSaveEvent extends PlayerEvent implements Cancellable {
-	private static final HandlerList handlers = new HandlerList();
-	@NotNull private String jsonData;
-	@NotNull private File path;
-	private boolean cancel = false;
+	private static final HandlerList mHandlers = new HandlerList();
+	@NotNull private String mJsonData;
+	@NotNull private File mPath;
+	private boolean mCancel = false;
 
 	public PlayerAdvancementDataSaveEvent(@NotNull Player who, @NotNull File path, @NotNull String jsonData) {
 		super(who);
-		this.jsonData = jsonData;
-		this.path = path;
+		this.mJsonData = jsonData;
+		this.mPath = path;
 	}
 
 	/**
@@ -29,14 +29,14 @@ public class PlayerAdvancementDataSaveEvent extends PlayerEvent implements Cance
 	 */
 	@NotNull
 	public File getPath() {
-		return path;
+		return mPath;
 	}
 
 	/**
 	 * Set the file path where advancement data will be saved to.
 	 */
 	public void setPath(@NotNull File path) {
-		this.path = path;
+		this.mPath = path;
 	}
 
 	/**
@@ -46,7 +46,7 @@ public class PlayerAdvancementDataSaveEvent extends PlayerEvent implements Cance
 	 */
 	@NotNull
 	public String getJsonData() {
-		return jsonData;
+		return mJsonData;
 	}
 
 	/**
@@ -55,27 +55,27 @@ public class PlayerAdvancementDataSaveEvent extends PlayerEvent implements Cance
 	 * @param jsonData advancement data JSON string to save instead
 	 */
 	public void setJsonData(@NotNull String jsonData) {
-		this.jsonData = jsonData;
+		this.mJsonData = jsonData;
 	}
 
 	@Override
 	public boolean isCancelled() {
-		return cancel;
+		return mCancel;
 	}
 
 	@Override
 	public void setCancelled(boolean cancel) {
-		this.cancel = cancel;
+		this.mCancel = cancel;
 	}
 
 	@NotNull
 	@Override
 	public HandlerList getHandlers() {
-		return handlers;
+		return mHandlers;
 	}
 
 	@NotNull
 	public static HandlerList getHandlerList() {
-		return handlers;
+		return mHandlers;
 	}
 }

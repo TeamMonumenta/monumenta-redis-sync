@@ -11,15 +11,15 @@ import org.jetbrains.annotations.NotNull;
  * Called when the server saves the primary .dat data for a player
  */
 public class PlayerDataSaveEvent extends PlayerEvent implements Cancellable {
-	private static final HandlerList handlers = new HandlerList();
-	@NotNull private final Object data;
-	@NotNull private File path;
-	private boolean cancel = false;
+	private static final HandlerList mHandlers = new HandlerList();
+	@NotNull private final Object mData;
+	@NotNull private File mPath;
+	private boolean mCancel = false;
 
 	public PlayerDataSaveEvent(@NotNull Player who, @NotNull File path, @NotNull Object data) {
 		super(who);
-		this.data = data;
-		this.path = path;
+		this.mData = data;
+		this.mPath = path;
 	}
 
 	/**
@@ -29,14 +29,14 @@ public class PlayerDataSaveEvent extends PlayerEvent implements Cancellable {
 	 */
 	@NotNull
 	public File getPath() {
-		return path;
+		return mPath;
 	}
 
 	/**
 	 * Set the file path where player data will be saved to.
 	 */
 	public void setPath(@NotNull File path) {
-		this.path = path;
+		this.mPath = path;
 	}
 
 	/**
@@ -46,27 +46,27 @@ public class PlayerDataSaveEvent extends PlayerEvent implements Cancellable {
 	 */
 	@NotNull
 	public Object getData() {
-		return data;
+		return mData;
 	}
 
 	@Override
 	public boolean isCancelled() {
-		return cancel;
+		return mCancel;
 	}
 
 	@Override
 	public void setCancelled(boolean cancel) {
-		this.cancel = cancel;
+		this.mCancel = cancel;
 	}
 
 	@NotNull
 	@Override
 	public HandlerList getHandlers() {
-		return handlers;
+		return mHandlers;
 	}
 
 	@NotNull
 	public static HandlerList getHandlerList() {
-		return handlers;
+		return mHandlers;
 	}
 }

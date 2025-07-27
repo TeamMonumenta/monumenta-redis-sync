@@ -912,6 +912,12 @@ public class DataEventListener implements Listener {
 		}
 		PlayerProfile profile = event.getPlayerProfile();
 		UUID uuid = profile.getId();
+		if (uuid == null) {
+			mLogger.warning(() -> "A player uuid=null" + " name=" + profile.getName() + " tried to login without a UUID! Preventing duplicate uuid stupidity");
+			// Probably the most accurate kick message? Can't verify a username without a UUID, however we got into this state.
+			event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, Component.translatable("multiplayer.disconnect.unverified_username"));
+			return;
+		}
 		// if player is loaded, but they are also trying to connect, disconnect the one trying to connect to prevent duplicate uuid stupidity
 		if (Bukkit.getPlayer(uuid) != null || mLoadingPlayers.contains(uuid) || mShardData.containsKey(uuid)) {
 			mLogger.warning(() -> "A player uuid=" + uuid + " name=" + profile.getName() + " tried to login while loading/online! Preventing duplicate uuid stupidity");

@@ -17,7 +17,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 public class TransferServer {
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "DataFlowIssue"})
 	public static void register() {
 		String command = "transferserver";
 		CommandPermission perms = CommandPermission.fromString("monumenta.command.transferserver");

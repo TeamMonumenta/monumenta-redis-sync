@@ -102,6 +102,7 @@ public class RboardCommand {
 			.register();
 	}
 
+	@SuppressWarnings("DataFlowIssue")
 	public static void register(Plugin plugin) {
 		List<Argument<?>> arguments = new ArrayList<>(40);
 

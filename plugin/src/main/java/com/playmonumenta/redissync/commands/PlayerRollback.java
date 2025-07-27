@@ -8,6 +8,7 @@ import dev.jorel.commandapi.arguments.EntitySelectorArgument;
 import dev.jorel.commandapi.arguments.IntegerArgument;
 
 public class PlayerRollback {
+	@SuppressWarnings("DataFlowIssue")
 	public static void register() {
 		EntitySelectorArgument.OnePlayer playerArg = new EntitySelectorArgument.OnePlayer("player");
 		IntegerArgument indexArg = new IntegerArgument("index", 0);

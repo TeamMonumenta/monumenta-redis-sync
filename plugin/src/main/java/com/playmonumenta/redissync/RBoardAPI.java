@@ -68,13 +68,13 @@ public class RBoardAPI {
 		for (String key : keys) {
 			commands.hincrby(redisPath, key, 0);
 		}
-		CompletableFuture<Map<String, String>> retval = commands.hmget(redisPath, keys).toCompletableFuture().thenApply(list -> {
+		CompletableFuture<Map<String, String>> retVal = commands.hmget(redisPath, keys).toCompletableFuture().thenApply(list -> {
 			Map<String, String> transformed = new LinkedHashMap<>();
 			list.forEach(item -> transformed.put(item.getKey(), item.getValue()));
 			return transformed;
 		});
 		commands.exec();
-		return retval;
+		return retVal;
 	}
 
 	public static CompletableFuture<Long> getAsLong(String name, String key, long def) {
@@ -101,14 +101,14 @@ public class RBoardAPI {
 
 		RedisAsyncCommands<String, String> commands = RedisAPI.getInstance().async();
 		commands.multi();
-		CompletableFuture<Map<String, String>> retval = commands.hmget(redisPath, keys).toCompletableFuture().thenApply(list -> {
+		CompletableFuture<Map<String, String>> retVal = commands.hmget(redisPath, keys).toCompletableFuture().thenApply(list -> {
 			Map<String, String> transformed = new LinkedHashMap<>();
 			list.forEach(item -> transformed.put(item.getKey(), item.getValue()));
 			return transformed;
 		});
 		commands.hdel(redisPath, keys).toCompletableFuture();
 		commands.exec();
-		return retval;
+		return retVal;
 	}
 
 	/* ******************* GetKeys ******************* */

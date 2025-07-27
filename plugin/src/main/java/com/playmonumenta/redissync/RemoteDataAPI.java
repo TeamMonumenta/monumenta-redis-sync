@@ -75,7 +75,7 @@ public class RemoteDataAPI {
 	 *
 	 * @return Resulting value
 	 */
-	public static CompletableFuture<Long> increment(UUID uuid, String key, int incby) {
+	public static CompletableFuture<Long> increment(UUID uuid, String key, int incBy) {
 		RedisAPI api = RedisAPI.getInstance();
 		if (api == null) {
 			CompletableFuture<Long> future = new CompletableFuture<>();
@@ -83,7 +83,7 @@ public class RemoteDataAPI {
 			return future;
 		}
 
-		return api.async().hincrby(getRedisPath(uuid), key, incby).toCompletableFuture();
+		return api.async().hincrby(getRedisPath(uuid), key, incBy).toCompletableFuture();
 	}
 
 	/**

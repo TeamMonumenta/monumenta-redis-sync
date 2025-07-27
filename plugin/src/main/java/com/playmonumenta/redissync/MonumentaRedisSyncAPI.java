@@ -454,20 +454,20 @@ public class MonumentaRedisSyncAPI {
 		});
 	}
 
-	public static void playerLoadFromPlayer(Player loadto, Player loadfrom, int index) throws Exception {
+	public static void playerLoadFromPlayer(Player loadTo, Player loadFrom, int index) throws Exception {
 		MonumentaRedisSync mrs = MonumentaRedisSync.getInstance();
 
 		/*
 		 * Save player in case this was a mistake so they can get back
 		 * This also saves per-shard data like location
 		 */
-		savePlayer(loadto);
+		savePlayer(loadTo);
 
 		/* Lock player during load */
-		DataEventListener.setPlayerAsTransferring(loadto);
+		DataEventListener.setPlayerAsTransferring(loadTo);
 
 		/* Wait for save to complete */
-		DataEventListener.waitForPlayerToSaveThenAsync(loadto, () -> {
+		DataEventListener.waitForPlayerToSaveThenAsync(loadTo, () -> {
 			List<RedisFuture<?>> futures = new ArrayList<>();
 
 			RedisAPI api = RedisAPI.getInstance();
@@ -475,37 +475,37 @@ public class MonumentaRedisSyncAPI {
 			try {
 				/* Read the history element and push it to the player's data */
 
-				RedisFuture<byte[]> dataFuture = api.asyncStringBytes().lindex(getRedisDataPath(loadfrom), index);
-				RedisFuture<String> advanceFuture = api.async().lindex(getRedisAdvancementsPath(loadfrom), index);
-				RedisFuture<String> scoreFuture = api.async().lindex(getRedisScoresPath(loadfrom), index);
-				RedisFuture<String> pluginFuture = api.async().lindex(getRedisPluginDataPath(loadfrom), index);
-				RedisFuture<String> historyFuture = api.async().lindex(getRedisHistoryPath(loadfrom), index);
+				RedisFuture<byte[]> dataFuture = api.asyncStringBytes().lindex(getRedisDataPath(loadFrom), index);
+				RedisFuture<String> advanceFuture = api.async().lindex(getRedisAdvancementsPath(loadFrom), index);
+				RedisFuture<String> scoreFuture = api.async().lindex(getRedisScoresPath(loadFrom), index);
+				RedisFuture<String> pluginFuture = api.async().lindex(getRedisPluginDataPath(loadFrom), index);
+				RedisFuture<String> historyFuture = api.async().lindex(getRedisHistoryPath(loadFrom), index);
 
 				/* Make sure there's actually data */
 				if (dataFuture.get() == null || advanceFuture.get() == null || scoreFuture.get() == null || pluginFuture.get() == null || historyFuture.get() == null) {
-					loadto.sendMessage(Component.text("Failed to retrieve player's data to load", NamedTextColor.RED));
+					loadTo.sendMessage(Component.text("Failed to retrieve player's data to load", NamedTextColor.RED));
 					return;
 				}
 
-				futures.add(api.asyncStringBytes().lpush(MonumentaRedisSyncAPI.getRedisDataPath(loadto), dataFuture.get()));
-				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisAdvancementsPath(loadto), advanceFuture.get()));
-				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisScoresPath(loadto), scoreFuture.get()));
-				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisPluginDataPath(loadto), pluginFuture.get()));
-				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisHistoryPath(loadto), "loadfrom@" + loadfrom.getName() + "@" + historyFuture.get()));
+				futures.add(api.asyncStringBytes().lpush(MonumentaRedisSyncAPI.getRedisDataPath(loadTo), dataFuture.get()));
+				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisAdvancementsPath(loadTo), advanceFuture.get()));
+				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisScoresPath(loadTo), scoreFuture.get()));
+				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisPluginDataPath(loadTo), pluginFuture.get()));
+				futures.add(api.async().lpush(MonumentaRedisSyncAPI.getRedisHistoryPath(loadTo), "loadfrom@" + loadFrom.getName() + "@" + historyFuture.get()));
 
 				if (!LettuceFutures.awaitAll(TIMEOUT_SECONDS, TimeUnit.SECONDS, futures.toArray(new RedisFuture[0]))) {
-					MonumentaRedisSync.getInstance().getLogger().severe("Got timeout loading data for player '" + loadfrom.getName() + "'");
-					loadto.sendMessage(Component.text("Got timeout loading data", NamedTextColor.RED));
+					MonumentaRedisSync.getInstance().getLogger().severe("Got timeout loading data for player '" + loadFrom.getName() + "'");
+					loadTo.sendMessage(Component.text("Got timeout loading data", NamedTextColor.RED));
 					return;
 				}
 			} catch (InterruptedException | ExecutionException ex) {
-				MonumentaRedisSync.getInstance().getLogger().log(Level.SEVERE, "Got exception while loading data for player '" + loadfrom.getName() + "'", ex);
-				loadto.sendMessage(Component.text("Failed to load data: " + ex.getMessage(), NamedTextColor.RED));
+				MonumentaRedisSync.getInstance().getLogger().log(Level.SEVERE, "Got exception while loading data for player '" + loadFrom.getName() + "'", ex);
+				loadTo.sendMessage(Component.text("Failed to load data: " + ex.getMessage(), NamedTextColor.RED));
 				return;
 			}
 
 			/* Kick the player on the main thread to force rejoin */
-			Bukkit.getServer().getScheduler().runTask(mrs, () -> loadto.kick(Component.text("Data loaded from player " + loadfrom.getName() + " at index " + index + " and you can now re-join the server")));
+			Bukkit.getServer().getScheduler().runTask(mrs, () -> loadTo.kick(Component.text("Data loaded from player " + loadFrom.getName() + " at index " + index + " and you can now re-join the server")));
 		});
 	}
 
@@ -523,8 +523,8 @@ public class MonumentaRedisSyncAPI {
 
 	/** @deprecated - use RemoteDataAPI */
 	@Deprecated
-	public static CompletableFuture<Long> incrementRemoteData(UUID uuid, String key, int incby) throws Exception {
-		return RemoteDataAPI.increment(uuid, key, incby);
+	public static CompletableFuture<Long> incrementRemoteData(UUID uuid, String key, int incBy) throws Exception {
+		return RemoteDataAPI.increment(uuid, key, incBy);
 	}
 
 	/** @deprecated - use RemoteDataAPI */
@@ -559,8 +559,8 @@ public class MonumentaRedisSyncAPI {
 
 	/** @deprecated - use RemoteDataAPI */
 	@Deprecated
-	public static CompletableFuture<Long> remoteDataIncrement(UUID uuid, String key, int incby) {
-		return RemoteDataAPI.increment(uuid, key, incby);
+	public static CompletableFuture<Long> remoteDataIncrement(UUID uuid, String key, int incBy) {
+		return RemoteDataAPI.increment(uuid, key, incBy);
 	}
 
 	/** @deprecated - use RemoteDataAPI */

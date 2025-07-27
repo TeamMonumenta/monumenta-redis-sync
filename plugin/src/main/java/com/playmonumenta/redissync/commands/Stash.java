@@ -23,19 +23,19 @@ public class Stash {
 			.withOptionalArguments(nameArg)
 			.withPermission(perms)
 			.executes((sender, args) -> {
-				if (sender instanceof ProxiedCommandSender proxiedCommandSender) {
-					sender = proxiedCommandSender.getCallee();
+					if (sender instanceof ProxiedCommandSender proxiedCommandSender) {
+						sender = proxiedCommandSender.getCallee();
+					}
+					if (!(sender instanceof Player player)) {
+						throw CommandAPI.failWithString("This command can only be run by/as players");
+					}
+					try {
+						MonumentaRedisSyncAPI.stashPut(player, args.getByArgument(nameArg));
+					} catch (Exception ex) {
+						throw CommandAPI.failWithString(ex.getMessage());
+					}
 				}
-				if (!(sender instanceof Player player)) {
-					throw CommandAPI.failWithString("This command can only be run by/as players");
-				}
-				try {
-					MonumentaRedisSyncAPI.stashPut(player, args.getByArgument(nameArg));
-				} catch (Exception ex) {
-					throw CommandAPI.failWithString(ex.getMessage());
-				}
-			}
-		).register();
+			).register();
 
 
 		/* ******************* stash get ******************* */
@@ -45,19 +45,19 @@ public class Stash {
 			.withPermission(perms)
 			.withOptionalArguments(nameArg)
 			.executes((sender, args) -> {
-				if (sender instanceof ProxiedCommandSender proxiedCommandSender) {
-					sender = proxiedCommandSender.getCallee();
+					if (sender instanceof ProxiedCommandSender proxiedCommandSender) {
+						sender = proxiedCommandSender.getCallee();
+					}
+					if (!(sender instanceof Player player)) {
+						throw CommandAPI.failWithString("This command can only be run by/as players");
+					}
+					try {
+						MonumentaRedisSyncAPI.stashGet(player, args.getByArgument(nameArg));
+					} catch (Exception ex) {
+						throw CommandAPI.failWithString(ex.getMessage());
+					}
 				}
-				if (!(sender instanceof Player player)) {
-					throw CommandAPI.failWithString("This command can only be run by/as players");
-				}
-				try {
-					MonumentaRedisSyncAPI.stashGet(player, args.getByArgument(nameArg));
-				} catch (Exception ex) {
-					throw CommandAPI.failWithString(ex.getMessage());
-				}
-			}
-		).register();
+			).register();
 
 		/* ******************* stash info ******************* */
 
@@ -66,12 +66,12 @@ public class Stash {
 			.withOptionalArguments(nameArg)
 			.withPermission(perms)
 			.executesPlayer((player, args) -> {
-				try {
-					MonumentaRedisSyncAPI.stashInfo(player, args.getByArgument(nameArg));
-				} catch (Exception ex) {
-					throw CommandAPI.failWithString(ex.getMessage());
+					try {
+						MonumentaRedisSyncAPI.stashInfo(player, args.getByArgument(nameArg));
+					} catch (Exception ex) {
+						throw CommandAPI.failWithString(ex.getMessage());
+					}
 				}
-			}
-		).register();
+			).register();
 	}
 }

@@ -22,13 +22,13 @@ public class PlayerHistory {
 			.withArguments(playerArg)
 			.withPermission(CommandPermission.fromString("monumenta.command.playerhistory"))
 			.executesPlayer((sender, args) -> {
-				try {
-					playerHistory(plugin, sender, args.getByArgument(playerArg));
-				} catch (Exception ex) {
-					throw CommandAPI.failWithString(ex.getMessage());
+					try {
+						playerHistory(plugin, sender, args.getByArgument(playerArg));
+					} catch (Exception ex) {
+						throw CommandAPI.failWithString(ex.getMessage());
+					}
 				}
-			}
-		).register();
+			).register();
 	}
 
 	private static void playerHistory(Plugin plugin, CommandSender sender, Player target) {

@@ -27,6 +27,6 @@ public class ChangeLogLevel {
 						.executes((sender, args) -> {
 							plugin.setLogLevel(Level.FINEST);
 						}))
-			)).register();
+				)).register();
 	}
 }

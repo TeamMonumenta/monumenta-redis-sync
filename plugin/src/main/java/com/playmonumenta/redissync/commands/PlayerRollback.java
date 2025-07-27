@@ -18,12 +18,12 @@ public class PlayerRollback {
 			.withArguments(playerArg)
 			.withArguments(indexArg)
 			.executesPlayer((sender, args) -> {
-				try {
-					MonumentaRedisSyncAPI.playerRollback(sender, args.getByArgument(playerArg), args.getByArgument(indexArg));
-				} catch (Exception ex) {
-					throw CommandAPI.failWithString(ex.getMessage());
+					try {
+						MonumentaRedisSyncAPI.playerRollback(sender, args.getByArgument(playerArg), args.getByArgument(indexArg));
+					} catch (Exception ex) {
+						throw CommandAPI.failWithString(ex.getMessage());
+					}
 				}
-			}
-		).register();
+			).register();
 	}
 }

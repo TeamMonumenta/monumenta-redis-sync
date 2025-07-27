@@ -227,20 +227,20 @@ public class RboardCommand {
 				objects[j] = args.getByArgument(getObjectiveArgument(j)).getName();
 			}
 			MonumentaRedisSyncAPI.runOnMainThreadWhenComplete(plugin,
-			                                                  RBoardAPI.get(rboardName, objects),
-			                                                  (Map<String, String> data, Throwable except) -> {
-				if (except != null) {
-					plugin.getLogger().severe("rboard get failed:" + except.getMessage());
-					except.printStackTrace();
-				} else {
-					for (Map.Entry<String, String> entry : data.entrySet()) {
-						ScoreboardUtils.setScoreboardValue(scoreboardName, entry.getKey(), Integer.parseInt(entry.getValue()));
+				RBoardAPI.get(rboardName, objects),
+				(Map<String, String> data, Throwable except) -> {
+					if (except != null) {
+						plugin.getLogger().severe("rboard get failed:" + except.getMessage());
+						except.printStackTrace();
+					} else {
+						for (Map.Entry<String, String> entry : data.entrySet()) {
+							ScoreboardUtils.setScoreboardValue(scoreboardName, entry.getKey(), Integer.parseInt(entry.getValue()));
+						}
+						for (FunctionWrapper func : args.getByArgument(functionArg)) {
+							func.run();
+						}
 					}
-					for (FunctionWrapper func : args.getByArgument(functionArg)) {
-						func.run();
-					}
-				}
-			});
+				});
 		};
 
 		arguments.clear();
@@ -256,18 +256,18 @@ public class RboardCommand {
 		action = (sender, args, rboardName, scoreboardName) -> {
 			Objective objective = args.getByArgument(objectiveArg);
 			MonumentaRedisSyncAPI.runOnMainThreadWhenComplete(plugin,
-			                                                  RBoardAPI.add(rboardName, objective.getName(), args.getByArgument(valueArg)),
-			                                                  (Long data, Throwable except) -> {
-				if (except != null) {
-					plugin.getLogger().severe("rboard addandget failed:" + except.getMessage());
-					except.printStackTrace();
-				} else {
-					ScoreboardUtils.setScoreboardValue(scoreboardName, objective, data.intValue());
-					for (FunctionWrapper func : args.getByArgument(functionArg)) {
-						func.run();
+				RBoardAPI.add(rboardName, objective.getName(), args.getByArgument(valueArg)),
+				(Long data, Throwable except) -> {
+					if (except != null) {
+						plugin.getLogger().severe("rboard addandget failed:" + except.getMessage());
+						except.printStackTrace();
+					} else {
+						ScoreboardUtils.setScoreboardValue(scoreboardName, objective, data.intValue());
+						for (FunctionWrapper func : args.getByArgument(functionArg)) {
+							func.run();
+						}
 					}
-				}
-			});
+				});
 		};
 
 		arguments.clear();
@@ -285,20 +285,20 @@ public class RboardCommand {
 				objects[j] = args.getByArgument(getObjectiveArgument(j)).getName();
 			}
 			MonumentaRedisSyncAPI.runOnMainThreadWhenComplete(plugin,
-			                                                  RBoardAPI.getAndReset(rboardName, objects),
-			                                                  (Map<String, String> data, Throwable except) -> {
-				if (except != null) {
-					plugin.getLogger().severe("rboard getandreset failed:" + except.getMessage());
-					except.printStackTrace();
-				} else {
-					for (Map.Entry<String, String> entry : data.entrySet()) {
-						ScoreboardUtils.setScoreboardValue(scoreboardName, entry.getKey(), Integer.parseInt(entry.getValue()));
+				RBoardAPI.getAndReset(rboardName, objects),
+				(Map<String, String> data, Throwable except) -> {
+					if (except != null) {
+						plugin.getLogger().severe("rboard getandreset failed:" + except.getMessage());
+						except.printStackTrace();
+					} else {
+						for (Map.Entry<String, String> entry : data.entrySet()) {
+							ScoreboardUtils.setScoreboardValue(scoreboardName, entry.getKey(), Integer.parseInt(entry.getValue()));
+						}
+						for (FunctionWrapper func : args.getByArgument(functionArg)) {
+							func.run();
+						}
 					}
-					for (FunctionWrapper func : args.getByArgument(functionArg)) {
-						func.run();
-					}
-				}
-			});
+				});
 		};
 
 		arguments.clear();

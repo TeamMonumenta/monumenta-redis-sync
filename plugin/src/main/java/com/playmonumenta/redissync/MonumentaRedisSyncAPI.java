@@ -1032,7 +1032,7 @@ public class MonumentaRedisSyncAPI {
 
 	private static Boolean transformPlayerSaveResult(MonumentaRedisSync mrs, TransactionResult result) {
 		if (result.isEmpty() || result.size() != 5 || result.get(0) == null
-		    || result.get(1) == null || result.get(2) == null || result.get(3) == null || result.get(4) == null) {
+			|| result.get(1) == null || result.get(2) == null || result.get(3) == null || result.get(4) == null) {
 			mrs.getLogger().severe("Failed to commit player data");
 			return false;
 		}

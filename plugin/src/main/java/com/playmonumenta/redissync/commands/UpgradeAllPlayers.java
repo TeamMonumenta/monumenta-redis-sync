@@ -28,7 +28,7 @@ public class UpgradeAllPlayers {
 							throw CommandAPI.failWithString(ex.getMessage());
 						}
 					})
-			)).register();
+				)).register();
 	}
 
 	private static void updatePlayer(MonumentaRedisSync mrs, UUID uuid) {

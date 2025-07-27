@@ -18,12 +18,12 @@ public class PlayerLoadFromPlayer {
 			.withArguments(playerArg)
 			.withArguments(indexArg)
 			.executesPlayer((sender, args) -> {
-				try {
-					MonumentaRedisSyncAPI.playerLoadFromPlayer(sender, args.getByArgument(playerArg), args.getByArgument(indexArg));
-				} catch (Exception ex) {
-					throw CommandAPI.failWithString(ex.getMessage());
+					try {
+						MonumentaRedisSyncAPI.playerLoadFromPlayer(sender, args.getByArgument(playerArg), args.getByArgument(indexArg));
+					} catch (Exception ex) {
+						throw CommandAPI.failWithString(ex.getMessage());
+					}
 				}
-			}
-		).register();
+			).register();
 	}
 }

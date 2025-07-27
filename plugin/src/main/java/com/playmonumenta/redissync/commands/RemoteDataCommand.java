@@ -152,6 +152,6 @@ public class RemoteDataCommand {
 						}
 					});
 				}))
-		.register();
+			.register();
 	}
 }

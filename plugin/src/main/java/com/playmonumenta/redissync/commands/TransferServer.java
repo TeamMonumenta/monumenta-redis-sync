@@ -34,19 +34,19 @@ public class TransferServer {
 			.withOptionalArguments(rotationArg)
 			.withPermission(perms)
 			.executes((sender, args) -> {
-				Collection<Player> players = args.getByArgument(playersArg);
-				String server = args.getByArgument(serverArg);
-				Location location = args.getByArgument(locationArg);
-				Rotation rotation = args.getByArgument(rotationArg);
-				for (Player player : players) {
-					try {
-						MonumentaRedisSyncAPI.sendPlayer(player, server, location, rotation);
-					} catch (Exception ex) {
-						throw CommandAPI.failWithString(ex.getMessage());
+					Collection<Player> players = args.getByArgument(playersArg);
+					String server = args.getByArgument(serverArg);
+					Location location = args.getByArgument(locationArg);
+					Rotation rotation = args.getByArgument(rotationArg);
+					for (Player player : players) {
+						try {
+							MonumentaRedisSyncAPI.sendPlayer(player, server, location, rotation);
+						} catch (Exception ex) {
+							throw CommandAPI.failWithString(ex.getMessage());
+						}
 					}
 				}
-			}
-		).register();
+			).register();
 
 		/* Single player alias */
 		new CommandAPICommand(command)
@@ -54,12 +54,12 @@ public class TransferServer {
 			.withPermission(perms)
 			.withAliases("s")
 			.executesPlayer((player, args) -> {
-				try {
-					MonumentaRedisSyncAPI.sendPlayer(player, args.getByArgument(serverArg));
-				} catch (Exception ex) {
-					throw CommandAPI.failWithString(ex.getMessage());
+					try {
+						MonumentaRedisSyncAPI.sendPlayer(player, args.getByArgument(serverArg));
+					} catch (Exception ex) {
+						throw CommandAPI.failWithString(ex.getMessage());
+					}
 				}
-			}
-		).register();
+			).register();
 	}
 }

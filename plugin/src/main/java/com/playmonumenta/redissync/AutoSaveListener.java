@@ -67,7 +67,7 @@ public class AutoSaveListener implements Listener {
 					}
 
 					mPendingSaves.remove(uuid);
-				}, i * delayBetweenSaves);
+				}, (long) i * delayBetweenSaves);
 
 				mPendingSaves.put(uuid, task);
 			}

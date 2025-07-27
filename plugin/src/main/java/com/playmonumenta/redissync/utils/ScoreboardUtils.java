@@ -20,7 +20,7 @@ public class ScoreboardUtils {
 
 		for (Objective objective : Bukkit.getScoreboardManager().getMainScoreboard().getObjectives()) {
 			Score score = objective.getScore(player.getName());
-			if (score != null) {
+			if (score.isScoreSet()) {
 				data.addProperty(objective.getName(), score.getScore());
 			}
 		}

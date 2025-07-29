@@ -45,7 +45,6 @@ import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -114,7 +113,7 @@ public class DataEventListener implements Listener {
 		}
 	}
 
-	private static final Map<UUID, BukkitTask> TRANSFER_UNLOCK_TASKS = new HashMap<>();
+	private static final Map<UUID, BukkitTask> TRANSFER_UNLOCK_TASKS = new HashMap<>(); // TODO Never queried
 	private static final int TRANSFER_UNLOCK_TIMEOUT_TICKS = 10 * 20;
 	private static final Component LOAD_ERROR_MSG =
 		Component.text("Critical error occurred when loading playerdata! Please notify a moderator.", NamedTextColor.RED);
@@ -154,7 +153,7 @@ public class DataEventListener implements Listener {
 		});
 	}
 
-	/********************* Protected API *********************/
+	/* ******************* Protected API ******************* */
 
 	protected static void setPlayerAsTransferring(Player player) throws Exception {
 		if (INSTANCE.mTransferringPlayers.contains(player.getUniqueId())) {
@@ -179,7 +178,7 @@ public class DataEventListener implements Listener {
 		 */
 		TRANSFER_UNLOCK_TASKS.put(player.getUniqueId(), Bukkit.getScheduler().runTaskLater(MonumentaRedisSync.getInstance(), () -> {
 			if (DataEventListener.isPlayerTransferring(player)) {
-				player.sendMessage(ChatColor.RED + "Transferring timed out and your player has been unlocked");
+				player.sendMessage(Component.text("Transferring timed out and your player has been unlocked", NamedTextColor.RED));
 				DataEventListener.setPlayerAsNotTransferring(player);
 			}
 			TRANSFER_UNLOCK_TASKS.remove(player.getUniqueId());
@@ -257,14 +256,14 @@ public class DataEventListener implements Listener {
 
 		mLogger.fine("Blocking wait for pending save for player=" + player.getName());
 
-		if (!LettuceFutures.awaitAll(MonumentaRedisSyncAPI.TIMEOUT_SECONDS, TimeUnit.SECONDS, futures.toArray(new RedisFuture[futures.size()]))) {
+		if (!LettuceFutures.awaitAll(MonumentaRedisSyncAPI.TIMEOUT_SECONDS, TimeUnit.SECONDS, futures.toArray(new RedisFuture[0]))) {
 			mLogger.severe("Got timeout waiting to commit transactions for player '" + player.getName() + "'. This is very bad!");
 		}
 
 		mLogger.fine("Pending save completed for player=" + player.getName());
 	}
 
-	/********************* Data Save/Load Event Handlers *********************/
+	/* ******************* Data Save/Load Event Handlers ******************* */
 
 	/*
 	 * When running /minecraft:reload, this event is triggered before player advancement data is reloaded
@@ -626,11 +625,7 @@ public class DataEventListener implements Listener {
 		}
 
 		/* Get the existing plugin data */
-		JsonObject pluginData = mPluginData.get(player.getUniqueId());
-		if (pluginData == null) {
-			pluginData = new JsonObject();
-			mPluginData.put(player.getUniqueId(), pluginData);
-		}
+		JsonObject pluginData = mPluginData.computeIfAbsent(player.getUniqueId(), k -> new JsonObject());
 
 		/* Call a custom save event that gives other plugins a chance to add data */
 		/* This is skipped until the join event finishes to prevent losing data if a save happens while joining */
@@ -727,7 +722,7 @@ public class DataEventListener implements Listener {
 		mPendingSaves.put(player.getUniqueId(), futures);
 	}
 
-	/********************* Transferring Restriction Event Handlers *********************/
+	/* ******************* Transferring Restriction Event Handlers ******************* */
 
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
 	public void playerLoginEvent(PlayerLoginEvent event) {
@@ -750,9 +745,8 @@ public class DataEventListener implements Listener {
 
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
 	public void playerJoinEvent(PlayerJoinEvent event) {
-		Bukkit.getScheduler().runTask(MonumentaRedisSync.getInstance(), () -> {
-			mLoadingPlayers.remove(event.getPlayer().getUniqueId());
-		});
+		Bukkit.getScheduler().runTask(MonumentaRedisSync.getInstance(),
+			() -> mLoadingPlayers.remove(event.getPlayer().getUniqueId()));
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
@@ -912,7 +906,7 @@ public class DataEventListener implements Listener {
 
 	/*
 	 * This event fires very early in the chain, it also isn't safe to do database lookups
-	 * Ideally this should also be done on the proxy but this is a failsafe incase a shard still has player data loaded
+	 * Ideally this should also be done on the proxy but this is a failsafe in case a shard still has player data loaded
 	 * Login events are fired in this order:
 	 * - AsyncPlayerPreLoginEvent
 	 * - PlayerJoinEvent
@@ -925,15 +919,20 @@ public class DataEventListener implements Listener {
 		}
 		PlayerProfile profile = event.getPlayerProfile();
 		UUID uuid = profile.getId();
+		if (uuid == null) {
+			mLogger.warning(() -> "A player uuid=null" + " name=" + profile.getName() + " tried to login without a UUID! Preventing duplicate uuid stupidity");
+			// Probably the most accurate kick message? Can't verify a username without a UUID, however we got into this state.
+			event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, Component.translatable("multiplayer.disconnect.unverified_username"));
+			return;
+		}
 		// if player is loaded, but they are also trying to connect, disconnect the one trying to connect to prevent duplicate uuid stupidity
 		if (Bukkit.getPlayer(uuid) != null || mLoadingPlayers.contains(uuid) || mShardData.containsKey(uuid)) {
 			mLogger.warning(() -> "A player uuid=" + uuid + " name=" + profile.getName() + " tried to login while loading/online! Preventing duplicate uuid stupidity");
 			event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, Component.translatable("multiplayer.disconnect.duplicate_login"));
-			return;
 		}
 	}
 
-	/********************* Private Utility Methods *********************/
+	/* ******************* Private Utility Methods ******************* */
 
 	private void cancelEventIfTransferring(Entity entity, Cancellable event) {
 		if (entity instanceof Player && isPlayerTransferring((Player) entity)) {

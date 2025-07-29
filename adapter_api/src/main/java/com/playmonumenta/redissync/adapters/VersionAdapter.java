@@ -2,10 +2,10 @@ package com.playmonumenta.redissync.adapters;
 
 import com.google.gson.JsonObject;
 import java.io.IOException;
-import javax.annotation.Nullable;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Scoreboard;
+import org.jetbrains.annotations.Nullable;
 
 public interface VersionAdapter {
 	class ReturnParams {
@@ -33,7 +33,7 @@ public interface VersionAdapter {
 			return mData;
 		}
 
-		public String getShardData() {
+		public @Nullable String getShardData() {
 			return mShardData;
 		}
 	}

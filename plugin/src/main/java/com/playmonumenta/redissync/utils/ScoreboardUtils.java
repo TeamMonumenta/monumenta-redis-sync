@@ -3,11 +3,11 @@ package com.playmonumenta.redissync.utils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.playmonumenta.redissync.MonumentaRedisSync;
-
 import java.util.Map;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
@@ -20,7 +20,7 @@ public class ScoreboardUtils {
 
 		for (Objective objective : Bukkit.getScoreboardManager().getMainScoreboard().getObjectives()) {
 			Score score = objective.getScore(player.getName());
-			if (score != null) {
+			if (score.isScoreSet()) {
 				data.addProperty(objective.getName(), score.getScore());
 			}
 		}
@@ -37,13 +37,13 @@ public class ScoreboardUtils {
 
 			Objective objective = scoreboard.getObjective(name);
 			if (objective == null) {
-				objective = scoreboard.registerNewObjective(name, "dummy", Component.text(name));
+				objective = scoreboard.registerNewObjective(name, Criteria.DUMMY, Component.text(name));
 			}
 
 			if (!objective.isModifiable()) {
-				final String criteriaName = objective.getCriteria();
+				final Criteria criteriaName = objective.getTrackedCriteria();
 				// TODO: remove debug logging :3
-				MonumentaRedisSync.getInstance().getLogger().warning(() -> "Objective " + name + " is not modifiable. Criteria: " + criteriaName);
+				MonumentaRedisSync.getInstance().getLogger().warning(() -> "Objective " + name + " is not modifiable. Criteria: " + criteriaName.getName());
 				continue;
 			}
 
@@ -55,7 +55,7 @@ public class ScoreboardUtils {
 	public static int getScoreboardValue(String name, String scoreboardValue) {
 		Objective objective = Bukkit.getScoreboardManager().getMainScoreboard().getObjective(scoreboardValue);
 		if (objective != null) {
-			getScoreboardValue(name, objective);
+			return getScoreboardValue(name, objective);
 		}
 
 		return 0;

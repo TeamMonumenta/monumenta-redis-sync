@@ -12,6 +12,7 @@ import com.playmonumenta.redissync.commands.Stash;
 import com.playmonumenta.redissync.commands.TransferServer;
 import com.playmonumenta.redissync.commands.UpgradeAllPlayers;
 import java.io.File;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
@@ -19,6 +20,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 
 public class MonumentaRedisSync extends JavaPlugin implements MonumentaRedisSyncInterface {
 	private static @Nullable MonumentaRedisSync INSTANCE = null;
@@ -71,7 +73,7 @@ public class MonumentaRedisSync extends JavaPlugin implements MonumentaRedisSync
 	public void onEnable() {
 		/* Refuse to enable without a version adapter */
 		if (mVersionAdapter == null) {
-			this.setEnabled(false);
+			Bukkit.getPluginManager().disablePlugin(this);
 			return;
 		}
 
@@ -147,7 +149,7 @@ public class MonumentaRedisSync extends JavaPlugin implements MonumentaRedisSync
 		boolean savingDisabled = config.getBoolean("saving_disabled", false);
 		boolean scoreboardCleanupEnabled = config.getBoolean("scoreboard_cleanup_enabled", true);
 
-		String level = config.getString("log_level", "INFO").toLowerCase();
+		String level = config.getString("log_level", "INFO").toLowerCase(Locale.ENGLISH);
 		switch (level) {
 			case "finest":
 				setLogLevel(Level.FINEST);
@@ -171,7 +173,7 @@ public class MonumentaRedisSync extends JavaPlugin implements MonumentaRedisSync
 	}
 
 	@Override
-	public Logger getLogger() {
+	public @NotNull Logger getLogger() {
 		if (mLogger == null) {
 			mLogger = new CustomLogger(super.getLogger(), Level.INFO);
 		}

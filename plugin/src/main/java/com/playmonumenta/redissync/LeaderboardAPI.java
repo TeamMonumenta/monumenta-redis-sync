@@ -27,7 +27,7 @@ public class LeaderboardAPI {
 		}
 
 		return values.thenApply((scores) -> {
-			LinkedHashMap<String, Integer> map = new LinkedHashMap<String, Integer>();
+			LinkedHashMap<String, Integer> map = new LinkedHashMap<>();
 			for (ScoredValue<String> value : scores) {
 				map.put(value.getValue(), (int)value.getScore());
 			}
@@ -38,7 +38,7 @@ public class LeaderboardAPI {
 
 	/**
 	 * Updates the specified leaderboard with name/value.
-	 *
+	 * <p>
 	 * Update is dispatched asynchronously, this method does not block or return success/failure
 	 *
 	 * @param objective The leaderboard objective name (one leaderboard per objective)

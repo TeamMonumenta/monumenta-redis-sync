@@ -13,7 +13,12 @@ import java.util.Map;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
 import net.minecraft.SharedConstants;
-import net.minecraft.nbt.*;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.DoubleTag;
+import net.minecraft.nbt.FloatTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtAccounter;
+import net.minecraft.nbt.NbtIo;
 import net.minecraft.world.scores.Scoreboard;
 import org.bukkit.craftbukkit.v1_20_R3.scoreboard.CraftScoreboard;
 import org.bukkit.entity.Player;
@@ -148,13 +153,13 @@ public class VersionAdapter_v1_20_R3 implements VersionAdapter {
 	}
 
 	protected ListTag toDoubleList(double... doubles) {
-		ListTag nbttaglist = new ListTag();
+		ListTag nbtTagList = new ListTag();
 
 		for (double d : doubles) {
-			nbttaglist.add(DoubleTag.valueOf(d));
+			nbtTagList.add(DoubleTag.valueOf(d));
 		}
 
-		return nbttaglist;
+		return nbtTagList;
 	}
 
 	private void applyStr(JsonObject obj, CompoundTag nbt, String key) {
@@ -191,11 +196,11 @@ public class VersionAdapter_v1_20_R3 implements VersionAdapter {
 		if (obj.has(key)) {
 			JsonElement element = obj.get(key);
 			if (element.isJsonArray()) {
-				ListTag nbttaglist = new ListTag();
+				ListTag nbtTagList = new ListTag();
 				for (JsonElement val : element.getAsJsonArray()) {
-					nbttaglist.add(FloatTag.valueOf(val.getAsFloat()));
+					nbtTagList.add(FloatTag.valueOf(val.getAsFloat()));
 				}
-				nbt.put(key, nbttaglist);
+				nbt.put(key, nbtTagList);
 			}
 		}
 	}
@@ -204,11 +209,11 @@ public class VersionAdapter_v1_20_R3 implements VersionAdapter {
 		if (obj.has(key)) {
 			JsonElement element = obj.get(key);
 			if (element.isJsonArray()) {
-				ListTag nbttaglist = new ListTag();
+				ListTag nbtTagList = new ListTag();
 				for (JsonElement val : element.getAsJsonArray()) {
-					nbttaglist.add(DoubleTag.valueOf(val.getAsDouble()));
+					nbtTagList.add(DoubleTag.valueOf(val.getAsDouble()));
 				}
-				nbt.put(key, nbttaglist);
+				nbt.put(key, nbtTagList);
 			}
 		}
 	}
@@ -217,11 +222,11 @@ public class VersionAdapter_v1_20_R3 implements VersionAdapter {
 		if (obj.has(key)) {
 			JsonElement element = obj.get(key);
 			if (element.isJsonObject()) {
-				CompoundTag nbtcomp = new CompoundTag();
+				CompoundTag nbtComp = new CompoundTag();
 				for (Map.Entry<String, JsonElement> subentry : element.getAsJsonObject().entrySet()) {
-					nbtcomp.putDouble(subentry.getKey(), subentry.getValue().getAsDouble());
+					nbtComp.putDouble(subentry.getKey(), subentry.getValue().getAsDouble());
 				}
-				nbt.put(key, nbtcomp);
+				nbt.put(key, nbtComp);
 			}
 		}
 	}
@@ -288,11 +293,11 @@ public class VersionAdapter_v1_20_R3 implements VersionAdapter {
 	private void copyCompoundOfDoubles(JsonObject obj, CompoundTag nbt, String key) {
 		if (nbt.contains(key)) {
 			CompoundTag compound = nbt.getCompound(key);
-			JsonObject sobj = new JsonObject();
+			JsonObject sObj = new JsonObject();
 			for (String comp : compound.getAllKeys()) {
-				sobj.addProperty(comp, compound.getDouble(comp));
+				sObj.addProperty(comp, compound.getDouble(comp));
 			}
-			obj.add(key, sobj);
+			obj.add(key, sObj);
 			nbt.remove(key);
 		}
 	}

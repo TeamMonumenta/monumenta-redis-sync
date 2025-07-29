@@ -22,7 +22,10 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.bukkit.ChatColor;
+import java.util.logging.Level;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -99,6 +102,7 @@ public class RboardCommand {
 			.register();
 	}
 
+	@SuppressWarnings("DataFlowIssue")
 	public static void register(Plugin plugin) {
 		List<Argument<?>> arguments = new ArrayList<>(40);
 
@@ -107,7 +111,7 @@ public class RboardCommand {
 		ObjectiveArgument objectiveToAddArg = new ObjectiveArgument("objectiveToAdd");
 		FunctionArgument functionArg = new FunctionArgument("function");
 
-		/********************* Set *********************/
+		/* ******************* Set ******************* */
 		RboardAction action = (sender, args, rboardName, scoreboardName) -> {
 			Map<String, String> values = new LinkedHashMap<>();
 			for (int i = 0; i < args.count() - 1; i += 2) {
@@ -125,7 +129,7 @@ public class RboardCommand {
 			regWrapper(arguments, action);
 		}
 
-		/********************* Store *********************/
+		/* ******************* Store ******************* */
 		action = (sender, args, rboardName, scoreboardName) -> {
 			Map<String, String> values = new LinkedHashMap<>();
 			for (int i = 0; i < args.count() - 1; i += 1) {
@@ -143,7 +147,7 @@ public class RboardCommand {
 			regWrapper(arguments, action);
 		}
 
-		/********************* Add *********************/
+		/* ******************* Add ******************* */
 		arguments.clear();
 		arguments.add(new LiteralArgument("add"));
 		arguments.add(playersArg);
@@ -152,7 +156,7 @@ public class RboardCommand {
 		regWrapper(arguments, (sender, args, rboardName, scoreboardName) ->
 			RBoardAPI.add(rboardName, args.getByArgument(objectiveArg).getName(), args.getByArgument(valueArg)));
 
-		/********************* AddScore *********************/
+		/* ******************* AddScore ******************* */
 		arguments.clear();
 		arguments.add(new LiteralArgument("addscore"));
 		arguments.add(playersArg);
@@ -161,7 +165,7 @@ public class RboardCommand {
 		regWrapper(arguments, (sender, args, rboardName, scoreboardName) ->
 			RBoardAPI.add(rboardName, args.getByArgument(objectiveArg).getName(), ScoreboardUtils.getScoreboardValue(scoreboardName, args.getByArgument(objectiveToAddArg))));
 
-		/********************* Reset *********************/
+		/* ******************* Reset ******************* */
 		action = (sender, args, rboardName, scoreboardName) -> {
 			String[] values = new String[args.count()];
 			for (int i = 0; i < args.count() - 1; i += 1) {
@@ -178,7 +182,7 @@ public class RboardCommand {
 			regWrapper(arguments, action);
 		}
 
-		/********************* ResetAll *********************/
+		/* ******************* ResetAll ******************* */
 		action = (sender, args, rboardName, scoreboardName) ->
 			RBoardAPI.resetAll(rboardName);
 
@@ -187,56 +191,56 @@ public class RboardCommand {
 		arguments.add(playersArg);
 		regWrapper(arguments, action);
 
-		/********************* GetAll *********************/
-		action = (sender, args, rboardName, scoreboardName) -> {
-			MonumentaRedisSyncAPI.runOnMainThreadWhenComplete(plugin,
-			                                                  RBoardAPI.getAll(rboardName),
-			                                                  (Map<String, String> data, Throwable except) -> {
+		/* ******************* GetAll ******************* */
+		action = (sender, args, rboardName, scoreboardName)
+			-> MonumentaRedisSyncAPI.runOnMainThreadWhenComplete(plugin,
+			RBoardAPI.getAll(rboardName),
+			(Map<String, String> data, Throwable except) -> {
 				if (except != null) {
-					plugin.getLogger().severe("rboard getall failed:" + except.getMessage());
-					except.printStackTrace();
+					plugin.getLogger().log(Level.SEVERE, "rboard getall failed:" + except.getMessage(), except);
 				} else {
-					StringBuilder output = new StringBuilder("[");
-					boolean first = true;
+					List<Component> entryComponents = new ArrayList<>();
 					for (Map.Entry<String, String> entry : data.entrySet()) {
-						if (!first) {
-							output.append(" ");
-						}
-						output.append(ChatColor.GOLD).append(entry.getKey()).append(ChatColor.WHITE).append("=").append(ChatColor.GREEN).append(entry.getValue());
-						first = false;
+						entryComponents.add(
+							Component.text(entry.getKey(), NamedTextColor.GOLD)
+								.append(Component.text("=", NamedTextColor.WHITE))
+								.append(Component.text(entry.getValue(), NamedTextColor.GREEN))
+						);
 					}
-					output.append(ChatColor.WHITE).append("]");
-					sender.sendMessage(output.toString());
+					sender.sendMessage(
+						Component.text("[", NamedTextColor.WHITE)
+							.append(Component.join(JoinConfiguration.spaces(), entryComponents))
+							.append(Component.text("]"))
+					);
 				}
 			});
-		};
 
 		arguments.clear();
 		arguments.add(new LiteralArgument("getall"));
 		arguments.add(playersArg);
 		regWrapper(arguments, action);
 
-		/********************* Get *********************/
+		/* ******************* Get ******************* */
 		action = (sender, args, rboardName, scoreboardName) -> {
 			String[] objects = new String[args.count() - 2];
 			for (int j = 0; j < args.count() - 2; j += 1) {
 				objects[j] = args.getByArgument(getObjectiveArgument(j)).getName();
 			}
 			MonumentaRedisSyncAPI.runOnMainThreadWhenComplete(plugin,
-			                                                  RBoardAPI.get(rboardName, objects),
-			                                                  (Map<String, String> data, Throwable except) -> {
-				if (except != null) {
-					plugin.getLogger().severe("rboard get failed:" + except.getMessage());
-					except.printStackTrace();
-				} else {
-					for (Map.Entry<String, String> entry : data.entrySet()) {
-						ScoreboardUtils.setScoreboardValue(scoreboardName, entry.getKey(), Integer.parseInt(entry.getValue()));
+				RBoardAPI.get(rboardName, objects),
+				(Map<String, String> data, Throwable except) -> {
+					if (except != null) {
+						plugin.getLogger().severe("rboard get failed:" + except.getMessage());
+						except.printStackTrace();
+					} else {
+						for (Map.Entry<String, String> entry : data.entrySet()) {
+							ScoreboardUtils.setScoreboardValue(scoreboardName, entry.getKey(), Integer.parseInt(entry.getValue()));
+						}
+						for (FunctionWrapper func : args.getByArgument(functionArg)) {
+							func.run();
+						}
 					}
-					for (FunctionWrapper func : args.getByArgument(functionArg)) {
-						func.run();
-					}
-				}
-			});
+				});
 		};
 
 		arguments.clear();
@@ -248,22 +252,22 @@ public class RboardCommand {
 			regWrapper(arguments, action);
 		}
 
-		/********************* AddAndGet *********************/
+		/* ******************* AddAndGet ******************* */
 		action = (sender, args, rboardName, scoreboardName) -> {
 			Objective objective = args.getByArgument(objectiveArg);
 			MonumentaRedisSyncAPI.runOnMainThreadWhenComplete(plugin,
-			                                                  RBoardAPI.add(rboardName, objective.getName(), args.getByArgument(valueArg)),
-			                                                  (Long data, Throwable except) -> {
-				if (except != null) {
-					plugin.getLogger().severe("rboard addandget failed:" + except.getMessage());
-					except.printStackTrace();
-				} else {
-					ScoreboardUtils.setScoreboardValue(scoreboardName, objective, data.intValue());
-					for (FunctionWrapper func : args.getByArgument(functionArg)) {
-						func.run();
+				RBoardAPI.add(rboardName, objective.getName(), args.getByArgument(valueArg)),
+				(Long data, Throwable except) -> {
+					if (except != null) {
+						plugin.getLogger().severe("rboard addandget failed:" + except.getMessage());
+						except.printStackTrace();
+					} else {
+						ScoreboardUtils.setScoreboardValue(scoreboardName, objective, data.intValue());
+						for (FunctionWrapper func : args.getByArgument(functionArg)) {
+							func.run();
+						}
 					}
-				}
-			});
+				});
 		};
 
 		arguments.clear();
@@ -274,27 +278,27 @@ public class RboardCommand {
 		arguments.add(valueArg);
 		regWrapper(arguments, action);
 
-		/********************* GetAndReset *********************/
+		/* ******************* GetAndReset ******************* */
 		action = (sender, args, rboardName, scoreboardName) -> {
 			String[] objects = new String[args.count() - 2];
 			for (int j = 0; j < args.count() - 2; j += 1) {
 				objects[j] = args.getByArgument(getObjectiveArgument(j)).getName();
 			}
 			MonumentaRedisSyncAPI.runOnMainThreadWhenComplete(plugin,
-			                                                  RBoardAPI.getAndReset(rboardName, objects),
-			                                                  (Map<String, String> data, Throwable except) -> {
-				if (except != null) {
-					plugin.getLogger().severe("rboard getandreset failed:" + except.getMessage());
-					except.printStackTrace();
-				} else {
-					for (Map.Entry<String, String> entry : data.entrySet()) {
-						ScoreboardUtils.setScoreboardValue(scoreboardName, entry.getKey(), Integer.parseInt(entry.getValue()));
+				RBoardAPI.getAndReset(rboardName, objects),
+				(Map<String, String> data, Throwable except) -> {
+					if (except != null) {
+						plugin.getLogger().severe("rboard getandreset failed:" + except.getMessage());
+						except.printStackTrace();
+					} else {
+						for (Map.Entry<String, String> entry : data.entrySet()) {
+							ScoreboardUtils.setScoreboardValue(scoreboardName, entry.getKey(), Integer.parseInt(entry.getValue()));
+						}
+						for (FunctionWrapper func : args.getByArgument(functionArg)) {
+							func.run();
+						}
 					}
-					for (FunctionWrapper func : args.getByArgument(functionArg)) {
-						func.run();
-					}
-				}
-			});
+				});
 		};
 
 		arguments.clear();

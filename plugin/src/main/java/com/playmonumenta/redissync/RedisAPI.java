@@ -80,12 +80,12 @@ public class RedisAPI {
 		mServer = server;
 		// OutOfDirectMemoryError workaround: https://github.com/redis/lettuce/issues/2590#issuecomment-1888683541
 		mClientResources = ClientResources.builder()
-		.nettyCustomizer(new NettyCustomizer() {
+			.nettyCustomizer(new NettyCustomizer() {
 				@Override
 				public void afterBootstrapInitialized(Bootstrap bootstrap) {
-						bootstrap.option(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false));
+					bootstrap.option(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false));
 				}
-		}).build();
+			}).build();
 		mRedisClient = RedisClient.create(mClientResources, RedisURI.Builder.redis(hostname, port).build());
 		mConnection = mRedisClient.connect();
 		mStringByteConnection = mRedisClient.connect(StringByteCodec.INSTANCE);

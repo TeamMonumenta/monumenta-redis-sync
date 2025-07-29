@@ -1,5 +1,7 @@
 package com.playmonumenta.redissync;
 
+import io.lettuce.core.KeyValue;
+import io.lettuce.core.Value;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -8,7 +10,7 @@ import java.util.stream.Collectors;
 public class RemoteDataAPI {
 	/**
 	 * Gets a specific remote data entry for a player.
-	 *
+	 * <p>
 	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.
 	 * WARNING: These complete async, if you need to run a sync task on completion you need to schedule it yourself (or wrap with runOnMainThreadWhenComplete)
 	 *
@@ -27,7 +29,7 @@ public class RemoteDataAPI {
 
 	/**
 	 * Gets multiple remote data entries for a player.
-	 *
+	 * <p>
 	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.
 	 * WARNING: These complete async, if you need to run a sync task on completion you need to schedule it yourself (or wrap with runOnMainThreadWhenComplete)
 	 *
@@ -41,12 +43,12 @@ public class RemoteDataAPI {
 			return future;
 		}
 
-		return api.async().hmget(getRedisPath(uuid), keys).toCompletableFuture().thenApply((listResult) -> listResult.stream().filter(x -> x.hasValue()).collect(Collectors.toMap((entry) -> entry.getKey(), (entry) -> entry.getValue())));
+		return api.async().hmget(getRedisPath(uuid), keys).toCompletableFuture().thenApply((listResult) -> listResult.stream().filter(Value::hasValue).collect(Collectors.toMap(KeyValue::getKey, Value::getValue)));
 	}
 
 	/**
 	 * Sets a specific remote data entry for a player.
-	 *
+	 * <p>
 	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.
 	 * WARNING: These complete async, if you need to run a sync task on completion you need to schedule it yourself (or wrap with runOnMainThreadWhenComplete)
 	 *
@@ -65,15 +67,15 @@ public class RemoteDataAPI {
 
 	/**
 	 * Atomically increments a specific remote data entry for a player.
-	 *
+	 * <p>
 	 * Note that this will interpret the hash value as an integer (default 0 if not existing)
-	 *
+	 * <p>
 	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.
 	 * WARNING: These complete async, if you need to run a sync task on completion you need to schedule it yourself (or wrap with runOnMainThreadWhenComplete)
 	 *
 	 * @return Resulting value
 	 */
-	public static CompletableFuture<Long> increment(UUID uuid, String key, int incby) {
+	public static CompletableFuture<Long> increment(UUID uuid, String key, int incBy) {
 		RedisAPI api = RedisAPI.getInstance();
 		if (api == null) {
 			CompletableFuture<Long> future = new CompletableFuture<>();
@@ -81,12 +83,12 @@ public class RemoteDataAPI {
 			return future;
 		}
 
-		return api.async().hincrby(getRedisPath(uuid), key, incby).toCompletableFuture();
+		return api.async().hincrby(getRedisPath(uuid), key, incBy).toCompletableFuture();
 	}
 
 	/**
 	 * Deletes a specific key in the player's remote data.
-	 *
+	 * <p>
 	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.
 	 * WARNING: These complete async, if you need to run a sync task on completion you need to schedule it yourself (or wrap with runOnMainThreadWhenComplete)
 	 *
@@ -105,7 +107,7 @@ public class RemoteDataAPI {
 
 	/**
 	 * Gets a map of all remote data for a player.
-	 *
+	 * <p>
 	 * Will dispatch the task immediately async, making this suitable for use on main or async thread.
 	 * WARNING: These complete async, if you need to run a sync task on completion you need to schedule it yourself (or wrap with runOnMainThreadWhenComplete)
 	 *

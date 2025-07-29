@@ -12,6 +12,7 @@ import java.util.UUID;
 import org.bukkit.plugin.Plugin;
 
 public class RemoteDataCommand {
+	@SuppressWarnings("DataFlowIssue")
 	public static void register(Plugin plugin) {
 		Argument<String> playerArg = new TextArgument("player").replaceSuggestions(MonumentaRedisSyncAPI.SUGGESTIONS_ALL_CACHED_PLAYER_NAMES);
 		TextArgument keyArg = new TextArgument("key");
@@ -151,6 +152,6 @@ public class RemoteDataCommand {
 						}
 					});
 				}))
-		.register();
+			.register();
 	}
 }

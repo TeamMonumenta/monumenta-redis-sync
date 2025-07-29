@@ -38,6 +38,7 @@ public class Trie<V> implements Cloneable {
 		mValue = null;
 	}
 
+	@SuppressWarnings("MethodDoesntCallSuperMethod")
 	@Override
 	public Trie<V> clone() {
 		Trie<V> result = new Trie<>(mDepth);
@@ -130,11 +131,7 @@ public class Trie<V> implements Cloneable {
 		}
 
 		Character c = key.charAt(mDepth);
-		Trie<V> child = mChildren.get(c);
-		if (child == null) {
-			child = new Trie<>(mDepth + 1);
-			mChildren.put(c, child);
-		}
+		Trie<V> child = mChildren.computeIfAbsent(c, k -> new Trie<>(mDepth + 1));
 		return child.put(key, value);
 	}
 

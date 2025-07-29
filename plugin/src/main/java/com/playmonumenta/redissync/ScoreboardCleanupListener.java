@@ -4,7 +4,6 @@ import com.destroystokyo.paper.event.player.PlayerAdvancementDataLoadEvent;
 import com.destroystokyo.paper.event.player.PlayerDataLoadEvent;
 import com.playmonumenta.redissync.adapters.VersionAdapter;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -19,7 +18,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
 public class ScoreboardCleanupListener implements Listener {
-	private static final int CLEANUP_LOGOUT_DELAY = 20 * 60 * 1; // 1 minute
+	private static final int CLEANUP_LOGOUT_DELAY = 20 * 60; // 1 minute
 
 	private final Plugin mPlugin;
 	private final Logger mLogger;
@@ -56,12 +55,7 @@ public class ScoreboardCleanupListener implements Listener {
 		}
 
 		// Remove any completed runnables from the map to keep things clean
-		Iterator<Map.Entry<UUID, BukkitTask>> iter = mCleanupTasks.entrySet().iterator();
-		while (iter.hasNext()) {
-			if (iter.next().getValue().isCancelled()) {
-				iter.remove();
-			}
-		}
+		mCleanupTasks.entrySet().removeIf(uuidBukkitTaskEntry -> uuidBukkitTaskEntry.getValue().isCancelled());
 
 		String playerName = event.getPlayer().getName();
 		mCleanupTasks.put(event.getPlayer().getUniqueId(), Bukkit.getScheduler().runTaskLater(mPlugin, () -> {

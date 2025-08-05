@@ -51,7 +51,7 @@ public class ScoreboardCleanupListener implements Listener {
 	public void playerQuitEvent(PlayerQuitEvent event) {
 		cancelCleanupTask(event.getPlayer());
 
-		if (!BukkitConfig.getBukkitInstance().getScoreboardCleanupEnabled()) {
+		if (!BukkitConfig.getScoreboardCleanupEnabled()) {
 			return;
 		}
 

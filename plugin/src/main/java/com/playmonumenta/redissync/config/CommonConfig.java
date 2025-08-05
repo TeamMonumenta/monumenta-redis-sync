@@ -10,6 +10,14 @@ public class CommonConfig {
 	protected final String mServerDomain;
 	protected final String mShardName;
 
+	public CommonConfig(String redisHost, int redisPort, String serverDomain, String shardName) {
+		mRedisHost = redisHost;
+		mRedisPort = redisPort;
+		mServerDomain = serverDomain;
+		mShardName = shardName;
+
+	}
+
 	public static CommonConfig getCommonInstance() {
 		CommonConfig commonConfig = COMMON_INSTANCE;
 		if (commonConfig == null) {
@@ -18,12 +26,12 @@ public class CommonConfig {
 		return commonConfig;
 	}
 
-	public String getRedisHost() {
-		return mRedisHost;
+	public static String getRedisHost() {
+		return getCommonInstance().mRedisHost;
 	}
 
-	public int getRedisPort() {
-		return mRedisPort;
+	public static int getRedisPort() {
+		return getCommonInstance().mRedisPort;
 	}
 
 	/**
@@ -32,19 +40,11 @@ public class CommonConfig {
 	 * This domain info is useful as a prefix for redis keys so that multiple different types of
 	 * servers can share the same redis database without intermingling data
 	 */
-	public String getServerDomain() {
-		return mServerDomain;
+	public static String getServerDomain() {
+		return getCommonInstance().mServerDomain;
 	}
 
-	public String getShardName() {
-		return mShardName;
-	}
-
-	public CommonConfig(String redisHost, int redisPort, String serverDomain, String shardName) {
-		mRedisHost = redisHost;
-		mRedisPort = redisPort;
-		mServerDomain = serverDomain;
-		mShardName = shardName;
-
+	public static String getShardName() {
+		return getCommonInstance().mShardName;
 	}
 }

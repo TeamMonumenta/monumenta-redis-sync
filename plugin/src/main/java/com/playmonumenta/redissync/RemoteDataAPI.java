@@ -126,6 +126,6 @@ public class RemoteDataAPI {
 	}
 
 	public static String getRedisPath(UUID uuid) {
-		return String.format("%s:playerdata:%s:remotedata", CommonConfig.getCommonInstance().getServerDomain(), uuid.toString());
+		return String.format("%s:playerdata:%s:remotedata", CommonConfig.getServerDomain(), uuid.toString());
 	}
 }

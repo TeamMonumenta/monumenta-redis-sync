@@ -42,7 +42,7 @@ public class AutoSaveListener implements Listener {
 
 			// Distribute saves evenly in the autosave interval.
 			// This means that at most a player will take two autosave intervals to save
-			int delayBetweenSaves = BukkitConfig.getBukkitInstance().getTicksPerPlayerAutosave() / players.size();
+			int delayBetweenSaves = BukkitConfig.getTicksPerPlayerAutosave() / players.size();
 
 			// Remove all the previous iteration saves
 			for (Map.Entry<UUID, BukkitTask> entry : mPendingSaves.entrySet()) {
@@ -72,7 +72,7 @@ public class AutoSaveListener implements Listener {
 
 				mPendingSaves.put(uuid, task);
 			}
-		}, BukkitConfig.getBukkitInstance().getTicksPerPlayerAutosave(), BukkitConfig.getBukkitInstance().getTicksPerPlayerAutosave());
+		}, BukkitConfig.getTicksPerPlayerAutosave(), BukkitConfig.getTicksPerPlayerAutosave());
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)

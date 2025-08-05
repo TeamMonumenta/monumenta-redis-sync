@@ -14,7 +14,7 @@ public class RBoardAPI {
 		if (!name.matches("^[-_0-9A-Za-z$]+$")) {
 			throw new IllegalArgumentException("Name '" + name + "' contains illegal characters, must match '^[-_$0-9A-Za-z$]+'");
 		}
-		return String.format("%s:rboard:%s", CommonConfig.getCommonInstance().getServerDomain(), name);
+		return String.format("%s:rboard:%s", CommonConfig.getServerDomain(), name);
 	}
 
 	/* ******************* Set ******************* */

@@ -52,6 +52,6 @@ public class LeaderboardAPI {
 	}
 
 	public static String getRedisPath(String objective) {
-		return String.format("%s:leaderboard:%s", CommonConfig.getCommonInstance().getServerDomain(), objective);
+		return String.format("%s:leaderboard:%s", CommonConfig.getServerDomain(), objective);
 	}
 }

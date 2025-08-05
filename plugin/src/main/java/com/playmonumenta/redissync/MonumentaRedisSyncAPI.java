@@ -209,7 +209,7 @@ public class MonumentaRedisSyncAPI {
 
 		long startTime = System.currentTimeMillis();
 
-		if (target.equalsIgnoreCase(CommonConfig.getCommonInstance().getShardName())) {
+		if (target.equalsIgnoreCase(CommonConfig.getShardName())) {
 			player.sendMessage(Component.text("Can not transfer to the same server you are already on", NamedTextColor.RED));
 			return;
 		}
@@ -591,7 +591,7 @@ public class MonumentaRedisSyncAPI {
 	/** @deprecated - use ConfigAPI */
 	@Deprecated
 	public static String getServerDomain() {
-		return CommonConfig.getCommonInstance().getServerDomain();
+		return CommonConfig.getServerDomain();
 	}
 
 	public static String getRedisDataPath(Player player) {
@@ -599,7 +599,7 @@ public class MonumentaRedisSyncAPI {
 	}
 
 	public static String getRedisDataPath(UUID uuid) {
-		return String.format("%s:playerdata:%s:data", CommonConfig.getCommonInstance().getServerDomain(), uuid.toString());
+		return String.format("%s:playerdata:%s:data", CommonConfig.getServerDomain(), uuid.toString());
 	}
 
 	public static String getRedisHistoryPath(Player player) {
@@ -607,7 +607,7 @@ public class MonumentaRedisSyncAPI {
 	}
 
 	public static String getRedisHistoryPath(UUID uuid) {
-		return String.format("%s:playerdata:%s:history", CommonConfig.getCommonInstance().getServerDomain(), uuid.toString());
+		return String.format("%s:playerdata:%s:history", CommonConfig.getServerDomain(), uuid.toString());
 	}
 
 	public static String getRedisPerShardDataPath(Player player) {
@@ -615,7 +615,7 @@ public class MonumentaRedisSyncAPI {
 	}
 
 	public static String getRedisPerShardDataPath(UUID uuid) {
-		return String.format("%s:playerdata:%s:sharddata", CommonConfig.getCommonInstance().getServerDomain(), uuid.toString());
+		return String.format("%s:playerdata:%s:sharddata", CommonConfig.getServerDomain(), uuid.toString());
 	}
 
 	public static String getRedisPerShardDataWorldKey(World world) {
@@ -632,7 +632,7 @@ public class MonumentaRedisSyncAPI {
 	}
 
 	public static String getRedisPluginDataPath(UUID uuid) {
-		return String.format("%s:playerdata:%s:plugins", CommonConfig.getCommonInstance().getServerDomain(), uuid.toString());
+		return String.format("%s:playerdata:%s:plugins", CommonConfig.getServerDomain(), uuid.toString());
 	}
 
 	public static String getRedisAdvancementsPath(Player player) {
@@ -640,7 +640,7 @@ public class MonumentaRedisSyncAPI {
 	}
 
 	public static String getRedisAdvancementsPath(UUID uuid) {
-		return String.format("%s:playerdata:%s:advancements", CommonConfig.getCommonInstance().getServerDomain(), uuid.toString());
+		return String.format("%s:playerdata:%s:advancements", CommonConfig.getServerDomain(), uuid.toString());
 	}
 
 	public static String getRedisScoresPath(Player player) {
@@ -648,15 +648,15 @@ public class MonumentaRedisSyncAPI {
 	}
 
 	public static String getRedisScoresPath(UUID uuid) {
-		return String.format("%s:playerdata:%s:scores", CommonConfig.getCommonInstance().getServerDomain(), uuid.toString());
+		return String.format("%s:playerdata:%s:scores", CommonConfig.getServerDomain(), uuid.toString());
 	}
 
 	public static String getStashPath() {
-		return String.format("%s:stash", CommonConfig.getCommonInstance().getServerDomain());
+		return String.format("%s:stash", CommonConfig.getServerDomain());
 	}
 
 	public static String getStashListPath() {
-		return String.format("%s:stashlist", CommonConfig.getCommonInstance().getServerDomain());
+		return String.format("%s:stashlist", CommonConfig.getServerDomain());
 	}
 
 	public static String getTimeDifferenceSince(long compareTime) {

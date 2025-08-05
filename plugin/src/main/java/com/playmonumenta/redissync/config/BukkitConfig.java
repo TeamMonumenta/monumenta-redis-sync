@@ -11,22 +11,6 @@ public class BukkitConfig extends CommonConfig {
 	protected final boolean mSavingDisabled;
 	protected final boolean mScoreboardCleanupEnabled;
 
-	public int getHistoryAmount() {
-		return mHistoryAmount;
-	}
-
-	public int getTicksPerPlayerAutosave() {
-		return mTicksPerPlayerAutosave;
-	}
-
-	public boolean getSavingDisabled() {
-		return mSavingDisabled;
-	}
-
-	public boolean getScoreboardCleanupEnabled() {
-		return mScoreboardCleanupEnabled;
-	}
-
 	public BukkitConfig(Logger logger, String redisHost, int redisPort, String serverDomain, String shardName, int historyAmount, int ticksPerPlayerAutosave, boolean savingDisabled, boolean scoreboardCleanupEnabled) {
 		super(redisHost, redisPort, serverDomain, shardName);
 		mHistoryAmount = historyAmount;
@@ -54,5 +38,21 @@ public class BukkitConfig extends CommonConfig {
 			throw new RuntimeException("BukkitConfig not initialized");
 		}
 		return bukkitConfig;
+	}
+
+	public static int getHistoryAmount() {
+		return getBukkitInstance().mHistoryAmount;
+	}
+
+	public static int getTicksPerPlayerAutosave() {
+		return getBukkitInstance().mTicksPerPlayerAutosave;
+	}
+
+	public static boolean getSavingDisabled() {
+		return getBukkitInstance().mSavingDisabled;
+	}
+
+	public static boolean getScoreboardCleanupEnabled() {
+		return getBukkitInstance().mScoreboardCleanupEnabled;
 	}
 }

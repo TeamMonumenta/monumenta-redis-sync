@@ -11,6 +11,7 @@ import com.google.gson.JsonObject;
 import com.playmonumenta.redissync.adapters.VersionAdapter;
 import com.playmonumenta.redissync.adapters.VersionAdapter.ReturnParams;
 import com.playmonumenta.redissync.adapters.VersionAdapter.SaveData;
+import com.playmonumenta.redissync.config.BukkitConfig;
 import com.playmonumenta.redissync.event.PlayerJoinSetWorldEvent;
 import com.playmonumenta.redissync.event.PlayerSaveEvent;
 import com.playmonumenta.redissync.event.PlayerTransferFailEvent;
@@ -225,7 +226,7 @@ public class DataEventListener implements Listener {
 	private void waitForPlayerToSaveInternal(Player player, Runnable callback, boolean sync) {
 		Plugin plugin = MonumentaRedisSync.getInstance();
 
-		if (!mPendingSaves.containsKey(player.getUniqueId()) && !ConfigAPI.getSavingDisabled()) {
+		if (!mPendingSaves.containsKey(player.getUniqueId()) && !BukkitConfig.getBukkitInstance().getSavingDisabled()) {
 			mLogger.warning("Got request to wait for save commit but no pending save operations found. This might be a bug with the plugin that uses MonumentaRedisSync");
 		}
 
@@ -286,7 +287,7 @@ public class DataEventListener implements Listener {
 	public void playerAdvancementDataLoadEvent(PlayerAdvancementDataLoadEvent event) {
 		Player player = event.getPlayer();
 
-		if (ConfigAPI.getSavingDisabled()) {
+		if (BukkitConfig.getBukkitInstance().getSavingDisabled()) {
 			/* No data saved, no data loaded */
 			return;
 		}
@@ -322,7 +323,7 @@ public class DataEventListener implements Listener {
 		/* Always cancel saving the player file to disk with this plugin present */
 		event.setCancelled(true);
 
-		if (ConfigAPI.getSavingDisabled()) {
+		if (BukkitConfig.getBukkitInstance().getSavingDisabled()) {
 			/* No data saved, no data loaded */
 			return;
 		}
@@ -349,7 +350,7 @@ public class DataEventListener implements Listener {
 		mLogger.finest(() -> "Data:" + event.getJsonData());
 		String advPath = MonumentaRedisSyncAPI.getRedisAdvancementsPath(player);
 		commands.lpush(advPath, event.getJsonData());
-		commands.ltrim(advPath, 0, ConfigAPI.getHistoryAmount());
+		commands.ltrim(advPath, 0, BukkitConfig.getBukkitInstance().getHistoryAmount());
 
 		futures.add(commands.exec()); /* MULTI > */
 
@@ -387,7 +388,7 @@ public class DataEventListener implements Listener {
 	public void playerDataLoadEvent(PlayerDataLoadEvent event) {
 		Player player = event.getPlayer();
 
-		if (ConfigAPI.getSavingDisabled()) {
+		if (BukkitConfig.getBukkitInstance().getSavingDisabled()) {
 			/* No data saved, no data loaded */
 			return;
 		}
@@ -466,7 +467,7 @@ public class DataEventListener implements Listener {
 				 * If shard data does not contain this shard name, no info on what world to use - use the default one
 				 * If shard data contains this shard name, fetch world parameters from it, preferring UUID, then name. Loaded worlds only, this plugin does not load worlds automatically.
 				 */
-				String overallShardData = shardData.get(ConfigAPI.getShardName());
+				String overallShardData = shardData.get(BukkitConfig.getBukkitInstance().getShardName());
 				if (overallShardData == null) {
 					/* This is not an error - this will happen whenever a player first visits a new shard */
 					mLogger.fine("Player '" + player.getName() + "' has never been to this shard before");
@@ -598,7 +599,7 @@ public class DataEventListener implements Listener {
 	public void playerDataSaveEvent(PlayerDataSaveEvent event) {
 		event.setCancelled(true);
 
-		if (ConfigAPI.getSavingDisabled()) {
+		if (BukkitConfig.getBukkitInstance().getSavingDisabled()) {
 			/* No data saved, no data loaded */
 			return;
 		}
@@ -652,7 +653,7 @@ public class DataEventListener implements Listener {
 			mLogger.finest(() -> "data: " + b64encode(data.getData()));
 			String dataPath = MonumentaRedisSyncAPI.getRedisDataPath(player);
 			futures.add(RedisAPI.getInstance().asyncStringBytes().lpush(dataPath, data.getData()));
-			futures.add(RedisAPI.getInstance().asyncStringBytes().ltrim(dataPath, 0, ConfigAPI.getHistoryAmount()));
+			futures.add(RedisAPI.getInstance().asyncStringBytes().ltrim(dataPath, 0, BukkitConfig.getBukkitInstance().getHistoryAmount()));
 
 			/* Execute the sharddata, history and plugin data as a multi() batch */
 			RedisAsyncCommands<String, String> commands = RedisAPI.getInstance().async();
@@ -680,18 +681,18 @@ public class DataEventListener implements Listener {
 			overallShardData.addProperty("WorldUUID", player.getWorld().getUID().toString());
 			overallShardData.addProperty("World", player.getWorld().getName());
 			String overallShardDataStr = mGson.toJson(overallShardData);
-			commands.hset(shardDataPath, ConfigAPI.getShardName(), overallShardDataStr);
+			commands.hset(shardDataPath, BukkitConfig.getBukkitInstance().getShardName(), overallShardDataStr);
 			if (shardDataMap != null) {
-				shardDataMap.put(ConfigAPI.getShardName(), overallShardDataStr);
+				shardDataMap.put(BukkitConfig.getBukkitInstance().getShardName(), overallShardDataStr);
 			}
-			mLogger.finest("sharddata (overall): " + ConfigAPI.getShardName() + "=" + overallShardDataStr);
+			mLogger.finest("sharddata (overall): " + BukkitConfig.getBukkitInstance().getShardName() + "=" + overallShardDataStr);
 
 			/* history */
 			String histPath = MonumentaRedisSyncAPI.getRedisHistoryPath(player);
-			String history = ConfigAPI.getShardName() + "|" + System.currentTimeMillis() + "|" + player.getName();
+			String history = BukkitConfig.getBukkitInstance().getShardName() + "|" + System.currentTimeMillis() + "|" + player.getName();
 			mLogger.finest(() -> "history: " + history);
 			commands.lpush(histPath, history);
-			commands.ltrim(histPath, 0, ConfigAPI.getHistoryAmount());
+			commands.ltrim(histPath, 0, BukkitConfig.getBukkitInstance().getHistoryAmount());
 
 			/* plugindata */
 			String pluginDataPath = MonumentaRedisSyncAPI.getRedisPluginDataPath(player);
@@ -699,7 +700,7 @@ public class DataEventListener implements Listener {
 			String pluginDataStr = mGson.toJson(pluginData);
 			mLogger.finest(() -> "plugindata: " + pluginDataStr);
 			commands.lpush(pluginDataPath, pluginDataStr);
-			commands.ltrim(pluginDataPath, 0, ConfigAPI.getHistoryAmount());
+			commands.ltrim(pluginDataPath, 0, BukkitConfig.getBukkitInstance().getHistoryAmount());
 
 			/* Scoreboards */
 			mLogger.fine("Saving scoreboard data for player=" + player.getName());
@@ -710,7 +711,7 @@ public class DataEventListener implements Listener {
 			mLogger.finest(() -> "Data:" + scoreboardData);
 			String scorePath = MonumentaRedisSyncAPI.getRedisScoresPath(player);
 			commands.lpush(scorePath, scoreboardData);
-			commands.ltrim(scorePath, 0, ConfigAPI.getHistoryAmount());
+			commands.ltrim(scorePath, 0, BukkitConfig.getBukkitInstance().getHistoryAmount());
 
 			futures.add(commands.exec()); /* MULTI > */
 		} catch (IOException ex) {

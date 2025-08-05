@@ -1,6 +1,7 @@
 package com.playmonumenta.redissync;
 
 import com.google.inject.Inject;
+import com.playmonumenta.redissync.config.ProxyConfig;
 import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
@@ -42,7 +43,7 @@ public class MonumentaRedisSyncVelocity implements MonumentaRedisSyncInterface {
 		System.setProperty("com.playmonumenta.redissync.internal.netty", "com.playmonumenta.redissync.internal");
 
 		loadConfig();
-		mRedisAPI = new RedisAPI(this, ConfigAPI.getRedisHost(), ConfigAPI.getRedisPort());
+		mRedisAPI = new RedisAPI(this, ProxyConfig.getProxyInstance().getRedisHost(), ProxyConfig.getProxyInstance().getRedisPort());
 	}
 
 	@Subscribe
@@ -78,12 +79,8 @@ public class MonumentaRedisSyncVelocity implements MonumentaRedisSyncInterface {
 		int redisPort = mConfig.mRedisPort;
 		String serverDomain = mConfig.mServerDomain;
 		String shardName = mConfig.mShardName;
-		int historyAmount = -1;
-		int ticksPerPlayerAutosave = -1;
-		boolean savingDisabled = true;
-		boolean scoreboardCleanupEnabled = false;
 
-		new ConfigAPI(mLogger, redisHost, redisPort, serverDomain, shardName, historyAmount, ticksPerPlayerAutosave, savingDisabled, scoreboardCleanupEnabled);
+		new ProxyConfig(mLogger, redisHost, redisPort, serverDomain, shardName);
 	}
 
 	private void saveConfig() {

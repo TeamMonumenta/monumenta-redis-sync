@@ -19,8 +19,8 @@ public class VelocityListener {
 
 		RedisAsyncCommands<String, String> async = RedisAPI.getInstance().async();
 		async.multi();
-		async.hset("uuid2name", uuid.toString(), name);
-		async.hset("name2uuid", name, uuid.toString());
+		async.hset(uuidToNamePath, uuid.toString(), name);
+		async.hset(nameToUUIDPath, name, uuid.toString());
 		async.exec();
 	}
 }

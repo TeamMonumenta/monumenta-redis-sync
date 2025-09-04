@@ -1,5 +1,6 @@
 package com.playmonumenta.redissync;
 
+import com.playmonumenta.redissync.config.CommonConfig;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.ScoredValue;
 import java.util.LinkedHashMap;
@@ -51,6 +52,6 @@ public class LeaderboardAPI {
 	}
 
 	public static String getRedisPath(String objective) {
-		return String.format("%s:leaderboard:%s", ConfigAPI.getServerDomain(), objective);
+		return String.format("%s:leaderboard:%s", CommonConfig.getServerDomain(), objective);
 	}
 }

@@ -1,6 +1,7 @@
 package com.playmonumenta.redissync;
 
 import com.google.inject.Inject;
+import com.playmonumenta.redissync.config.ProxyConfig;
 import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
@@ -9,6 +10,8 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.CommentedConfigurationNode;
@@ -21,8 +24,8 @@ import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 @Plugin(id = "monumenta-redisapi", name = "Monumenta-RedisAPI", version = "", url = "", description = "", authors = {""})
 public class MonumentaRedisSyncVelocity implements MonumentaRedisSyncInterface {
 	private @Nullable RedisAPI mRedisAPI = null;
-	private final ProxyServer mServer;
-	private final Logger mLogger;
+	public final ProxyServer mServer;
+	public final Logger mLogger;
 
 	private final YamlConfigurationLoader mLoader; // Config reader & writer
 	private @Nullable CommentedConfigurationNode mBaseConfig;
@@ -42,12 +45,12 @@ public class MonumentaRedisSyncVelocity implements MonumentaRedisSyncInterface {
 		System.setProperty("com.playmonumenta.redissync.internal.netty", "com.playmonumenta.redissync.internal");
 
 		loadConfig();
-		mRedisAPI = new RedisAPI(this, ConfigAPI.getRedisHost(), ConfigAPI.getRedisPort());
+		mRedisAPI = new RedisAPI(this, ProxyConfig.getRedisHost(), ProxyConfig.getRedisPort());
 	}
 
 	@Subscribe
 	public void onEnable(ProxyInitializeEvent event) {
-		mServer.getEventManager().register(this, new VelocityListener());
+		mServer.getEventManager().register(this, new VelocityListener(this));
 	}
 
 	// we use ProxyShutdownEvent because ListenerClosEvent might fire too early
@@ -78,12 +81,18 @@ public class MonumentaRedisSyncVelocity implements MonumentaRedisSyncInterface {
 		int redisPort = mConfig.mRedisPort;
 		String serverDomain = mConfig.mServerDomain;
 		String shardName = mConfig.mShardName;
-		int historyAmount = -1;
-		int ticksPerPlayerAutosave = -1;
-		boolean savingDisabled = true;
-		boolean scoreboardCleanupEnabled = false;
+		String defaultServer = mConfig.mDefaultServer;
+		List<String> excludedServers = mConfig.mExcludedServers;
 
-		new ConfigAPI(mLogger, redisHost, redisPort, serverDomain, shardName, historyAmount, ticksPerPlayerAutosave, savingDisabled, scoreboardCleanupEnabled);
+		new ProxyConfig(
+			mLogger,
+			redisHost,
+			redisPort,
+			serverDomain,
+			shardName,
+			defaultServer,
+			excludedServers
+		);
 	}
 
 	private void saveConfig() {
@@ -119,5 +128,11 @@ public class MonumentaRedisSyncVelocity implements MonumentaRedisSyncInterface {
 
 		@Setting(value = "shard_name")
 		public String mShardName = "bungee";
+
+		@Setting(value = "default_server")
+		public String mDefaultServer = "";
+
+		@Setting(value = "excluded_servers")
+		public List<String> mExcludedServers = new ArrayList<>();
 	}
 }

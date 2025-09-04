@@ -1,26 +1,17 @@
 package com.playmonumenta.redissync;
 
-import java.util.logging.Logger;
+import com.playmonumenta.redissync.config.BukkitConfig;
+import com.playmonumenta.redissync.config.CommonConfig;
 
 public class ConfigAPI {
-	@SuppressWarnings("NullAway") // Required to avoid many null checks, this class will always be instantiated if this plugin is loaded
-	private static ConfigAPI INSTANCE = null;
-
-	private final String mRedisHost;
-	private final int mRedisPort;
-	private final String mServerDomain;
-	private final String mShardName;
-	private final int mHistoryAmount;
-	private final int mTicksPerPlayerAutosave;
-	private final boolean mSavingDisabled;
-	private final boolean mScoreboardCleanupEnabled;
-
+	@Deprecated()
 	public static String getRedisHost() {
-		return INSTANCE.mRedisHost;
+		return CommonConfig.getRedisHost();
 	}
 
+	@Deprecated()
 	public static int getRedisPort() {
-		return INSTANCE.mRedisPort;
+		return CommonConfig.getRedisPort();
 	}
 
 	/**
@@ -29,72 +20,33 @@ public class ConfigAPI {
 	 * This domain info is useful as a prefix for redis keys so that multiple different types of
 	 * servers can share the same redis database without intermingling data
 	 */
+	@Deprecated()
 	public static String getServerDomain() {
-		return INSTANCE.mServerDomain;
+		return CommonConfig.getServerDomain();
 	}
 
+	@Deprecated()
 	public static String getShardName() {
-		return INSTANCE.mShardName;
+		return CommonConfig.getShardName();
 	}
 
+	@Deprecated()
 	public static int getHistoryAmount() {
-		return INSTANCE.mHistoryAmount;
+		return BukkitConfig.getHistoryAmount();
 	}
 
+	@Deprecated()
 	public static int getTicksPerPlayerAutosave() {
-		return INSTANCE.mTicksPerPlayerAutosave;
+		return BukkitConfig.getTicksPerPlayerAutosave();
 	}
 
+	@Deprecated()
 	public static boolean getSavingDisabled() {
-		return INSTANCE.mSavingDisabled;
+		return BukkitConfig.getSavingDisabled();
 	}
 
+	@Deprecated()
 	public static boolean getScoreboardCleanupEnabled() {
-		return INSTANCE.mScoreboardCleanupEnabled;
-	}
-
-	protected ConfigAPI(Logger logger, String redisHost, int redisPort, String serverDomain, String shardName, int historyAmount, int ticksPerPlayerAutosave, boolean savingDisabled, boolean scoreboardCleanupEnabled) {
-		mRedisHost = redisHost;
-		mRedisPort = redisPort;
-		mServerDomain = serverDomain;
-		mShardName = shardName;
-		mHistoryAmount = historyAmount;
-		mTicksPerPlayerAutosave = ticksPerPlayerAutosave;
-		mSavingDisabled = savingDisabled;
-		mScoreboardCleanupEnabled = scoreboardCleanupEnabled;
-		INSTANCE = this;
-
-		logger.info("Configuration:");
-		logger.info("  redis_host = " + (mRedisHost == null ? "null" : mRedisHost));
-		logger.info("  redis_port = " + mRedisPort);
-		logger.info("  server_domain = " + (mServerDomain == null ? "null" : mServerDomain));
-		logger.info("  shard_name = " + (mShardName == null ? "null" : mShardName));
-		logger.info("  history_amount = " + mHistoryAmount);
-		logger.info("  ticks_per_player_autosave = " + mTicksPerPlayerAutosave);
-		logger.info("  saving_disabled = " + mSavingDisabled);
-		logger.info("  scoreboard_cleanup_enabled = " + mScoreboardCleanupEnabled);
-	}
-
-	// Probably a better way to do this
-	protected ConfigAPI(org.slf4j.Logger logger, String redisHost, int redisPort, String serverDomain, String shardName, int historyAmount, int ticksPerPlayerAutosave, boolean savingDisabled, boolean scoreboardCleanupEnabled) {
-		mRedisHost = redisHost;
-		mRedisPort = redisPort;
-		mServerDomain = serverDomain;
-		mShardName = shardName;
-		mHistoryAmount = historyAmount;
-		mTicksPerPlayerAutosave = ticksPerPlayerAutosave;
-		mSavingDisabled = savingDisabled;
-		mScoreboardCleanupEnabled = scoreboardCleanupEnabled;
-		INSTANCE = this;
-
-		logger.info("Configuration:");
-		logger.info("  redis_host = {}", (mRedisHost == null ? "null" : mRedisHost));
-		logger.info("  redis_port = {}", mRedisPort);
-		logger.info("  server_domain = {}", (mServerDomain == null ? "null" : mServerDomain));
-		logger.info("  shard_name = {}", (mShardName == null ? "null" : mShardName));
-		logger.info("  history_amount = {}", mHistoryAmount);
-		logger.info("  ticks_per_player_autosave = {}", mTicksPerPlayerAutosave);
-		logger.info("  saving_disabled = {}", mSavingDisabled);
-		logger.info("  scoreboard_cleanup_enabled = {}", mScoreboardCleanupEnabled);
+		return BukkitConfig.getScoreboardCleanupEnabled();
 	}
 }

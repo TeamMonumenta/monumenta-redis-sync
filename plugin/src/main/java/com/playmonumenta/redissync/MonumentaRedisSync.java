@@ -11,6 +11,7 @@ import com.playmonumenta.redissync.commands.RemoteDataCommand;
 import com.playmonumenta.redissync.commands.Stash;
 import com.playmonumenta.redissync.commands.TransferServer;
 import com.playmonumenta.redissync.commands.UpgradeAllPlayers;
+import com.playmonumenta.redissync.config.BukkitConfig;
 import java.io.File;
 import java.util.Locale;
 import java.util.logging.Level;
@@ -91,11 +92,11 @@ public class MonumentaRedisSync extends JavaPlugin implements MonumentaRedisSync
 		}
 
 		loadConfig();
-		mRedisAPI = new RedisAPI(this, ConfigAPI.getRedisHost(), ConfigAPI.getRedisPort());
+		mRedisAPI = new RedisAPI(this, BukkitConfig.getRedisHost(), BukkitConfig.getRedisPort());
 		getServer().getPluginManager().registerEvents(new DataEventListener(this.getLogger(), mVersionAdapter), this);
 		getServer().getPluginManager().registerEvents(new ScoreboardCleanupListener(this, this.getLogger(), mVersionAdapter), this);
 		getServer().getPluginManager().registerEvents(AccountTransferManager.getInstance(), this);
-		if (ConfigAPI.getTicksPerPlayerAutosave() > 0) {
+		if (BukkitConfig.getTicksPerPlayerAutosave() > 0) {
 			getServer().getPluginManager().registerEvents(new AutoSaveListener(this, mVersionAdapter), this);
 		}
 
@@ -129,7 +130,7 @@ public class MonumentaRedisSync extends JavaPlugin implements MonumentaRedisSync
 		return versionAdapter;
 	}
 
-	private void loadConfig() {
+	private BukkitConfig loadConfig() {
 		File configFile = new File(this.getDataFolder(), "config.yml");
 		/* TODO: Default file if not exist */
 		FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
@@ -164,7 +165,7 @@ public class MonumentaRedisSync extends JavaPlugin implements MonumentaRedisSync
 				setLogLevel(Level.INFO);
 		}
 
-		new ConfigAPI(getLogger(), redisHost, redisPort, serverDomain, shardName, historyAmount, ticksPerPlayerAutosave, savingDisabled, scoreboardCleanupEnabled);
+		 return new BukkitConfig(getLogger(), redisHost, redisPort, serverDomain, shardName, historyAmount, ticksPerPlayerAutosave, savingDisabled, scoreboardCleanupEnabled);
 	}
 
 	public void setLogLevel(Level level) {

@@ -1,5 +1,6 @@
 package com.playmonumenta.redissync;
 
+import com.playmonumenta.redissync.config.CommonConfig;
 import io.lettuce.core.KeyValue;
 import io.lettuce.core.Value;
 import java.util.Map;
@@ -125,6 +126,6 @@ public class RemoteDataAPI {
 	}
 
 	public static String getRedisPath(UUID uuid) {
-		return String.format("%s:playerdata:%s:remotedata", ConfigAPI.getServerDomain(), uuid.toString());
+		return String.format("%s:playerdata:%s:remotedata", CommonConfig.getServerDomain(), uuid.toString());
 	}
 }

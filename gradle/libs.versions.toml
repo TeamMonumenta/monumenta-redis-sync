@@ -1,6 +1,6 @@
 [versions]
 lettuce = "6.3.2.RELEASE"
-networkrelay = "2.7"
+networkrelay = "2.14"
 commandapi = "9.4.1"
 velocity = "3.3.0-SNAPSHOT"
 mixinapi = "1.0.2"

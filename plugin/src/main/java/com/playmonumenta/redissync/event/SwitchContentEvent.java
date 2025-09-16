@@ -1,5 +1,6 @@
 package com.playmonumenta.redissync.event;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -23,7 +24,7 @@ public class SwitchContentEvent extends Event {
 
 	public SwitchContentEvent(
 		UUID mainPlayerId,
-		Set<UUID> invitedPlayerIds,
+		Collection<UUID> invitedPlayerIds,
 		String contentId,
 		@Nullable Vector fromPosition,
 		@Nullable Vector2f fromRotation,
@@ -32,6 +33,7 @@ public class SwitchContentEvent extends Event {
 	) {
 		mMainPlayerId = mainPlayerId;
 		mInvitedPlayerIds = new HashSet<>(invitedPlayerIds);
+		mInvitedPlayerIds.remove(mainPlayerId);
 		mContentId = contentId;
 		mFromPosition = fromPosition;
 		mFromRotation = fromRotation;

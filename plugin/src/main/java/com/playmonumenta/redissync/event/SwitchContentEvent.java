@@ -53,19 +53,19 @@ public class SwitchContentEvent extends Event {
 		return mContentId;
 	}
 
-	public Vector fromPosition() {
+	public @Nullable Vector fromPosition() {
 		return mFromPosition;
 	}
 
-	public Vector2f fromRotation() {
+	public @Nullable Vector2f fromRotation() {
 		return mFromRotation;
 	}
 
-	public Vector toPosition() {
+	public @Nullable Vector toPosition() {
 		return mToPosition;
 	}
 
-	public Vector2f toRotation() {
+	public @Nullable Vector2f toRotation() {
 		return mToRotation;
 	}
 

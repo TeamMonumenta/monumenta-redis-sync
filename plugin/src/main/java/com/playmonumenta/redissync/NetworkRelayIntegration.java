@@ -1,11 +1,16 @@
 package com.playmonumenta.redissync;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkrelay.GatherHeartbeatDataEvent;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
+import com.playmonumenta.networkrelay.shardhealth.ShardHealth;
 import com.playmonumenta.redissync.event.PlayerAccountTransferEvent;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
@@ -117,8 +122,18 @@ public class NetworkRelayIntegration implements Listener {
 	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = false)
 	public void gatherHeartbeatDataEvent(GatherHeartbeatDataEvent event) throws Exception {
 		mLogger.finest("Got relay request for heartbeat data");
-		/* Don't actually need to set any data - just being present is sufficient */
-		event.setPluginData(PLUGIN_IDENTIFIER, new JsonObject());
+
+		JsonObject contentData = new JsonObject();
+		for (Map.Entry<String, Double> contentEntry : ContentAPI.localContent().entrySet()) {
+			String contentId = contentEntry.getKey();
+			Double contentHealth = contentEntry.getValue();
+			contentData.addProperty(contentId, contentHealth);
+		}
+
+		JsonObject pluginData = new JsonObject();
+		pluginData.add("content", contentData);
+
+		event.setPluginData(PLUGIN_IDENTIFIER, pluginData);
 	}
 
 	public static String[] getOnlineTransferTargets() {
@@ -139,6 +154,52 @@ public class NetworkRelayIntegration implements Listener {
 			}
 		}
 		return new String[0];
+	}
+
+	public static Double getLocalShardHealth() {
+		NetworkRelayIntegration instance = INSTANCE;
+		if (instance == null) {
+			return 0.0;
+		}
+
+		ShardHealth shardHealth = ShardHealth.averageHealth();
+		return shardHealth.healthScore();
+	}
+
+	public static Map<String, Map<String, Double>> getRemoteContent() {
+		Map<String, Map<String, Double>> result = new TreeMap<>();
+
+		NetworkRelayIntegration instance = INSTANCE;
+		if (instance == null) {
+			return result;
+		}
+
+		Set<String> shards = NetworkRelayAPI.getOnlineShardNames();
+
+		for (String shardName :  shards) {
+			JsonObject shardHeartbeat = NetworkRelayAPI.getHeartbeatPluginData(shardName, PLUGIN_IDENTIFIER);
+			if (shardHeartbeat == null) {
+				continue;
+			}
+
+			if (!(shardHeartbeat.get("content") instanceof JsonObject remoteContentJson)) {
+				continue;
+			}
+
+			for (Map.Entry<String, JsonElement> contentEntry : remoteContentJson.entrySet()) {
+				String contentId = contentEntry.getKey();
+				JsonElement contentElement = contentEntry.getValue();
+
+				if (contentElement instanceof JsonPrimitive contentPrimitive && contentPrimitive.isNumber()) {
+					double shardHealth = contentPrimitive.getAsDouble();
+
+					result.computeIfAbsent(contentId, k -> new TreeMap<>())
+						.put(shardName, shardHealth);
+				}
+			}
+		}
+
+		return result;
 	}
 
 	private void remoteLoginEvent(JsonObject data) {

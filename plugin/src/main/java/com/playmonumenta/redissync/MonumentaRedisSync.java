@@ -2,6 +2,7 @@ package com.playmonumenta.redissync;
 
 import com.playmonumenta.redissync.adapters.VersionAdapter;
 import com.playmonumenta.redissync.commands.ChangeLogLevel;
+import com.playmonumenta.redissync.commands.ContentCommand;
 import com.playmonumenta.redissync.commands.PlayerHistory;
 import com.playmonumenta.redissync.commands.PlayerLoadFromPlayer;
 import com.playmonumenta.redissync.commands.PlayerRollback;
@@ -59,6 +60,7 @@ public class MonumentaRedisSync extends JavaPlugin implements MonumentaRedisSync
 		 * These need to register immediately on load to prevent function loading errors
 		 */
 		TransferServer.register();
+		ContentCommand.register();
 		Stash.register();
 		PlayerHistory.register(this);
 		PlayerRollback.register();

@@ -2,8 +2,6 @@ package com.playmonumenta.redissync;
 
 import com.playmonumenta.redissync.event.GatherContentEvent;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import org.jetbrains.annotations.Nullable;
 
 public class ContentManager {
